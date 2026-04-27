@@ -2,136 +2,68 @@
 
 Everything you need to create, configure, and connect before writing code.
 
-## 1. GitHub Repository
+## 1. GitHub Repository ✅
 
-1. Go to https://github.com/new
-2. Create a new repository:
-   - Name: `prepd`
-   - Private
-   - No template, no README (we already have one)
-3. From the local `prepd` folder:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial project docs"
-   git remote add origin git@github.com:<your-username>/prepd.git
-   git push -u origin main
-   ```
+Repo created at `git@github.com:horiaradu/prepd.git` (private).
 
-## 2. Google Cloud Project
+## 2. Google Cloud Project ✅
 
-A single Google Cloud project provides both OAuth (login) and Gemini API (LLM).
+Project `prepd` created. Gemini API enabled. OAuth 2.0 configured.
 
-### Create the project
+### Credentials
 
-1. Go to https://console.cloud.google.com/
-2. Click **Select a project** → **New Project**
-3. Name: `prepd`
-4. Create
+- **Gemini API key** → stored in `.env` as `GEMINI_API_KEY`
+- **OAuth Client ID/Secret** → stored in `.env` as `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
+- Authorized redirect URIs:
+  - `http://localhost:3000/api/auth/callback/google` (dev)
+  - `https://prepd-ten.vercel.app/api/auth/callback/google` (prod)
+- OAuth consent screen: External, test user added
 
-### Enable Gemini API
+## 3. Vercel ✅
 
-1. In the project, go to **APIs & Services** → **Library**
-2. Search for **Generative Language API** (this is the Gemini API)
-3. Click **Enable**
-4. Go to **APIs & Services** → **Credentials**
-5. Click **Create Credentials** → **API Key**
-6. Copy the key → this is your `GEMINI_API_KEY`
-7. (Optional) Restrict the key to the Generative Language API only
+App deployed at `https://prepd-ten.vercel.app`.
 
-### Set up OAuth 2.0 (for Google Login)
+### Database (Neon Postgres) ✅
 
-1. In the same project, go to **APIs & Services** → **OAuth consent screen**
-2. Choose **External** user type (even though it's just you — Internal requires a Workspace org)
-3. Fill in:
-   - App name: `Prepd`
-   - User support email: your email
-   - Developer contact: your email
-4. Scopes: add `email`, `profile`, `openid`
-5. Test users: add your Google email
-6. Save
+Provisioned via Vercel marketplace (Frankfurt region, free tier). Connection strings auto-injected into Vercel env vars.
 
-7. Go to **APIs & Services** → **Credentials**
-8. Click **Create Credentials** → **OAuth client ID**
-9. Application type: **Web application**
-10. Name: `Prepd Web`
-11. Authorized JavaScript origins:
-    - `http://localhost:3000` (dev)
-    - `https://prepd-ten.vercel.app` (prod — add after first deploy)
-12. Authorized redirect URIs:
-    - `http://localhost:3000/api/auth/callback/google` (dev)
-    - `https://prepd-ten.vercel.app/api/auth/callback/google` (prod — add after first deploy)
-13. Create → copy **Client ID** and **Client Secret**
+## 4. Environment Variables \u2705
 
-**Note:** While in "Testing" publishing status, only the test users you added can log in. This is fine — you don't need to publish the app.
+### Local (`.env`)
 
-## 3. Vercel
-
-### Account & project
-
-1. Go to https://vercel.com/ and sign in with GitHub
-2. Click **Add New Project** → import the `prepd` GitHub repo
-3. Framework preset: **Next.js** (auto-detected)
-4. Don't deploy yet — we need env vars first
-
-### Database (Neon Postgres)
-
-1. In the Vercel dashboard, go to **Storage** → **Create Database**
-2. Select **Neon** (Serverless Postgres)
-3. Name: `prepd-db`
-4. Region: pick the closest to you (e.g., `eu-west-1` for Europe)
-5. Create
-6. Connect it to your `prepd` project
-7. Vercel auto-injects `POSTGRES_URL` (and related vars) into your project's environment
-
-For local development, go to the database page → **`.env.local` tab** → copy the connection string snippet into your `.env.local`.
-
-## 4. Environment Variables
-
-### Local (`.env.local`)
-
-Create `.env.local` in the project root:
+All variables configured in `.env` (gitignored):
 
 ```bash
-# Auth (from Google Cloud Console → OAuth credentials)
-GOOGLE_CLIENT_ID=<from step 2>
-GOOGLE_CLIENT_SECRET=<from step 2>
-NEXTAUTH_SECRET=<generate with: openssl rand -base64 32>
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+NEXTAUTH_SECRET=...
 NEXTAUTH_URL=http://localhost:3000
-AUTHORIZED_EMAIL=<your Google email>
-
-# Database (from Neon dashboard or Vercel Storage → .env.local tab)
-POSTGRES_URL=<from Vercel/Neon>
-
-# LLM (from Google Cloud Console → API key)
-GEMINI_API_KEY=<from step 2>
+AUTHORIZED_EMAIL=horia.radu23@gmail.com
+GEMINI_API_KEY=...
+DATABASE_URL=...     # Neon Postgres connection string
 ```
 
 ### Vercel (production)
 
-In the Vercel project dashboard → **Settings** → **Environment Variables**, add:
+Set in Vercel project dashboard → **Settings** → **Environment Variables**:
 
-| Variable | Value | Notes |
-|----------|-------|-------|
-| `GOOGLE_CLIENT_ID` | from Google Cloud | |
-| `GOOGLE_CLIENT_SECRET` | from Google Cloud | |
-| `NEXTAUTH_SECRET` | random 32-byte base64 | Generate a different one from local |
-| `NEXTAUTH_URL` | `https://prepd-ten.vercel.app` | Or your custom domain |
-| `AUTHORIZED_EMAIL` | your email | |
-| `GEMINI_API_KEY` | from Google Cloud | |
+| Variable | Notes |
+|----------|-------|
+| `GOOGLE_CLIENT_ID` | from Google Cloud |
+| `GOOGLE_CLIENT_SECRET` | from Google Cloud |
+| `NEXTAUTH_SECRET` | random 32-byte base64 |
+| `NEXTAUTH_URL` | `https://prepd-ten.vercel.app` |
+| `AUTHORIZED_EMAIL` | `horia.radu23@gmail.com` |
+| `GEMINI_API_KEY` | from Google Cloud |
 
-`POSTGRES_URL` is auto-injected by Vercel when you connect the database — no need to set it manually.
+`DATABASE_URL` and related Postgres vars are auto-injected by the Neon integration.
 
-## 5. Local Development Prerequisites
+## 5. Local Development
 
 ```bash
-# Node.js (LTS)
-nvm install --lts
-nvm use --lts
-
-# Verify
-node -v  # Should be 20+ or 22+
-npm -v
+nvm use        # uses .nvmrc (Node 24)
+npm ci
+npm run dev    # starts on http://localhost:3000
 ```
 
 No Docker needed — the database is remote (Vercel Postgres). If you later want a local Postgres for offline dev, you can add Docker, but it's not necessary to start.

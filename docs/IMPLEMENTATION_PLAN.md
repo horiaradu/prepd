@@ -26,7 +26,7 @@ Get the single most valuable feature working end-to-end with no auth, no databas
 - [ ] Manual testing with 5-10 diverse recipes (blog posts, YouTube videos, different cuisines)
 - [ ] Iterate on the parsing prompt based on results
 
-**Status:** Core implementation complete. Testing and prompt iteration in progress.
+**Status:** Core implementation complete. Deployed to Vercel. Testing and prompt iteration pending.
 
 ## Phase 2: Database + saved recipes
 
@@ -34,7 +34,7 @@ Persist recipes so they aren't lost on refresh.
 
 ### Tasks
 
-- [ ] Set up Vercel Postgres
+- [ ] Set up Neon Postgres (via Vercel marketplace)
 - [ ] Set up Drizzle ORM with schema from DATA_MODEL.md
 - [ ] Run initial migration
 - [ ] Update parse route to save recipes to the database after parsing
@@ -52,12 +52,14 @@ Lock it down to just you.
 
 ### Tasks
 
-- [ ] Set up NextAuth.js with Google provider
-- [ ] Create Google OAuth credentials (Google Cloud Console)
-- [ ] Add auth middleware — protect all routes except `/login`
-- [ ] Add `AUTHORIZED_EMAIL` check — reject logins from other Google accounts
+- [x] Set up NextAuth.js with Google provider
+- [x] Create Google OAuth credentials (Google Cloud Console)
+- [x] Add auth middleware — protect all routes except `/login`
+- [x] Add `AUTHORIZED_EMAIL` check — reject logins from other Google accounts
 - [ ] Add user_id to recipes table, associate recipes with the logged-in user
-- [ ] Add login/logout UI
+- [x] Add login/logout UI
+
+**Status:** Auth guard complete. user_id association deferred to Phase 2 (requires database).
 
 **Done when:** Only your Google account can access the app.
 
@@ -86,32 +88,33 @@ The conversational recipe discovery feature.
 - [ ] Loading states and error handling for all async operations
 - [ ] Re-parse action on saved recipes (useful when prompts improve)
 - [ ] Edit recipe manually (fix LLM mistakes)
-- [ ] Deploy to Vercel with production env vars
+- [x] Deploy to Vercel with production env vars
 - [ ] Custom domain (optional)
 
-## Dependencies to install
+## Dependencies
 
 ```bash
-# Core
-npx create-next-app@latest prepd --typescript --tailwind --eslint --app --src-dir --use-npm --no-turbopack
+# Core (installed)
+npx create-next-app@latest prepd --typescript --tailwind --eslint --app --src-dir --use-npm
 
-# LLM
+# LLM (installed)
 npm install @google/generative-ai
 
-# Content extraction
+# Content extraction (installed)
 npm install youtube-transcript cheerio
 
-# Database
-npm install drizzle-orm @vercel/postgres
-npm install -D drizzle-kit
-
-# Auth
+# Auth (installed)
 npm install next-auth
+
+# Database (not yet installed)
+npm install drizzle-orm @neondatabase/serverless
+npm install -D drizzle-kit
 ```
 
-## External accounts needed
+## External accounts (all set up)
 
-1. **Google Cloud Console** — create a project for:
+1. **Google Cloud Console** — project `prepd`:
    - OAuth 2.0 credentials (for login)
    - Gemini API key (for LLM)
-2. **Vercel** — deploy the app, provision Postgres database
+2. **Vercel** — app deployed at `prepd-ten.vercel.app`, Neon Postgres provisioned
+3. **GitHub** — private repo `horiaradu/prepd`
