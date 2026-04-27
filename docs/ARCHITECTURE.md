@@ -146,8 +146,9 @@ AUTHORIZED_EMAIL=        # Your Google email — only this user can log in
 
 ### Google Gemini API
 
+- Model: `gemini-2.5-flash` (stable, free tier)
 - Used for recipe parsing (structured JSON output) and recipe suggestions (with Search grounding)
-- Free tier: 15 requests/minute, 1M tokens/day — more than enough for personal use
+- Free tier — more than enough for personal use
 - API key stored in `GEMINI_API_KEY` env var
 
 ### YouTube Transcripts

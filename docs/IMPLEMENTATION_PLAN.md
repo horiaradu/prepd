@@ -8,25 +8,25 @@ Get the single most valuable feature working end-to-end with no auth, no databas
 
 ### Tasks
 
-- [ ] Scaffold Next.js project with App Router, Tailwind CSS, TypeScript
-- [ ] Create a simple page with a URL input field and a "Parse" button
-- [ ] Implement URL content extraction:
-  - [ ] YouTube URL detection + transcript extraction (`youtube-transcript`)
-  - [ ] Web page fetching + content extraction (`cheerio`) — check for JSON-LD Recipe schema first, fall back to body text
-- [ ] Set up Gemini API client (`@google/generative-ai` SDK)
-- [ ] Implement `POST /api/recipes/parse` route:
-  - [ ] Extract content from URL
-  - [ ] Send to Gemini with recipe parsing prompt
-  - [ ] Return structured JSON
-- [ ] Create recipe display component:
-  - [ ] Title and servings
-  - [ ] Ingredients list (with metric quantities)
-  - [ ] Prep steps section (each step shows its ingredients)
-  - [ ] Cooking steps section (each step shows its ingredients)
+- [x] Scaffold Next.js project with App Router, Tailwind CSS, TypeScript
+- [x] Create a simple page with a URL input field and a "Parse" button
+- [x] Implement URL content extraction:
+  - [x] YouTube URL detection + transcript extraction (`youtube-transcript`)
+  - [x] Web page fetching + content extraction (`cheerio`) — check for JSON-LD Recipe schema first, fall back to body text
+- [x] Set up Gemini API client (`@google/generative-ai` SDK)
+- [x] Implement `POST /api/recipes/parse` route:
+  - [x] Extract content from URL
+  - [x] Send to Gemini with recipe parsing prompt
+  - [x] Return structured JSON
+- [x] Create recipe display component:
+  - [x] Title and servings
+  - [x] Ingredients list (with metric quantities)
+  - [x] Prep steps section (each step shows its ingredients)
+  - [x] Cooking steps section (each step shows its ingredients)
 - [ ] Manual testing with 5-10 diverse recipes (blog posts, YouTube videos, different cuisines)
 - [ ] Iterate on the parsing prompt based on results
 
-**Done when:** You can paste a URL, get a clean structured recipe, and the metric conversions are reasonable.
+**Status:** Core implementation complete. Testing and prompt iteration in progress.
 
 ## Phase 2: Database + saved recipes
 
@@ -93,7 +93,7 @@ The conversational recipe discovery feature.
 
 ```bash
 # Core
-npx create-next-app@latest prepd --typescript --tailwind --eslint --app --src-dir
+npx create-next-app@latest prepd --typescript --tailwind --eslint --app --src-dir --use-npm --no-turbopack
 
 # LLM
 npm install @google/generative-ai

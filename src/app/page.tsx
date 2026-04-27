@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
 import type { ParsedRecipe, ParseResponse } from "@/types/recipe";
 
@@ -44,11 +45,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-8 max-w-3xl mx-auto">
-      <header className="mb-8">
-        <h1 className="text-4xl font-bold">Prepd</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Paste a recipe URL or YouTube video link
-        </p>
+      <header className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-4xl font-bold">Prepd</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Paste a recipe URL or YouTube video link
+          </p>
+        </div>
+        <button
+          onClick={() => signOut()}
+          className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          Sign out
+        </button>
       </header>
 
       <form onSubmit={handleParse} className="flex gap-3 mb-8">

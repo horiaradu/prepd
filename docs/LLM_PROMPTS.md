@@ -104,8 +104,8 @@ User's message: {user_message}
 ### Gemini Configuration
 
 - Enable **Google Search grounding** (`tools: [{ google_search: {} }]`) — this allows Gemini to search the web and return real links
-- Use `gemini-2.0-flash` for suggestions (fast, cheap, good enough)
-- Use `gemini-2.0-flash` for parsing too (structured output is reliable)
+- Use `gemini-2.5-flash` for suggestions (fast, cheap, good enough)
+- Use `gemini-2.5-flash` for parsing too (structured output is reliable)
 
 ## 3. Prompt Iteration
 
