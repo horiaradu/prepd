@@ -14,7 +14,7 @@ Prepd is a single Next.js application deployed on Vercel. All server logic lives
 │  └──────────────┘     └────────┬─────────┘   │
 │                                │              │
 │                       ┌────────┴─────────┐   │
-│                       │  Vercel Postgres  │   │
+│                       │  Neon Postgres    │   │
 │                       └──────────────────┘   │
 └───────────────────────────┬───────────────────┘
                             │
@@ -138,7 +138,7 @@ NextAuth.js with Google OAuth provider. Single authorized user (your Google emai
 GOOGLE_CLIENT_ID=        # Google OAuth client ID
 GOOGLE_CLIENT_SECRET=    # Google OAuth client secret
 NEXTAUTH_SECRET=         # Random string for session encryption
-NEXTAUTH_URL=            # App URL (http://localhost:3000 in dev)
+NEXTAUTH_URL=            # App URL (http://localhost:3000 in dev, https://prepd-ten.vercel.app in prod)
 AUTHORIZED_EMAIL=        # Your Google email — only this user can log in
 ```
 
@@ -173,7 +173,7 @@ NEXTAUTH_URL=http://localhost:3000
 AUTHORIZED_EMAIL=
 
 # Database
-POSTGRES_URL=            # Vercel Postgres connection string
+POSTGRES_URL=            # Neon Postgres connection string (via Vercel)
 
 # LLM
 GEMINI_API_KEY=

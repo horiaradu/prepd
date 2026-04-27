@@ -57,10 +57,10 @@ A single Google Cloud project provides both OAuth (login) and Gemini API (LLM).
 10. Name: `Prepd Web`
 11. Authorized JavaScript origins:
     - `http://localhost:3000` (dev)
-    - `https://prepd.vercel.app` (prod — add after first deploy)
+    - `https://prepd-ten.vercel.app` (prod — add after first deploy)
 12. Authorized redirect URIs:
     - `http://localhost:3000/api/auth/callback/google` (dev)
-    - `https://prepd.vercel.app/api/auth/callback/google` (prod — add after first deploy)
+    - `https://prepd-ten.vercel.app/api/auth/callback/google` (prod — add after first deploy)
 13. Create → copy **Client ID** and **Client Secret**
 
 **Note:** While in "Testing" publishing status, only the test users you added can log in. This is fine — you don't need to publish the app.
@@ -74,10 +74,10 @@ A single Google Cloud project provides both OAuth (login) and Gemini API (LLM).
 3. Framework preset: **Next.js** (auto-detected)
 4. Don't deploy yet — we need env vars first
 
-### Vercel Postgres
+### Database (Neon Postgres)
 
 1. In the Vercel dashboard, go to **Storage** → **Create Database**
-2. Select **Postgres**
+2. Select **Neon** (Serverless Postgres)
 3. Name: `prepd-db`
 4. Region: pick the closest to you (e.g., `eu-west-1` for Europe)
 5. Create
@@ -100,10 +100,8 @@ NEXTAUTH_SECRET=<generate with: openssl rand -base64 32>
 NEXTAUTH_URL=http://localhost:3000
 AUTHORIZED_EMAIL=<your Google email>
 
-# Database (from Vercel Postgres dashboard → .env.local tab)
-POSTGRES_URL=<from Vercel>
-POSTGRES_PRISMA_URL=<from Vercel, if provided>
-POSTGRES_URL_NON_POOLING=<from Vercel, if provided>
+# Database (from Neon dashboard or Vercel Storage → .env.local tab)
+POSTGRES_URL=<from Vercel/Neon>
 
 # LLM (from Google Cloud Console → API key)
 GEMINI_API_KEY=<from step 2>
@@ -118,7 +116,7 @@ In the Vercel project dashboard → **Settings** → **Environment Variables**, 
 | `GOOGLE_CLIENT_ID` | from Google Cloud | |
 | `GOOGLE_CLIENT_SECRET` | from Google Cloud | |
 | `NEXTAUTH_SECRET` | random 32-byte base64 | Generate a different one from local |
-| `NEXTAUTH_URL` | `https://prepd.vercel.app` | Or your custom domain |
+| `NEXTAUTH_URL` | `https://prepd-ten.vercel.app` | Or your custom domain |
 | `AUTHORIZED_EMAIL` | your email | |
 | `GEMINI_API_KEY` | from Google Cloud | |
 
@@ -140,13 +138,13 @@ No Docker needed — the database is remote (Vercel Postgres). If you later want
 
 ## Checklist
 
-- [ ] GitHub repo created and local folder pushed
-- [ ] Google Cloud project created (`prepd`)
-- [ ] Gemini API enabled + API key generated
-- [ ] OAuth consent screen configured with your email as test user
-- [ ] OAuth client ID + secret created with correct redirect URIs
-- [ ] Vercel project created (linked to GitHub repo)
-- [ ] Vercel Postgres database provisioned and connected
-- [ ] `.env.local` file created with all variables filled in
-- [ ] Vercel environment variables set for production
-- [ ] Node.js LTS installed
+- [x] GitHub repo created and local folder pushed
+- [x] Google Cloud project created (`prepd`)
+- [x] Gemini API enabled + API key generated
+- [x] OAuth consent screen configured with your email as test user
+- [x] OAuth client ID + secret created with correct redirect URIs
+- [x] Vercel project created (linked to GitHub repo)
+- [x] Neon Postgres database provisioned and connected via Vercel
+- [x] `.env` file created with all variables filled in
+- [x] Vercel environment variables set for production
+- [x] Node.js 24 (`.nvmrc`)
