@@ -17,6 +17,7 @@ Rules:
 7. Preserve the original recipe's intent — do not add or remove ingredients or steps.
 8. If the content does not contain a recipe, return { "error": "No recipe found in the provided content" }.
 9. IMAGE ASSIGNMENT: If a list of available images is provided, assign each image to the most relevant step by setting "imageUrl" on that step. Each image should be used at most once. Only assign an image if it is clearly relevant to a specific step (based on alt text or context). Do not assign images to steps where they don't fit. It's fine to leave most steps without an image.
+10. VIDEO TIMESTAMP: If the content is a timestamped video transcript (lines starting with [MM:SS]), assign a "videoTimestamp" (in seconds) to each step indicating where in the video that step is demonstrated. Use the timestamp of the transcript segment that best matches the start of each step. Only include videoTimestamp for steps that clearly correspond to a part of the video.
 
 Return ONLY valid JSON matching this exact structure (no markdown, no explanation):
 
@@ -32,7 +33,8 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
       "ingredients": [
         { "name": "ingredient name", "quantity": 500, "unit": "g" }
       ],
-      "imageUrl": "https://example.com/step-photo.jpg"
+      "imageUrl": "https://example.com/step-photo.jpg",
+      "videoTimestamp": 45
     }
   ],
   "cookingSteps": [
@@ -40,7 +42,8 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
       "instruction": "Step description",
       "ingredients": [
         { "name": "ingredient name", "quantity": 500, "unit": "g" }
-      ]
+      ],
+      "videoTimestamp": 120
     }
   ]
 }`;

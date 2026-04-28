@@ -120,7 +120,7 @@ export default function RecipePage({
         </div>
       </div>
 
-      <RecipeDisplay recipe={recipe} />
+      <RecipeDisplay recipe={recipe} sourceUrl={recipe.sourceUrl} />
 
       <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-6">
         {!showCookForm ? (

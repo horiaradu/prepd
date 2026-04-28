@@ -32,14 +32,22 @@ function StepIngredients({
   );
 }
 
+function formatTimestamp(seconds: number): string {
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
 function StepList({
   title,
   steps,
   scale,
+  videoBaseUrl,
 }: {
   title: string;
   steps: Step[];
   scale: number;
+  videoBaseUrl?: string;
 }) {
   if (steps.length === 0) return null;
   return (
@@ -61,6 +69,16 @@ function StepList({
                   className="mt-2 rounded-lg max-h-48 object-cover"
                 />
               )}
+              {videoBaseUrl && step.videoTimestamp != null && (
+                <a
+                  href={`${videoBaseUrl}&t=${step.videoTimestamp}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-1.5 text-xs text-red-500 hover:text-red-600"
+                >
+                  ▶ Watch at {formatTimestamp(step.videoTimestamp)}
+                </a>
+              )}
             </div>
           </li>
         ))}
@@ -69,9 +87,20 @@ function StepList({
   );
 }
 
-export function RecipeDisplay({ recipe }: { recipe: ParsedRecipe }) {
+export function RecipeDisplay({
+  recipe,
+  sourceUrl,
+}: {
+  recipe: ParsedRecipe;
+  sourceUrl?: string;
+}) {
   const [servings, setServings] = useState<number | null>(recipe.servings);
   const scale = recipe.servings && servings ? servings / recipe.servings : 1;
+  const videoBaseUrl = sourceUrl?.includes("youtube.com/watch")
+    ? sourceUrl
+    : sourceUrl?.includes("youtu.be/")
+      ? `https://www.youtube.com/watch?v=${sourceUrl.split("youtu.be/")[1]?.split(/[?#]/)[0]}`
+      : undefined;
 
   return (
     <div className="space-y-8">
@@ -114,8 +143,18 @@ export function RecipeDisplay({ recipe }: { recipe: ParsedRecipe }) {
         </ul>
       </section>
 
-      <StepList title="Preparation" steps={recipe.prepSteps} scale={scale} />
-      <StepList title="Cooking" steps={recipe.cookingSteps} scale={scale} />
+      <StepList
+        title="Preparation"
+        steps={recipe.prepSteps}
+        scale={scale}
+        videoBaseUrl={videoBaseUrl}
+      />
+      <StepList
+        title="Cooking"
+        steps={recipe.cookingSteps}
+        scale={scale}
+        videoBaseUrl={videoBaseUrl}
+      />
     </div>
   );
 }

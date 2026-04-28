@@ -25,6 +25,7 @@ export interface Step {
   instruction: string;
   ingredients: Ingredient[];
   imageUrl?: string;
+  videoTimestamp?: number;
 }
 
 export interface RecipeImage {

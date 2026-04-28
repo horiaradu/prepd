@@ -24,7 +24,14 @@ export async function extractYoutubeTranscript(url: string): Promise<string> {
   }
 
   const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
-  return transcriptItems.map((item) => item.text).join(" ");
+  return transcriptItems
+    .map((item) => {
+      const seconds = Math.floor(item.offset / 1000);
+      const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+      const ss = String(seconds % 60).padStart(2, "0");
+      return `[${mm}:${ss}] ${item.text}`;
+    })
+    .join("\n");
 }
 
 export function getYoutubeThumbnailUrl(url: string): string | null {
