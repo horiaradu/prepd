@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
-import { recipes } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { recipes, cookLog } from "@/db/schema";
+import { eq, desc, count, max } from "drizzle-orm";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -18,10 +18,14 @@ export async function GET() {
       sourceUrl: recipes.sourceUrl,
       sourceType: recipes.sourceType,
       createdAt: recipes.createdAt,
+      cookCount: count(cookLog.id),
+      lastCookedAt: max(cookLog.cookedAt),
     })
     .from(recipes)
+    .leftJoin(cookLog, eq(recipes.id, cookLog.recipeId))
     .where(eq(recipes.userId, session.user.id))
-    .orderBy(desc(recipes.createdAt));
+    .groupBy(recipes.id)
+    .orderBy(desc(max(cookLog.cookedAt)), desc(recipes.createdAt));
 
   return NextResponse.json(rows);
 }

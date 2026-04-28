@@ -46,6 +46,8 @@ export default function Home() {
           sourceUrl: parsed.sourceUrl,
           sourceType: parsed.sourceType,
           createdAt: new Date().toISOString(),
+          cookCount: 0,
+          lastCookedAt: null,
         },
         ...prev,
       ]);
@@ -116,10 +118,21 @@ export default function Home() {
               <h2 className="font-semibold text-lg mb-1 line-clamp-2">
                 {recipe.title}
               </h2>
-              <p className="text-xs text-gray-400">
-                {recipe.sourceType === "youtube" ? "YouTube" : "Web"} ·{" "}
-                {new Date(recipe.createdAt).toLocaleDateString()}
-              </p>
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <span>
+                  {recipe.sourceType === "youtube" ? "YouTube" : "Web"}
+                </span>
+                <span>·</span>
+                <span>{new Date(recipe.createdAt).toLocaleDateString()}</span>
+                {recipe.cookCount > 0 && (
+                  <>
+                    <span>·</span>
+                    <span className="text-green-500">
+                      🍳 {recipe.cookCount}
+                    </span>
+                  </>
+                )}
+              </div>
             </Link>
           ))}
         </div>

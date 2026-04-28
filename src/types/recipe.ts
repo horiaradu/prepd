@@ -48,6 +48,8 @@ export interface RecipeSummary {
   sourceUrl: string;
   sourceType: SourceType;
   createdAt: string;
+  cookCount: number;
+  lastCookedAt: string | null;
 }
 
 export interface ParseRequest {

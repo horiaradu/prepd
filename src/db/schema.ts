@@ -93,3 +93,26 @@ export const recipes = pgTable(
 
 export type RecipeRow = typeof recipes.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
+
+export const cookLog = pgTable(
+  "cook_log",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tweaks: text("tweaks"),
+    cookedAt: timestamp("cooked_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_cook_log_recipe_id").on(table.recipeId),
+    index("idx_cook_log_user_id").on(table.userId),
+  ],
+);
+
+export type CookLogRow = typeof cookLog.$inferSelect;
+export type NewCookLog = typeof cookLog.$inferInsert;
