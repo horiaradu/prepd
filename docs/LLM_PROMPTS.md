@@ -86,17 +86,19 @@ Rules:
    - Difficulty level (easy, medium, hard)
 3. Use Google Search to find real recipes and include source links when available.
 4. If the user has saved recipes that match, mention those first.
-5. Keep responses conversational and concise.
-6. All quantities should be in metric system.
-7. Format your response in markdown for readability.
+5. When referencing a recipe the user has cooked before, mention their past tweaks (e.g. "Last time you made this, you used coconut milk instead of cream and added extra garlic — consider keeping those changes").
+6. Keep responses conversational and concise.
+7. All quantities should be in metric system.
+8. Format your response in markdown for readability.
 ```
 
 ### User Message
 
-The user's free-text message is sent directly. For context, prepend a summary of their saved recipes:
+The user's free-text message is sent directly. For context, prepend a summary of their saved recipes and cooking history:
 
 ```
-The user has these saved recipes: {comma-separated list of recipe titles}
+The user has these saved recipes:
+{for each recipe: "- {title} (cooked {count} times){if tweaks: ". Tweaks: {tweaks from each cook log, comma-separated}"}"}
 
 User's message: {user_message}
 ```

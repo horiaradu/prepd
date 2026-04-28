@@ -33,6 +33,7 @@ Plus NextAuth's `accounts` and `sessions` tables (auto-created by the adapter).
 | ingredients | jsonb | Array of `{ name, quantity, unit }` |
 | prep_steps | jsonb | Array of `{ instruction, ingredients[] }` |
 | cooking_steps | jsonb | Array of `{ instruction, ingredients[] }` |
+| images | jsonb | Array of `{ url, alt? }` — photos extracted from source page |
 | raw_content | text | Original extracted text (transcript or HTML) — useful for re-parsing later if prompts improve |
 | created_at | timestamp | Default `now()` |
 | updated_at | timestamp | Default `now()` |
@@ -40,6 +41,23 @@ Plus NextAuth's `accounts` and `sessions` tables (auto-created by the adapter).
 **Indexes:**
 - `idx_recipes_user_id` on `user_id`
 - `idx_recipes_title_search` — GIN index on `to_tsvector('english', title)` for full-text search
+
+### `cook_log`
+
+Tracks each time a recipe was cooked, with optional free-text tweaks.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK, default `gen_random_uuid()` |
+| recipe_id | uuid | FK → recipes.id |
+| user_id | uuid | FK → users.id |
+| tweaks | text | Nullable — free-text notes on what was changed (e.g. "used coconut milk instead of cream", "added extra garlic") |
+| cooked_at | timestamp | Default `now()` — when the recipe was cooked |
+| created_at | timestamp | Default `now()` |
+
+**Indexes:**
+- `idx_cook_log_recipe_id` on `recipe_id`
+- `idx_cook_log_user_id` on `user_id`
 
 ## TypeScript Types
 
@@ -68,6 +86,11 @@ export interface Step {
   ingredients: Ingredient[];
 }
 
+export interface RecipeImage {
+  url: string;
+  alt?: string;
+}
+
 export interface Recipe {
   id: string;
   title: string;
@@ -77,6 +100,7 @@ export interface Recipe {
   ingredients: Ingredient[];
   prepSteps: Step[];
   cookingSteps: Step[];
+  images: RecipeImage[];
   createdAt: string;
   updatedAt: string;
 }
@@ -90,12 +114,23 @@ export interface ParsedRecipe {
   cookingSteps: Step[];
 }
 
-/** Recipe list item (no full steps/ingredients) */
+/** Recipe list item for home page tile view */
 export interface RecipeSummary {
   id: string;
   title: string;
   sourceUrl: string;
   sourceType: SourceType;
+  images: RecipeImage[];
+  cookCount: number;
+  lastCookedAt: string | null;
+  createdAt: string;
+}
+
+export interface CookLog {
+  id: string;
+  recipeId: string;
+  tweaks: string | null;
+  cookedAt: string;
   createdAt: string;
 }
 
@@ -120,6 +155,20 @@ export interface SuggestResponse {
 
 export interface RecipeListResponse {
   recipes: RecipeSummary[];
+}
+
+export interface CookLogRequest {
+  recipeId: string;
+  tweaks?: string;
+  cookedAt?: string;
+}
+
+export interface CookLogResponse {
+  cookLog: CookLog;
+}
+
+export interface RecipeCookHistory {
+  cookLog: CookLog[];
 }
 ```
 
@@ -160,9 +209,19 @@ export const recipes = pgTable("recipes", {
   ingredients: jsonb("ingredients").notNull(), // Ingredient[]
   prepSteps: jsonb("prep_steps").notNull(),   // Step[]
   cookingSteps: jsonb("cooking_steps").notNull(), // Step[]
+  images: jsonb("images").notNull().default([]), // RecipeImage[]
   rawContent: text("raw_content"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const cookLog = pgTable("cook_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  recipeId: uuid("recipe_id").notNull().references(() => recipes.id),
+  userId: uuid("user_id").notNull(),
+  tweaks: text("tweaks"),
+  cookedAt: timestamp("cooked_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 ```
 

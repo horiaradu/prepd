@@ -38,13 +38,37 @@ Persist recipes so they aren't lost on refresh.
 - [ ] Set up Drizzle ORM with schema from DATA_MODEL.md
 - [ ] Run initial migration
 - [ ] Update parse route to save recipes to the database after parsing
-- [ ] Create `GET /api/recipes` route — list saved recipes
-- [ ] Create `GET /api/recipes/[id]` route — get single recipe
+- [ ] Extract and store images from web page recipes during parsing (scrape `<img>` tags from recipe content area, JSON-LD `image` field)
+- [ ] Create `GET /api/recipes` route — list saved recipes (include cook count + last cooked date)
+- [ ] Create `GET /api/recipes/[id]` route — get single recipe with cook history
 - [ ] Create `DELETE /api/recipes/[id]` route
-- [ ] Build recipe list page (`/`) showing saved recipes with search
-- [ ] Build recipe detail page (`/recipe/[id]`)
+- [ ] Build home page (`/`) as a tiled grid of previously cooked/saved recipes:
+  - [ ] Each tile shows the recipe's hero image (first from `images`), title, cook count
+  - [ ] Recipes sorted by last cooked date (most recent first), then by creation date
+  - [ ] URL input for parsing new recipes stays at the top
+  - [ ] Search/filter by title
+- [ ] Build recipe detail page (`/recipe/[id]`):
+  - [ ] Show recipe images (hero image + any additional photos from source)
+  - [ ] Show cook history with tweaks
+  - [ ] "I cooked this" button with optional tweaks text field
 
-**Done when:** Parsed recipes persist, you can browse them, search by title, and delete ones you don't want.
+**Done when:** Parsed recipes persist, the home page shows a visual tile grid of recipes, and you can browse, search, and delete them.
+
+## Phase 2b: Cook log + tweaks
+
+Track cooking history and personal adjustments.
+
+### Tasks
+
+- [ ] Create `cook_log` table (migration)
+- [ ] Create `POST /api/recipes/[id]/cook` route — log a cook with optional tweaks
+- [ ] Create `GET /api/recipes/[id]/cook-history` route — get cook log for a recipe
+- [ ] Add "I cooked this" button to recipe detail page
+- [ ] Show tweaks input (free text) when logging a cook
+- [ ] Display cook history on recipe detail page (date + tweaks for each cook)
+- [ ] Update home page tiles to show cook count badge
+
+**Done when:** You can mark recipes as cooked, add tweaks, and see your cooking history per recipe.
 
 ## Phase 3: Authentication
 
@@ -65,20 +89,22 @@ Lock it down to just you.
 
 ## Phase 4: Recipe suggestions (chat)
 
-The conversational recipe discovery feature.
+The conversational recipe discovery feature. Leverages cooking history and tweaks for personalized suggestions.
 
 ### Tasks
 
 - [ ] Create `/suggest` page with a chat-style UI (message input, scrollable message list)
 - [ ] Implement `POST /api/recipes/suggest` route:
   - [ ] Send user message to Gemini with Search grounding enabled
-  - [ ] Include saved recipe titles as context
+  - [ ] Include saved recipe titles + cook history as context
+  - [ ] Include tweaks history so the LLM knows user preferences (e.g. "when you made Chicken Tikka Masala, you swapped cream for coconut milk and added extra garlic")
   - [ ] Return markdown response with source links
 - [ ] Render markdown responses in the chat UI
+- [ ] When suggesting a previously cooked recipe, show past tweaks inline (e.g. "You've made this 3 times. Last time you noted: used coconut milk instead of cream")
 - [ ] Add "Parse this recipe" action on any URL that appears in suggestions
 - [ ] Add conversation history (in-memory per session is fine — no need to persist chats)
 
-**Done when:** You can ask for recipe ideas, get suggestions with links, and parse any suggested recipe directly.
+**Done when:** You can ask for recipe ideas, get suggestions that reference your cooking history and tweaks, and parse any suggested recipe directly.
 
 ## Phase 5: Polish
 
@@ -88,6 +114,11 @@ The conversational recipe discovery feature.
 - [ ] Loading states and error handling for all async operations
 - [ ] Re-parse action on saved recipes (useful when prompts improve)
 - [ ] Edit recipe manually (fix LLM mistakes)
+- [ ] Recipe presentation improvements:
+  - [ ] Hero image at top of recipe detail page
+  - [ ] Step photos inline where available (matched from source page images)
+  - [ ] Visual cook timer indicators for steps that mention time
+  - [ ] Print-friendly layout
 - [x] Deploy to Vercel with production env vars
 - [ ] Custom domain (optional)
 

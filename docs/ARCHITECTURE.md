@@ -31,8 +31,8 @@ Prepd is a single Next.js application deployed on Vercel. All server logic lives
 
 | Route | Description |
 |-------|-------------|
-| `/` | Landing / recipe list (saved recipes) |
-| `/recipe/[id]` | View a parsed recipe |
+| `/` | Home page — tiled grid of saved/cooked recipes |
+| `/recipe/[id]` | View a parsed recipe with images and cook history |
 | `/parse` | Paste a URL to parse a new recipe |
 | `/suggest` | Chat-style interface for recipe suggestions |
 | `/login` | Google sign-in (handled by NextAuth) |
@@ -115,19 +115,34 @@ Free-text recipe suggestions with conversational UX.
 
 ### `GET /api/recipes`
 
-List saved recipes. Supports search via query param.
+List saved recipes. Supports search via query param. Returns recipe summaries with cook count and last cooked date.
 
 **Request:** `GET /api/recipes?q=chicken`
 
-**Response:** Array of recipe summaries (id, title, sourceUrl, createdAt).
+**Response:** Array of `RecipeSummary` (id, title, sourceUrl, images, cookCount, lastCookedAt, createdAt).
 
 ### `GET /api/recipes/[id]`
 
-Get full recipe by ID.
+Get full recipe by ID, including images and cook history (with tweaks).
 
 ### `DELETE /api/recipes/[id]`
 
 Delete a saved recipe.
+
+### `POST /api/recipes/[id]/cook`
+
+Log that a recipe was cooked, with optional tweaks.
+
+**Request:**
+```json
+{ "tweaks": "used coconut milk instead of cream, added extra garlic" }
+```
+
+**Response:** The created `CookLog` entry.
+
+### `GET /api/recipes/[id]/cook-history`
+
+Get the full cook history for a recipe (dates + tweaks).
 
 ## Authentication
 
