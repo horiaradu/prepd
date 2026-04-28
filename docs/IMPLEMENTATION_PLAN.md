@@ -26,7 +26,7 @@ Get the single most valuable feature working end-to-end with no auth, no databas
 - [ ] Manual testing with 5-10 diverse recipes (blog posts, YouTube videos, different cuisines)
 - [ ] Iterate on the parsing prompt based on results
 
-**Status:** Core implementation complete. Deployed to Vercel. Testing and prompt iteration pending.
+**Status:** Complete. Deployed to Vercel. Testing and prompt iteration ongoing.
 
 ## Phase 2: Database + saved recipes
 
@@ -34,25 +34,25 @@ Persist recipes so they aren't lost on refresh.
 
 ### Tasks
 
-- [ ] Set up Neon Postgres (via Vercel marketplace)
-- [ ] Set up Drizzle ORM with schema from DATA_MODEL.md
-- [ ] Run initial migration
-- [ ] Update parse route to save recipes to the database after parsing
-- [ ] Extract and store images from web page recipes during parsing (scrape `<img>` tags from recipe content area, JSON-LD `image` field)
-- [ ] Create `GET /api/recipes` route — list saved recipes (include cook count + last cooked date)
-- [ ] Create `GET /api/recipes/[id]` route — get single recipe with cook history
-- [ ] Create `DELETE /api/recipes/[id]` route
-- [ ] Build home page (`/`) as a tiled grid of previously cooked/saved recipes:
-  - [ ] Each tile shows the recipe's hero image (first from `images`), title, cook count
-  - [ ] Recipes sorted by last cooked date (most recent first), then by creation date
-  - [ ] URL input for parsing new recipes stays at the top
+- [x] Set up Neon Postgres (via Vercel marketplace)
+- [x] Set up Drizzle ORM with schema from DATA_MODEL.md
+- [x] Run initial migration
+- [x] Update parse route to save recipes to the database after parsing
+- [x] Extract and store images from web page recipes during parsing (JSON-LD `image`, `og:image`, content area `<img>` tags)
+- [x] Create `GET /api/recipes` route — list saved recipes (include cook count + last cooked date)
+- [x] Create `GET /api/recipes/[id]` route — get single recipe with cook history
+- [x] Create `DELETE /api/recipes/[id]` route
+- [x] Build home page (`/`) as a tiled grid of previously cooked/saved recipes:
+  - [x] Each tile shows the recipe's hero image (first from `images`), title, cook count
+  - [x] Recipes sorted by last cooked date (most recent first), then by creation date
+  - [x] URL input for parsing new recipes stays at the top
   - [ ] Search/filter by title
-- [ ] Build recipe detail page (`/recipe/[id]`):
-  - [ ] Show recipe images (hero image + any additional photos from source)
-  - [ ] Show cook history with tweaks
-  - [ ] "I cooked this" button with optional tweaks text field
+- [x] Build recipe detail page (`/recipe/[id]`):
+  - [x] Gemini assigns extracted images to relevant steps (shown inline)
+  - [x] Show cook history with tweaks
+  - [x] "I cooked this" button with optional tweaks text field
 
-**Done when:** Parsed recipes persist, the home page shows a visual tile grid of recipes, and you can browse, search, and delete them.
+**Status:** Complete (except search/filter).
 
 ## Phase 2b: Cook log + tweaks
 
@@ -60,36 +60,72 @@ Track cooking history and personal adjustments.
 
 ### Tasks
 
-- [ ] Create `cook_log` table (migration)
-- [ ] Create `POST /api/recipes/[id]/cook` route — log a cook with optional tweaks
-- [ ] Create `GET /api/recipes/[id]/cook-history` route — get cook log for a recipe
-- [ ] Add "I cooked this" button to recipe detail page
-- [ ] Show tweaks input (free text) when logging a cook
-- [ ] Display cook history on recipe detail page (date + tweaks for each cook)
-- [ ] Update home page tiles to show cook count badge
+- [x] Create `cook_log` table (migration)
+- [x] Create `POST /api/recipes/[id]/cook` route — log a cook with optional tweaks
+- [x] Create `GET /api/recipes/[id]/cook-history` route — get cook log for a recipe
+- [x] Add "I cooked this" button to recipe detail page
+- [x] Show tweaks input (free text) when logging a cook
+- [x] Display cook history on recipe detail page (date + tweaks for each cook)
+- [x] Update home page tiles to show cook count badge
 
-**Done when:** You can mark recipes as cooked, add tweaks, and see your cooking history per recipe.
+**Status:** Complete. Will be reworked in Phase 4 — "I cooked this" becomes a conversation with the LLM that applies tweaks directly to the recipe instead of storing them as comments.
 
-## Phase 3: Authentication
-
-Lock it down to just you.
+## Phase 2c: Recipe display enhancements
 
 ### Tasks
 
-- [x] Set up NextAuth.js with Google provider
+- [x] Servings scaler — number input adjusts all ingredient quantities proportionally
+- [x] YouTube video timestamp links — each step links to the relevant moment in the video
+- [x] YouTube thumbnail on home tiles
+
+**Status:** Complete.
+
+## Phase 3: Authentication
+
+Multi-user support with Google OAuth.
+
+### Tasks
+
+- [x] Set up NextAuth.js with Google provider + DrizzleAdapter
 - [x] Create Google OAuth credentials (Google Cloud Console)
 - [x] Add auth middleware — protect all routes except `/login`
-- [x] Add `AUTHORIZED_EMAIL` check — reject logins from other Google accounts
-- [ ] Add user_id to recipes table, associate recipes with the logged-in user
+- [x] Add user_id to recipes table, associate recipes with the logged-in user
 - [x] Add login/logout UI
+- [x] Open to any Google account (no email restriction)
 
-**Status:** Auth guard complete. user_id association deferred to Phase 2 (requires database).
+**Status:** Complete.
 
-**Done when:** Only your Google account can access the app.
+## Phase 4: Recipe conversations
 
-## Phase 4: Recipe suggestions (chat)
+LLM-powered editing and post-cook refinement. Both "fix this recipe" and "I cooked this" happen through the same conversation interface on the recipe detail page.
 
-The conversational recipe discovery feature. Leverages cooking history and tweaks for personalized suggestions.
+### Recipe chat
+
+A conversation panel on the recipe detail page. You can:
+- Correct parsing mistakes ("garlic should be 4 cloves not 2")
+- Refine steps ("add a step to toast the spices first")
+- Apply post-cook tweaks ("coconut milk worked better than cream, and it needed 10 more minutes")
+
+The LLM receives the current recipe JSON + your message, returns an updated recipe, and the new version is saved. The cook date is logged when you indicate you've cooked it.
+
+### Tasks
+
+- [x] Add recipe conversation UI to detail page (message input + message history)
+- [x] Implement `POST /api/recipes/[id]/chat` route:
+  - [x] Send current recipe JSON + user message to Gemini
+  - [x] Gemini returns updated recipe JSON
+  - [x] Save updated recipe to DB
+  - [x] Log cook date if the message indicates the user cooked it
+- [x] Store original parsed recipe for "view original" comparison
+- [x] Show conversation history on the recipe (persisted)
+- [x] Rework "I cooked this" to open the conversation with a prompt
+- [x] Remove old tweaks-as-comments UI (cook_log.tweaks → conversation messages)
+
+**Status:** Complete.
+
+## Phase 4b: Recipe suggestions (chat)
+
+Conversational recipe discovery. Leverages cooking history for personalized suggestions.
 
 ### Tasks
 
@@ -97,14 +133,12 @@ The conversational recipe discovery feature. Leverages cooking history and tweak
 - [ ] Implement `POST /api/recipes/suggest` route:
   - [ ] Send user message to Gemini with Search grounding enabled
   - [ ] Include saved recipe titles + cook history as context
-  - [ ] Include tweaks history so the LLM knows user preferences (e.g. "when you made Chicken Tikka Masala, you swapped cream for coconut milk and added extra garlic")
   - [ ] Return markdown response with source links
 - [ ] Render markdown responses in the chat UI
-- [ ] When suggesting a previously cooked recipe, show past tweaks inline (e.g. "You've made this 3 times. Last time you noted: used coconut milk instead of cream")
 - [ ] Add "Parse this recipe" action on any URL that appears in suggestions
 - [ ] Add conversation history (in-memory per session is fine — no need to persist chats)
 
-**Done when:** You can ask for recipe ideas, get suggestions that reference your cooking history and tweaks, and parse any suggested recipe directly.
+**Done when:** You can ask for recipe ideas, get suggestions that reference your cooking history, and parse any suggested recipe directly.
 
 ## Phase 5: Polish
 
@@ -113,31 +147,28 @@ The conversational recipe discovery feature. Leverages cooking history and tweak
 - [ ] Responsive design (works on phone — useful in the kitchen)
 - [ ] Loading states and error handling for all async operations
 - [ ] Re-parse action on saved recipes (useful when prompts improve)
-- [ ] Edit recipe manually (fix LLM mistakes)
-- [ ] Recipe presentation improvements:
-  - [ ] Hero image at top of recipe detail page
-  - [ ] Step photos inline where available (matched from source page images)
-  - [ ] Visual cook timer indicators for steps that mention time
-  - [ ] Print-friendly layout
+- [ ] Search/filter recipes by title on home page
+- [ ] Visual cook timer indicators for steps that mention time
+- [ ] Print-friendly layout
 - [x] Deploy to Vercel with production env vars
 - [ ] Custom domain (optional)
 
 ## Dependencies
 
 ```bash
-# Core (installed)
+# Core
 npx create-next-app@latest prepd --typescript --tailwind --eslint --app --src-dir --use-npm
 
-# LLM (installed)
+# LLM
 npm install @google/generative-ai
 
-# Content extraction (installed)
+# Content extraction
 npm install youtube-transcript cheerio
 
-# Auth (installed)
-npm install next-auth
+# Auth
+npm install next-auth @auth/drizzle-adapter
 
-# Database (not yet installed)
+# Database
 npm install drizzle-orm @neondatabase/serverless
 npm install -D drizzle-kit
 ```
