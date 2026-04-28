@@ -46,6 +46,7 @@ export interface Recipe extends ParsedRecipe {
   sourceUrl: string;
   sourceType: SourceType;
   images: RecipeImage[] | null;
+  originalRecipe: ParsedRecipe | null;
   createdAt: string;
   updatedAt: string;
 }

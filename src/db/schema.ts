@@ -8,7 +8,12 @@ import {
   index,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, Step, RecipeImage } from "@/types/recipe";
+import type {
+  Ingredient,
+  Step,
+  RecipeImage,
+  ParsedRecipe,
+} from "@/types/recipe";
 
 // NextAuth tables — must match @auth/drizzle-adapter expected schema
 
@@ -79,6 +84,7 @@ export const recipes = pgTable(
     prepSteps: jsonb("prep_steps").$type<Step[]>().notNull(),
     cookingSteps: jsonb("cooking_steps").$type<Step[]>().notNull(),
     images: jsonb("images").$type<RecipeImage[]>().default([]),
+    originalRecipe: jsonb("original_recipe").$type<ParsedRecipe>(),
     rawContent: text("raw_content"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -114,3 +120,19 @@ export const cookLog = pgTable(
 
 export type CookLogRow = typeof cookLog.$inferSelect;
 export type NewCookLog = typeof cookLog.$inferInsert;
+
+export const recipeMessages = pgTable(
+  "recipe_messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // "user" | "assistant"
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("idx_recipe_messages_recipe_id").on(table.recipeId)],
+);
+
+export type RecipeMessageRow = typeof recipeMessages.$inferSelect;

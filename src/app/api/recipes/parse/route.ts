@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
         prepSteps: parsed.prepSteps,
         cookingSteps: parsed.cookingSteps,
         images,
+        originalRecipe: parsed,
         rawContent: content,
       })
       .returning();
