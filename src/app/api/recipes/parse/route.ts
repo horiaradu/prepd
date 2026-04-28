@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isYoutubeUrl, extractYoutubeTranscript } from "@/lib/youtube";
-import { extractWebPageContent } from "@/lib/scraper";
+import {
+  isYoutubeUrl,
+  extractYoutubeTranscript,
+  getYoutubeThumbnailUrl,
+} from "@/lib/youtube";
+import { extractWebPage } from "@/lib/scraper";
 import { parseRecipeContent } from "@/lib/gemini";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
-import type { ParseRequest, SourceType } from "@/types/recipe";
+import type { ParseRequest, SourceType, RecipeImage } from "@/types/recipe";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,10 +42,18 @@ export async function POST(request: NextRequest) {
 
     const sourceType: SourceType = isYoutubeUrl(body.url) ? "youtube" : "web";
 
-    const content =
-      sourceType === "youtube"
-        ? await extractYoutubeTranscript(body.url)
-        : await extractWebPageContent(body.url);
+    let content: string;
+    let images: RecipeImage[];
+
+    if (sourceType === "youtube") {
+      content = await extractYoutubeTranscript(body.url);
+      const thumb = getYoutubeThumbnailUrl(body.url);
+      images = thumb ? [{ url: thumb }] : [];
+    } else {
+      const extracted = await extractWebPage(body.url);
+      content = extracted.content;
+      images = extracted.images;
+    }
 
     if (!content || content.trim().length === 0) {
       return NextResponse.json(
@@ -50,7 +62,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const parsed = await parseRecipeContent(content);
+    const parsed = await parseRecipeContent(content, images);
 
     const [saved] = await db
       .insert(recipes)
@@ -63,6 +75,7 @@ export async function POST(request: NextRequest) {
         ingredients: parsed.ingredients,
         prepSteps: parsed.prepSteps,
         cookingSteps: parsed.cookingSteps,
+        images,
         rawContent: content,
       })
       .returning();
@@ -72,6 +85,7 @@ export async function POST(request: NextRequest) {
       recipe: parsed,
       sourceUrl: body.url,
       sourceType,
+      imageUrl: images[0]?.url ?? null,
     });
   } catch (error) {
     console.error("Recipe parse error:", error);

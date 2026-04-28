@@ -26,3 +26,9 @@ export async function extractYoutubeTranscript(url: string): Promise<string> {
   const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
   return transcriptItems.map((item) => item.text).join(" ");
 }
+
+export function getYoutubeThumbnailUrl(url: string): string | null {
+  const videoId = extractYoutubeVideoId(url);
+  if (!videoId) return null;
+  return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+}

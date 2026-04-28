@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { ParsedRecipe } from "@/types/recipe";
+import type { ParsedRecipe, RecipeImage } from "@/types/recipe";
 
 const RECIPE_PARSING_PROMPT = `You are a recipe extraction assistant. Your job is to take raw recipe content (from a webpage or video transcript) and return a clean, structured recipe.
 
@@ -16,6 +16,7 @@ Rules:
 6. The sum of ingredient quantities across all steps should approximately equal the total in the ingredients list.
 7. Preserve the original recipe's intent — do not add or remove ingredients or steps.
 8. If the content does not contain a recipe, return { "error": "No recipe found in the provided content" }.
+9. IMAGE ASSIGNMENT: If a list of available images is provided, assign each image to the most relevant step by setting "imageUrl" on that step. Each image should be used at most once. Only assign an image if it is clearly relevant to a specific step (based on alt text or context). Do not assign images to steps where they don't fit. It's fine to leave most steps without an image.
 
 Return ONLY valid JSON matching this exact structure (no markdown, no explanation):
 
@@ -30,7 +31,8 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
       "instruction": "Step description",
       "ingredients": [
         { "name": "ingredient name", "quantity": 500, "unit": "g" }
-      ]
+      ],
+      "imageUrl": "https://example.com/step-photo.jpg"
     }
   ],
   "cookingSteps": [
@@ -53,6 +55,7 @@ function getGeminiClient() {
 
 export async function parseRecipeContent(
   content: string,
+  images?: RecipeImage[],
 ): Promise<ParsedRecipe> {
   const genAI = getGeminiClient();
   const model = genAI.getGenerativeModel({
@@ -63,9 +66,19 @@ export async function parseRecipeContent(
     },
   });
 
-  const result = await model.generateContent(
-    `Extract the recipe from the following content:\n\n---\n${content}\n---`,
-  );
+  let prompt = `Extract the recipe from the following content:\n\n---\n${content}\n---`;
+
+  if (images && images.length > 0) {
+    const imageList = images
+      .map(
+        (img, i) =>
+          `${i + 1}. ${img.url}${img.alt ? ` (alt: ${img.alt})` : ""}`,
+      )
+      .join("\n");
+    prompt += `\n\nAvailable images from the source page (assign to the most relevant steps):\n${imageList}`;
+  }
+
+  const result = await model.generateContent(prompt);
 
   const responseText = result.response.text();
   const parsed = JSON.parse(responseText);

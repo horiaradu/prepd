@@ -24,6 +24,12 @@ export interface Ingredient {
 export interface Step {
   instruction: string;
   ingredients: Ingredient[];
+  imageUrl?: string;
+}
+
+export interface RecipeImage {
+  url: string;
+  alt?: string;
 }
 
 export interface ParsedRecipe {
@@ -38,6 +44,7 @@ export interface Recipe extends ParsedRecipe {
   id: string;
   sourceUrl: string;
   sourceType: SourceType;
+  images: RecipeImage[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +55,7 @@ export interface RecipeSummary {
   sourceUrl: string;
   sourceType: SourceType;
   createdAt: string;
+  imageUrl: string | null;
   cookCount: number;
   lastCookedAt: string | null;
 }
@@ -61,4 +69,5 @@ export interface ParseResponse {
   recipe: ParsedRecipe;
   sourceUrl: string;
   sourceType: SourceType;
+  imageUrl: string | null;
 }

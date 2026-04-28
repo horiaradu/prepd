@@ -46,6 +46,7 @@ export default function Home() {
           sourceUrl: parsed.sourceUrl,
           sourceType: parsed.sourceType,
           createdAt: new Date().toISOString(),
+          imageUrl: parsed.imageUrl,
           cookCount: 0,
           lastCookedAt: null,
         },
@@ -113,25 +114,34 @@ export default function Home() {
             <Link
               key={recipe.id}
               href={`/recipe/${recipe.id}`}
-              className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+              className="block overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
             >
-              <h2 className="font-semibold text-lg mb-1 line-clamp-2">
-                {recipe.title}
-              </h2>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span>
-                  {recipe.sourceType === "youtube" ? "YouTube" : "Web"}
-                </span>
-                <span>·</span>
-                <span>{new Date(recipe.createdAt).toLocaleDateString()}</span>
-                {recipe.cookCount > 0 && (
-                  <>
-                    <span>·</span>
-                    <span className="text-green-500">
-                      🍳 {recipe.cookCount}
-                    </span>
-                  </>
-                )}
+              {recipe.imageUrl && (
+                <img
+                  src={recipe.imageUrl}
+                  alt={recipe.title}
+                  className="w-full h-40 object-cover"
+                />
+              )}
+              <div className="p-4">
+                <h2 className="font-semibold text-lg mb-1 line-clamp-2">
+                  {recipe.title}
+                </h2>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>
+                    {recipe.sourceType === "youtube" ? "YouTube" : "Web"}
+                  </span>
+                  <span>·</span>
+                  <span>{new Date(recipe.createdAt).toLocaleDateString()}</span>
+                  {recipe.cookCount > 0 && (
+                    <>
+                      <span>·</span>
+                      <span className="text-green-500">
+                        🍳 {recipe.cookCount}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </Link>
           ))}

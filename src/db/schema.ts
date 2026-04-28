@@ -8,7 +8,7 @@ import {
   index,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, Step } from "@/types/recipe";
+import type { Ingredient, Step, RecipeImage } from "@/types/recipe";
 
 // NextAuth tables — must match @auth/drizzle-adapter expected schema
 
@@ -78,9 +78,7 @@ export const recipes = pgTable(
     ingredients: jsonb("ingredients").$type<Ingredient[]>().notNull(),
     prepSteps: jsonb("prep_steps").$type<Step[]>().notNull(),
     cookingSteps: jsonb("cooking_steps").$type<Step[]>().notNull(),
-    images: jsonb("images")
-      .$type<{ url: string; alt?: string }[]>()
-      .default([]),
+    images: jsonb("images").$type<RecipeImage[]>().default([]),
     rawContent: text("raw_content"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

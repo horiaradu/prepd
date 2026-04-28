@@ -18,6 +18,7 @@ export async function GET() {
       sourceUrl: recipes.sourceUrl,
       sourceType: recipes.sourceType,
       createdAt: recipes.createdAt,
+      images: recipes.images,
       cookCount: count(cookLog.id),
       lastCookedAt: max(cookLog.cookedAt),
     })
@@ -27,5 +28,11 @@ export async function GET() {
     .groupBy(recipes.id)
     .orderBy(desc(max(cookLog.cookedAt)), desc(recipes.createdAt));
 
-  return NextResponse.json(rows);
+  const result = rows.map((row) => ({
+    ...row,
+    imageUrl: row.images?.[0]?.url ?? null,
+    images: undefined,
+  }));
+
+  return NextResponse.json(result);
 }

@@ -54,6 +54,13 @@ function StepList({
             <div className="flex-1">
               <p>{step.instruction}</p>
               <StepIngredients ingredients={step.ingredients} scale={scale} />
+              {step.imageUrl && (
+                <img
+                  src={step.imageUrl}
+                  alt={step.instruction}
+                  className="mt-2 rounded-lg max-h-48 object-cover"
+                />
+              )}
             </div>
           </li>
         ))}
