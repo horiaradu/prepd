@@ -1,28 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { isYoutubeUrl, extractYoutubeTranscript } from "@/lib/youtube";
 import { extractWebPageContent } from "@/lib/scraper";
 import { parseRecipeContent } from "@/lib/gemini";
+import { db } from "@/db";
+import { recipes } from "@/db/schema";
 import type { ParseRequest, SourceType } from "@/types/recipe";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = (await request.json()) as ParseRequest;
 
     if (!body.url || typeof body.url !== "string") {
-      return NextResponse.json(
-        { error: "URL is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
     let url: URL;
     try {
       url = new URL(body.url);
     } catch {
-      return NextResponse.json(
-        { error: "Invalid URL" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
     // Only allow http/https
@@ -47,10 +50,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const recipe = await parseRecipeContent(content);
+    const parsed = await parseRecipeContent(content);
+
+    const [saved] = await db
+      .insert(recipes)
+      .values({
+        userId: session.user.id,
+        title: parsed.title,
+        sourceUrl: body.url,
+        sourceType,
+        servings: parsed.servings,
+        ingredients: parsed.ingredients,
+        prepSteps: parsed.prepSteps,
+        cookingSteps: parsed.cookingSteps,
+        rawContent: content,
+      })
+      .returning();
 
     return NextResponse.json({
-      recipe,
+      id: saved.id,
+      recipe: parsed,
       sourceUrl: body.url,
       sourceType,
     });

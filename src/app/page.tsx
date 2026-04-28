@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { RecipeDisplay } from "@/components/RecipeDisplay";
-import type { ParsedRecipe, ParseResponse } from "@/types/recipe";
+import Link from "next/link";
+import type { RecipeSummary, ParseResponse } from "@/types/recipe";
 
 export default function Home() {
   const [url, setUrl] = useState("");
-  const [recipe, setRecipe] = useState<ParsedRecipe | null>(null);
-  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/recipes")
+      .then((res) => res.json())
+      .then((data) => setRecipes(data))
+      .catch(() => {});
+  }, []);
 
   async function handleParse(e: React.FormEvent) {
     e.preventDefault();
@@ -18,7 +24,6 @@ export default function Home() {
 
     setLoading(true);
     setError(null);
-    setRecipe(null);
 
     try {
       const response = await fetch("/api/recipes/parse", {
@@ -34,8 +39,17 @@ export default function Home() {
       }
 
       const parsed = data as ParseResponse;
-      setRecipe(parsed.recipe);
-      setSourceUrl(parsed.sourceUrl);
+      setRecipes((prev) => [
+        {
+          id: parsed.id,
+          title: parsed.recipe.title,
+          sourceUrl: parsed.sourceUrl,
+          sourceType: parsed.sourceType,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+      setUrl("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -44,7 +58,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-8 max-w-3xl mx-auto">
+    <div className="min-h-screen p-8 max-w-4xl mx-auto">
       <header className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-4xl font-bold">Prepd</h1>
@@ -86,28 +100,35 @@ export default function Home() {
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
 
-      {recipe && (
-        <div>
-          {sourceUrl && (
-            <p className="text-sm text-gray-400 mb-4">
-              Source:{" "}
-              <a
-                href={sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                {sourceUrl}
-              </a>
-            </p>
-          )}
-          <RecipeDisplay recipe={recipe} />
+      {recipes.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {recipes.map((recipe) => (
+            <Link
+              key={recipe.id}
+              href={`/recipe/${recipe.id}`}
+              className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+            >
+              <h2 className="font-semibold text-lg mb-1 line-clamp-2">
+                {recipe.title}
+              </h2>
+              <p className="text-xs text-gray-400">
+                {recipe.sourceType === "youtube" ? "YouTube" : "Web"} ·{" "}
+                {new Date(recipe.createdAt).toLocaleDateString()}
+              </p>
+            </Link>
+          ))}
         </div>
+      )}
+
+      {!loading && recipes.length === 0 && (
+        <p className="text-center text-gray-400 py-12">
+          No recipes yet. Paste a URL above to get started.
+        </p>
       )}
     </div>
   );

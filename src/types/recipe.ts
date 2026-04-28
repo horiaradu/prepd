@@ -55,6 +55,7 @@ export interface ParseRequest {
 }
 
 export interface ParseResponse {
+  id: string;
   recipe: ParsedRecipe;
   sourceUrl: string;
   sourceType: SourceType;
