@@ -11,7 +11,14 @@ function LoginContent() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Prepd</h1>
+        <h1 className="flex items-center justify-center gap-3 text-3xl font-bold tracking-tight">
+          <img
+            src="/icons/icon-192.png"
+            alt=""
+            className="w-10 h-10 rounded-lg"
+          />
+          Prepd
+        </h1>
         <p className="text-gray-500">Sign in to access your recipes</p>
 
         {error === "AccessDenied" && (
