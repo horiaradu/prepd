@@ -2,28 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { put, del } from "@vercel/blob";
 import sharp from "sharp";
+import path from "path";
+import fs from "fs/promises";
 import { and, eq } from "drizzle-orm";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { generateRecipeHeroImage } from "@/lib/gemini";
 
-function buildWatermarkSvg(imageWidth: number, imageHeight: number): string {
-  const fontSize = Math.max(
-    18,
-    Math.round(Math.min(imageWidth, imageHeight) * 0.025),
-  );
-  const padX = Math.round(fontSize * 0.9);
-  const padY = Math.round(fontSize * 0.5);
-  const text = "Generated with AI";
-  const textWidth = Math.round(text.length * fontSize * 0.55);
-  const boxWidth = textWidth + padX * 2;
-  const boxHeight = fontSize + padY * 2;
-  const margin = Math.round(fontSize * 0.8);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${boxWidth + margin}" height="${boxHeight + margin}">
-  <rect x="0" y="0" width="${boxWidth}" height="${boxHeight}" rx="${Math.round(boxHeight / 2)}" ry="${Math.round(boxHeight / 2)}" fill="rgba(0,0,0,0.55)"/>
-  <text x="${padX}" y="${padY + fontSize * 0.85}" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="${fontSize}" font-weight="600" fill="white">${text}</text>
-</svg>`;
+let watermarkCache: Buffer | null = null;
+
+async function loadWatermark(targetWidth: number): Promise<Buffer> {
+  if (!watermarkCache) {
+    const filePath = path.join(process.cwd(), "public", "watermark.png");
+    watermarkCache = await fs.readFile(filePath);
+  }
+  return sharp(watermarkCache)
+    .resize({ width: targetWidth, fit: "inside" })
+    .toBuffer();
 }
 
 export async function POST(
@@ -65,9 +61,9 @@ export async function POST(
     });
     const meta = await base.metadata();
     const width = meta.width ?? 1600;
-    const height = meta.height ?? 1600;
 
-    const watermark = Buffer.from(buildWatermarkSvg(width, height));
+    const watermarkWidth = Math.max(140, Math.round(width * 0.2));
+    const watermark = await loadWatermark(watermarkWidth);
 
     const resized = await base
       .composite([{ input: watermark, gravity: "southeast" }])
