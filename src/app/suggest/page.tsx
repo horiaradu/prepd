@@ -74,6 +74,9 @@ export default function SuggestPage() {
   const [activeTab, setActiveTab] = useState<Tab>("web");
   const [sections, setSections] = useState<Sections | null>(null);
   const [sources, setSources] = useState<Source[]>([]);
+  const [savedRecipes, setSavedRecipes] = useState<
+    Array<{ id: number; title: string }>
+  >([]);
   const [history, setHistory] = useState<
     Array<{ role: "user" | "model"; content: string }>
   >([]);
@@ -98,8 +101,11 @@ export default function SuggestPage() {
       if (res.ok) {
         const text: string = data.text ?? "";
         const newSources: Source[] = data.sources ?? [];
+        const newRecipes: Array<{ id: number; title: string }> =
+          data.recipes ?? [];
         setSections(parseSections(text));
         setSources(newSources);
+        setSavedRecipes(newRecipes);
         setHistory([
           ...history,
           { role: "user", content: message },
@@ -145,12 +151,20 @@ export default function SuggestPage() {
     }
   }
 
-  function renderWebItem(item: ParsedItem, index: number) {
+  function renderItem(
+    item: ParsedItem,
+    index: number,
+    action: "parse" | "generate",
+  ) {
     const url =
-      item.urls[0] ||
-      sources.find((s) =>
-        item.title.toLowerCase().includes(s.title.toLowerCase().slice(0, 20)),
-      )?.uri;
+      action === "parse"
+        ? item.urls[0] ||
+          sources.find((s) =>
+            item.title
+              .toLowerCase()
+              .includes(s.title.toLowerCase().slice(0, 20)),
+          )?.uri
+        : undefined;
     const source = url
       ? sources.find((s) => s.uri === url || item.urls.includes(s.uri))
       : null;
@@ -168,8 +182,18 @@ export default function SuggestPage() {
             {item.description && (
               <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
             )}
+            {url && (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-600 hover:underline break-all mt-1 inline-block"
+              >
+                {source?.title || new URL(url).hostname}
+              </a>
+            )}
           </div>
-          {url && (
+          {action === "parse" && url && (
             <button
               onClick={() => handleParseUrl(url)}
               disabled={busy}
@@ -178,43 +202,15 @@ export default function SuggestPage() {
               {parsing === url ? "Parsing…" : "Save recipe"}
             </button>
           )}
-        </div>
-        {url && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-green-600 hover:underline break-all mt-1 inline-block"
-          >
-            {source?.title || new URL(url).hostname}
-          </a>
-        )}
-      </div>
-    );
-  }
-
-  function renderIdeaItem(item: ParsedItem, index: number) {
-    return (
-      <div
-        key={index}
-        className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-800">
-              {item.title || "Recipe idea"}
-            </p>
-            {item.description && (
-              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
-            )}
-          </div>
-          <button
-            onClick={() => handleGenerate(item.title)}
-            disabled={busy}
-            className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            {generating === item.title ? "Generating…" : "Generate recipe"}
-          </button>
+          {action === "generate" && (
+            <button
+              onClick={() => handleGenerate(item.title)}
+              disabled={busy}
+              className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              {generating === item.title ? "Generating…" : "Generate recipe"}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -304,9 +300,45 @@ export default function SuggestPage() {
             {activeTab === "collection" && (
               <>
                 {sections.collection ? (
-                  <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-                    {sections.collection}
-                  </div>
+                  extractItems(sections.collection).length > 0 ? (
+                    extractItems(sections.collection).map((item, i) => {
+                      const match = savedRecipes.find(
+                        (r) =>
+                          r.title.toLowerCase() === item.title.toLowerCase(),
+                      );
+                      return (
+                        <div
+                          key={i}
+                          className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-800">
+                                {item.title}
+                              </p>
+                              {item.description && (
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+                            {match && (
+                              <Link
+                                href={`/recipe/${match.id}`}
+                                className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+                              >
+                                View recipe
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
+                      {sections.collection}
+                    </div>
+                  )
                 ) : (
                   <p className="text-gray-400 text-sm">
                     No suggestions from your collection.
@@ -325,15 +357,16 @@ export default function SuggestPage() {
                   );
                   return (
                     <>
-                      {items.map((item, i) => renderWebItem(item, i))}
+                      {items.map((item, i) => renderItem(item, i, "parse"))}
                       {extraSources.map((s, i) =>
-                        renderWebItem(
+                        renderItem(
                           {
                             title: s.title || "Recipe",
                             description: "",
                             urls: [s.uri],
                           },
                           items.length + i,
+                          "parse",
                         ),
                       )}
                       {items.length === 0 && extraSources.length === 0 && (
@@ -352,7 +385,7 @@ export default function SuggestPage() {
                 {sections.ideas ? (
                   extractItems(sections.ideas).length > 0 ? (
                     extractItems(sections.ideas).map((item, i) =>
-                      renderIdeaItem(item, i),
+                      renderItem(item, i, "generate"),
                     )
                   ) : (
                     <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">

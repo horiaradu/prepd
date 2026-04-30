@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
 
   const rows = await db
     .select({
+      id: recipes.id,
       title: recipes.title,
       cookCount: count(cookLog.id),
       lastCookedAt: max(cookLog.cookedAt),
@@ -44,5 +45,8 @@ export async function POST(request: NextRequest) {
 
   const result = await suggestRecipes(message, history, recipeContext);
 
-  return NextResponse.json(result);
+  return NextResponse.json({
+    ...result,
+    recipes: rows.map((r) => ({ id: r.id, title: r.title })),
+  });
 }
