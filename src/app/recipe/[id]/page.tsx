@@ -146,7 +146,7 @@ export default function RecipePage({
 
   if (error) {
     return (
-      <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
+      <div className="min-h-screen p-6 sm:p-8 max-w-3xl w-full mx-auto">
         <p className="text-red-500">{error}</p>
         <Link
           href="/"
@@ -160,7 +160,7 @@ export default function RecipePage({
 
   if (!recipe) {
     return (
-      <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
+      <div className="min-h-screen p-6 sm:p-8 max-w-3xl w-full mx-auto">
         <p className="text-gray-500">Loading…</p>
       </div>
     );
@@ -179,7 +179,7 @@ export default function RecipePage({
         };
 
   return (
-    <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
+    <div className="min-h-screen p-6 sm:p-8 max-w-3xl w-full mx-auto">
       <div className="flex items-center justify-between mb-6">
         <Link
           href="/"

@@ -222,7 +222,7 @@ export default function SuggestPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col max-w-3xl mx-auto p-6 sm:p-8">
+    <div className="min-h-screen flex flex-col max-w-3xl w-full mx-auto p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
         <Link
           href="/"
