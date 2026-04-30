@@ -251,6 +251,16 @@ export default function RecipePage({
               Source
             </a>
           )}
+          {recipe.sourceType === "image" && (
+            <a
+              href={`/api/recipes/${recipe.id}/source-image`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-gray-400 hover:text-gray-600"
+            >
+              Source
+            </a>
+          )}
           <button
             onClick={handleGenerateImage}
             disabled={generatingImage}

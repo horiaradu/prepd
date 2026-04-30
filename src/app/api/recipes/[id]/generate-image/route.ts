@@ -88,7 +88,9 @@ export async function POST(
       .set({ images: [{ url: imageUrl, blobUrl, alt: row.title }] })
       .where(eq(recipes.id, id));
 
-    if (previousBlobUrl) {
+    // Don't delete the original uploaded photo; users may want to view or
+    // re-parse from it later via the source-image proxy.
+    if (previousBlobUrl && previousBlobUrl !== row.sourceUrl) {
       await del(previousBlobUrl).catch(() => {});
     }
 
