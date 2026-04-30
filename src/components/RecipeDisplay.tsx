@@ -24,7 +24,7 @@ function StepIngredients({
 }) {
   if (ingredients.length === 0) return null;
   return (
-    <ul className="mt-1 ml-6 text-sm text-gray-500 dark:text-gray-400">
+    <ul className="mt-1 ml-6 text-sm text-gray-500">
       {ingredients.map((ing, i) => (
         <li key={i}>{formatScaledQuantity(ing, scale)}</li>
       ))}
@@ -56,7 +56,7 @@ function StepList({
       <ol className="space-y-4">
         {steps.map((step, i) => (
           <li key={i} className="flex gap-3">
-            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-medium">
+            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-sm font-medium">
               {i + 1}
             </span>
             <div className="flex-1">
@@ -107,7 +107,7 @@ export function RecipeDisplay({
       <div>
         <h1 className="text-3xl font-bold">{recipe.title}</h1>
         {recipe.servings && (
-          <div className="flex items-center gap-2 mt-1 text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 mt-1 text-gray-500">
             <span>Serves</span>
             <input
               type="number"
@@ -117,12 +117,12 @@ export function RecipeDisplay({
                 const v = parseInt(e.target.value, 10);
                 setServings(v > 0 ? v : null);
               }}
-              className="w-16 px-2 py-0.5 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-16 px-2 py-0.5 text-center border border-gray-200 rounded bg-gray-50 focus:outline-none focus:border-green-600"
             />
             {servings !== recipe.servings && (
               <button
                 onClick={() => setServings(recipe.servings)}
-                className="text-xs text-blue-500 hover:underline"
+                className="text-xs text-green-600 hover:underline"
               >
                 Reset
               </button>

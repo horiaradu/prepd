@@ -116,9 +116,12 @@ export default function RecipePage({
 
   if (error) {
     return (
-      <div className="min-h-screen p-8 max-w-3xl mx-auto">
+      <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
         <p className="text-red-500">{error}</p>
-        <Link href="/" className="text-blue-500 hover:underline mt-4 block">
+        <Link
+          href="/"
+          className="text-green-600 hover:text-green-700 mt-4 block text-sm font-medium"
+        >
           ← Back to recipes
         </Link>
       </div>
@@ -127,7 +130,7 @@ export default function RecipePage({
 
   if (!recipe) {
     return (
-      <div className="min-h-screen p-8 max-w-3xl mx-auto">
+      <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
         <p className="text-gray-500">Loading…</p>
       </div>
     );
@@ -146,16 +149,19 @@ export default function RecipePage({
         };
 
   return (
-    <div className="min-h-screen p-8 max-w-3xl mx-auto">
+    <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <Link href="/" className="text-blue-500 hover:underline">
+        <Link
+          href="/"
+          className="text-green-600 hover:text-green-700 text-sm font-medium"
+        >
           ← Back
         </Link>
         <div className="flex items-center gap-4">
           {hasOriginal && messages.length > 0 && (
             <button
               onClick={() => setShowOriginal(!showOriginal)}
-              className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-sm text-gray-400 hover:text-gray-600"
             >
               {showOriginal ? "View current" : "View original"}
             </button>
@@ -165,7 +171,7 @@ export default function RecipePage({
               href={recipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-sm text-gray-400 hover:text-gray-600"
             >
               Source
             </a>
@@ -181,7 +187,7 @@ export default function RecipePage({
       </div>
 
       {showOriginal && (
-        <div className="mb-4 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-400">
+        <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
           Viewing the original recipe as first parsed
         </div>
       )}
@@ -189,7 +195,7 @@ export default function RecipePage({
       <RecipeDisplay recipe={displayRecipe} sourceUrl={recipe.sourceUrl} />
 
       {!showOriginal && (
-        <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="mt-10 border-t border-gray-100 pt-6">
           {messages.length > 0 && (
             <div className="mb-6 space-y-3">
               {messages.map((msg) => (
@@ -197,16 +203,14 @@ export default function RecipePage({
                   key={msg.id}
                   className={`text-sm rounded-lg px-3 py-2 ${
                     msg.role === "user"
-                      ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
-                      : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-gray-50 border border-gray-100"
                   }`}
                 >
                   <span className="font-medium text-xs text-gray-500 uppercase">
                     {msg.role === "user" ? "You" : "Prepd"}
                   </span>
-                  <p className="mt-0.5 text-gray-700 dark:text-gray-300">
-                    {msg.content}
-                  </p>
+                  <p className="mt-0.5 text-gray-700">{msg.content}</p>
                 </div>
               ))}
               <div ref={messagesEndRef} />
@@ -218,7 +222,7 @@ export default function RecipePage({
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Tweak the recipe… e.g. 'use coconut milk instead of cream' or 'double the garlic'"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
               rows={2}
               disabled={sending}
               onKeyDown={(e) => {
@@ -232,14 +236,14 @@ export default function RecipePage({
               <button
                 onClick={() => handleSendMessage()}
                 disabled={sending || !chatInput.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
                 Update recipe
               </button>
               <button
                 onClick={() => handleSendMessage("cook")}
                 disabled={sending}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50 transition-colors"
               >
                 {chatInput.trim() ? "I cooked this + update" : "I cooked this"}
               </button>

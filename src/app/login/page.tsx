@@ -11,10 +11,8 @@ function LoginContent() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-6">
-        <h1 className="text-4xl font-bold">Prepd</h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Sign in to access your recipes
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Prepd</h1>
+        <p className="text-gray-500">Sign in to access your recipes</p>
 
         {error === "AccessDenied" && (
           <p className="text-red-500 text-sm">
@@ -24,7 +22,7 @@ function LoginContent() {
 
         <button
           onClick={() => signIn("google", { callbackUrl: "/" })}
-          className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 mx-auto"
+          className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:border-green-600 transition-colors flex items-center gap-3 mx-auto"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path

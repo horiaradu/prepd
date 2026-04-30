@@ -61,43 +61,38 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-8 max-w-4xl mx-auto">
-      <header className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-4xl font-bold">Prepd</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Paste a recipe URL or YouTube video link
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen p-6 sm:p-8 max-w-[960px] mx-auto">
+      <header className="mb-10 flex items-center justify-between pb-4 border-b border-gray-100">
+        <h1 className="text-2xl font-bold tracking-tight">Prepd</h1>
+        <nav className="flex items-center gap-6">
           <Link
             href="/suggest"
-            className="text-sm text-blue-500 hover:text-blue-700"
+            className="text-sm font-medium text-green-600 hover:text-green-700"
           >
             Suggest recipes
           </Link>
           <button
             onClick={() => signOut()}
-            className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-sm text-gray-400 hover:text-gray-600"
           >
             Sign out
           </button>
-        </div>
+        </nav>
       </header>
 
-      <form onSubmit={handleParse} className="flex gap-3 mb-8">
+      <form onSubmit={handleParse} className="flex gap-2 mb-10">
         <input
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://youtube.com/watch?v=... or recipe blog URL"
-          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Paste a recipe URL or YouTube link"
+          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
           required
         />
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Parsing…" : "Parse"}
         </button>
@@ -111,7 +106,7 @@ export default function Home() {
       )}
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
         </div>
       )}
@@ -122,29 +117,38 @@ export default function Home() {
             <Link
               key={recipe.id}
               href={`/recipe/${recipe.id}`}
-              className="block overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+              className="block overflow-hidden border border-gray-100 rounded-xl hover:border-green-600 transition-colors"
             >
-              {recipe.imageUrl && (
+              {recipe.imageUrl ? (
                 <img
                   src={recipe.imageUrl}
                   alt={recipe.title}
                   className="w-full h-40 object-cover"
                 />
+              ) : (
+                <div className="w-full h-40 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-4xl">
+                  🍽️
+                </div>
               )}
-              <div className="p-4">
-                <h2 className="font-semibold text-lg mb-1 line-clamp-2">
+              <div className="p-3.5">
+                <h2 className="font-semibold text-[0.9rem] mb-1 line-clamp-2">
                   {recipe.title}
                 </h2>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-1.5 text-[0.7rem] text-gray-400">
                   <span>
                     {recipe.sourceType === "youtube" ? "YouTube" : "Web"}
                   </span>
                   <span>·</span>
-                  <span>{new Date(recipe.createdAt).toLocaleDateString()}</span>
+                  <span>
+                    {new Date(recipe.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
                   {recipe.cookCount > 0 && (
                     <>
                       <span>·</span>
-                      <span className="text-green-500">
+                      <span className="text-green-600 font-semibold">
                         🍳 {recipe.cookCount}
                       </span>
                     </>
