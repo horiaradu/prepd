@@ -351,30 +351,20 @@ export default function SuggestPage() {
               <>
                 {(() => {
                   const items = sections.web ? extractItems(sections.web) : [];
-                  const itemUrls = new Set(items.flatMap((i) => i.urls));
-                  const extraSources = sources.filter(
-                    (s) => !itemUrls.has(s.uri),
-                  );
-                  return (
-                    <>
-                      {items.map((item, i) => renderItem(item, i, "parse"))}
-                      {extraSources.map((s, i) =>
-                        renderItem(
-                          {
-                            title: s.title || "Recipe",
-                            description: "",
-                            urls: [s.uri],
-                          },
-                          items.length + i,
-                          "parse",
-                        ),
-                      )}
-                      {items.length === 0 && extraSources.length === 0 && (
-                        <p className="text-gray-400 text-sm">
-                          No web recipes found.
-                        </p>
-                      )}
-                    </>
+                  const enriched = items.map((item, i) => {
+                    if (item.urls.length > 0) return item;
+                    const source = sources[i] ?? null;
+                    if (source) {
+                      return { ...item, urls: [source.uri] };
+                    }
+                    return item;
+                  });
+                  return enriched.length > 0 ? (
+                    enriched.map((item, i) => renderItem(item, i, "parse"))
+                  ) : (
+                    <p className="text-gray-400 text-sm">
+                      No web recipes found.
+                    </p>
                   );
                 })()}
               </>
