@@ -280,6 +280,11 @@ Guidelines:
       }
 
       const sources: Array<{ uri: string; title: string }> = [];
+      const supports: Array<{
+        startIndex: number;
+        endIndex: number;
+        chunkIndices: number[];
+      }> = [];
       const metadata = lastCandidate?.groundingMetadata;
       if (metadata?.groundingChunks) {
         for (const grChunk of metadata.groundingChunks) {
@@ -291,9 +296,25 @@ Guidelines:
           }
         }
       }
+      if (metadata?.groundingSupports) {
+        for (const support of metadata.groundingSupports) {
+          const seg = support.segment;
+          if (
+            seg &&
+            typeof seg.startIndex === "number" &&
+            typeof seg.endIndex === "number"
+          ) {
+            supports.push({
+              startIndex: seg.startIndex,
+              endIndex: seg.endIndex,
+              chunkIndices: support.groundingChunkIndices ?? [],
+            });
+          }
+        }
+      }
       controller.enqueue(
         encoder.encode(
-          `data: ${JSON.stringify({ type: "done", sources })}\n\n`,
+          `data: ${JSON.stringify({ type: "done", sources, supports })}\n\n`,
         ),
       );
       controller.close();

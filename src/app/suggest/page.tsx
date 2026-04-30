@@ -13,21 +13,37 @@ interface Source {
   title: string;
 }
 
+interface Support {
+  startIndex: number;
+  endIndex: number;
+  chunkIndices: number[];
+}
+
 interface Sections {
   collection: string;
   web: string;
   ideas: string;
+  webOffset: number;
 }
 
 function parseSections(text: string): Sections {
-  const sections: Sections = { collection: "", web: "", ideas: "" };
+  const sections: Sections = {
+    collection: "",
+    web: "",
+    ideas: "",
+    webOffset: 0,
+  };
   const collectionMatch = text.match(
     /## From your collection\n([\s\S]*?)(?=\n## |$)/,
   );
   const webMatch = text.match(/## From the web\n([\s\S]*?)(?=\n## |$)/);
   const ideasMatch = text.match(/## My own ideas\n([\s\S]*?)(?=\n## |$)/);
   if (collectionMatch) sections.collection = collectionMatch[1].trim();
-  if (webMatch) sections.web = webMatch[1].trim();
+  if (webMatch) {
+    sections.web = webMatch[1].trim();
+    // offset of the captured group within fullText (skip header line)
+    sections.webOffset = (webMatch.index ?? 0) + "## From the web\n".length;
+  }
   if (ideasMatch) sections.ideas = ideasMatch[1].trim();
   return sections;
 }
@@ -36,22 +52,34 @@ interface ParsedItem {
   title: string;
   description: string;
   urls: string[];
+  startIndex?: number;
+  endIndex?: number;
 }
 
-function extractItems(text: string): ParsedItem[] {
-  const items: string[] = [];
-  let current = "";
-  for (const line of text.split("\n")) {
-    if (/^\d+\.\s|^[-*]\s/.test(line.trim())) {
-      if (current) items.push(current.trim());
-      current = line.replace(/^\s*(?:\d+\.\s|[-*]\s)/, "").trim();
-    } else if (current && line.trim()) {
-      current += "\n" + line.trim();
-    }
-  }
-  if (current) items.push(current.trim());
+function extractItems(text: string, baseOffset = 0): ParsedItem[] {
+  const items: Array<{ block: string; start: number; end: number }> = [];
+  let current: { block: string; start: number; end: number } | null = null;
+  let cursor = 0;
 
-  return items.map((block) => {
+  for (const line of text.split("\n")) {
+    const lineLength = line.length + 1; // include the \n
+    const trimmed = line.trim();
+    if (/^\d+\.\s|^[-*]\s/.test(trimmed)) {
+      if (current) items.push(current);
+      current = {
+        block: line.replace(/^\s*(?:\d+\.\s|[-*]\s)/, "").trim(),
+        start: cursor,
+        end: cursor + lineLength,
+      };
+    } else if (current && trimmed) {
+      current.block += "\n" + trimmed;
+      current.end = cursor + lineLength;
+    }
+    cursor += lineLength;
+  }
+  if (current) items.push(current);
+
+  return items.map(({ block, start, end }) => {
     const urls = [...new Set(block.match(/https?:\/\/[^\s)]+/g) ?? [])];
     const cleaned = block
       .replace(/https?:\/\/[^\s)]+/g, "")
@@ -63,8 +91,55 @@ function extractItems(text: string): ParsedItem[] {
     const description = (parts[1] || "")
       .replace(/^[-–—:,]+|[-–—:,]+$/g, "")
       .trim();
-    return { title, description, urls };
+    return {
+      title,
+      description,
+      urls,
+      startIndex: baseOffset + start,
+      endIndex: baseOffset + end,
+    };
   });
+}
+
+// Gemini grounding indices are byte offsets in UTF-8. Convert to char offsets.
+function buildByteToCharMap(text: string): number[] {
+  const map: number[] = [];
+  let byteIdx = 0;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    let len = 1;
+    if (code >= 0xd800 && code <= 0xdbff) {
+      // surrogate pair = 4 bytes, advance i by 1 extra
+      len = 4;
+      i++;
+    } else if (code >= 0x800) len = 3;
+    else if (code >= 0x80) len = 2;
+    for (let b = 0; b < len; b++) map[byteIdx + b] = i;
+    byteIdx += len;
+  }
+  map[byteIdx] = text.length;
+  return map;
+}
+
+function findSourcesForItem(
+  item: ParsedItem,
+  supports: Support[],
+  sources: Source[],
+  byteToChar: number[],
+): Source[] {
+  if (item.startIndex === undefined || item.endIndex === undefined) return [];
+  const chunkIds = new Set<number>();
+  for (const support of supports) {
+    const segStart = byteToChar[support.startIndex] ?? support.startIndex;
+    const segEnd = byteToChar[support.endIndex] ?? support.endIndex;
+    // overlap?
+    if (segStart < item.endIndex && segEnd > item.startIndex) {
+      for (const idx of support.chunkIndices) chunkIds.add(idx);
+    }
+  }
+  return [...chunkIds]
+    .map((idx) => sources[idx])
+    .filter((s): s is Source => Boolean(s));
 }
 
 export default function SuggestPage() {
@@ -75,7 +150,9 @@ export default function SuggestPage() {
   const [generating, setGenerating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("web");
   const [sections, setSections] = useState<Sections | null>(null);
+  const [fullText, setFullText] = useState("");
   const [sources, setSources] = useState<Source[]>([]);
+  const [supports, setSupports] = useState<Support[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<
     Array<{ id: number; title: string }>
   >([]);
@@ -94,6 +171,8 @@ export default function SuggestPage() {
     setSending(true);
     setSections(null);
     setSources([]);
+    setSupports([]);
+    setFullText("");
 
     try {
       const res = await fetch("/api/recipes/suggest", {
@@ -107,7 +186,7 @@ export default function SuggestPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let fullText = "";
+      let accumulated = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -125,10 +204,12 @@ export default function SuggestPage() {
             if (event.type === "recipes") {
               setSavedRecipes(event.recipes);
             } else if (event.type === "text") {
-              fullText += event.text;
-              setSections(parseSections(fullText));
+              accumulated += event.text;
+              setFullText(accumulated);
+              setSections(parseSections(accumulated));
             } else if (event.type === "done") {
               setSources(event.sources ?? []);
+              setSupports(event.supports ?? []);
             }
           } catch {
             // skip malformed events
@@ -139,7 +220,7 @@ export default function SuggestPage() {
       setHistory([
         ...history,
         { role: "user", content: message },
-        { role: "model", content: fullText },
+        { role: "model", content: accumulated },
       ]);
     } finally {
       setSending(false);
@@ -186,18 +267,12 @@ export default function SuggestPage() {
     item: ParsedItem,
     index: number,
     action: "parse" | "generate",
+    matchedSource?: Source,
   ) {
     const url =
-      action === "parse"
-        ? item.urls[0] ||
-          sources.find((s) =>
-            item.title
-              .toLowerCase()
-              .includes(s.title.toLowerCase().slice(0, 20)),
-          )?.uri
-        : undefined;
+      action === "parse" ? item.urls[0] || matchedSource?.uri : undefined;
     const source = url
-      ? sources.find((s) => s.uri === url || item.urls.includes(s.uri))
+      ? (sources.find((s) => s.uri === url) ?? matchedSource ?? null)
       : null;
 
     return (
@@ -339,35 +414,51 @@ export default function SuggestPage() {
                 {sections.collection ? (
                   extractItems(sections.collection).length > 0 ? (
                     extractItems(sections.collection).map((item, i) => {
-                      const match = savedRecipes.find(
-                        (r) =>
-                          r.title.toLowerCase() === item.title.toLowerCase(),
+                      const normalize = (s: string) =>
+                        s
+                          .toLowerCase()
+                          .replace(/[^\w\s]/g, "")
+                          .trim();
+                      const itemNorm = normalize(item.title);
+                      const match = savedRecipes.find((r) => {
+                        const rNorm = normalize(r.title);
+                        return (
+                          rNorm === itemNorm ||
+                          rNorm.includes(itemNorm) ||
+                          itemNorm.includes(rNorm)
+                        );
+                      });
+
+                      const content = (
+                        <>
+                          <p className="text-sm font-medium text-gray-800">
+                            {item.title}
+                          </p>
+                          {item.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {item.description}
+                            </p>
+                          )}
+                        </>
                       );
-                      return (
-                        <div
+
+                      const className =
+                        "block rounded-lg border border-gray-100 bg-gray-50 px-4 py-3" +
+                        (match
+                          ? " hover:border-green-600 transition-colors"
+                          : "");
+
+                      return match ? (
+                        <Link
                           key={i}
-                          className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
+                          href={`/recipe/${match.id}`}
+                          className={className}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-800">
-                                {item.title}
-                              </p>
-                              {item.description && (
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                  {item.description}
-                                </p>
-                              )}
-                            </div>
-                            {match && (
-                              <Link
-                                href={`/recipe/${match.id}`}
-                                className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
-                              >
-                                View recipe
-                              </Link>
-                            )}
-                          </div>
+                          {content}
+                        </Link>
+                      ) : (
+                        <div key={i} className={className}>
+                          {content}
                         </div>
                       );
                     })
@@ -389,17 +480,25 @@ export default function SuggestPage() {
             {activeTab === "web" && (
               <>
                 {(() => {
-                  const items = sections.web ? extractItems(sections.web) : [];
-                  const enriched = items.map((item, i) => {
-                    if (item.urls.length > 0) return item;
-                    const source = sources[i] ?? null;
-                    if (source) {
-                      return { ...item, urls: [source.uri] };
-                    }
-                    return item;
-                  });
-                  return enriched.length > 0 ? (
-                    enriched.map((item, i) => renderItem(item, i, "parse"))
+                  const items = sections.web
+                    ? extractItems(sections.web, sections.webOffset)
+                    : [];
+                  const byteToChar = buildByteToCharMap(fullText);
+                  const rendered = items
+                    .map((item) => {
+                      const matched = findSourcesForItem(
+                        item,
+                        supports,
+                        sources,
+                        byteToChar,
+                      );
+                      return { item, source: matched[0] };
+                    })
+                    .filter(({ item, source }) => item.urls[0] || source);
+                  return rendered.length > 0 ? (
+                    rendered.map(({ item, source }, i) =>
+                      renderItem(item, i, "parse", source),
+                    )
                   ) : !sending ? (
                     <p className="text-gray-400 text-sm">
                       No web recipes found.
