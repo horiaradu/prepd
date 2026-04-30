@@ -35,6 +35,10 @@ export default function RecipePage({
   const [reparseProgress, setReparseProgress] = useState<ProgressEvent | null>(
     null,
   );
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [heroImageOverride, setHeroImageOverride] = useState<string | null>(
+    null,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -156,6 +160,26 @@ export default function RecipePage({
     }
   }
 
+  async function handleGenerateImage() {
+    if (!recipeId) return;
+    setGeneratingImage(true);
+    try {
+      const res = await fetch(`/api/recipes/${recipeId}/generate-image`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Failed to generate image");
+        return;
+      }
+      setHeroImageOverride(data.imageUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate image");
+    } finally {
+      setGeneratingImage(false);
+    }
+  }
+
   if (error) {
     return (
       <div className="min-h-screen p-6 sm:p-8 max-w-3xl w-full mx-auto">
@@ -228,6 +252,17 @@ export default function RecipePage({
             </a>
           )}
           <button
+            onClick={handleGenerateImage}
+            disabled={generatingImage}
+            className="text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
+          >
+            {generatingImage
+              ? "Generating…"
+              : heroImageOverride || recipe.images?.[0]?.url
+                ? "Regenerate image"
+                : "Generate image"}
+          </button>
+          <button
             onClick={() => setConfirmingDelete(true)}
             disabled={deleting}
             className="text-sm text-red-400 hover:text-red-600 disabled:opacity-50"
@@ -264,7 +299,7 @@ export default function RecipePage({
       <RecipeDisplay
         recipe={displayRecipe}
         sourceUrl={recipe.sourceUrl}
-        heroImageUrl={recipe.images?.[0]?.url}
+        heroImageUrl={heroImageOverride ?? recipe.images?.[0]?.url}
       />
 
       {!showOriginal && (

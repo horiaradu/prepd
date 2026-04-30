@@ -9,16 +9,26 @@ A personal recipe organizer that takes messy recipe links and YouTube videos and
    - Preparation steps first (chopping, slicing, marinating, etc.)
    - Cooking steps second, each listing the ingredients and quantities involved in that step
 
-2. **Suggest recipes** — Ask in free text ("quick weeknight pasta") and get suggestions, either from your saved recipes or generated with web search results and source links.
+2. **Parse recipes from photos** — Snap a photo of a cookbook page, handwritten recipe, or screenshot. The image is resized in the browser, uploaded once via multipart, stored privately in Vercel Blob, and parsed with Gemini vision. The original photo doubles as the recipe's hero image, served through an authenticated proxy.
 
-3. **Save & browse** — All parsed recipes are saved and searchable.
+3. **Suggest recipes** — Ask in free text ("quick weeknight pasta") and get suggestions, either from your saved recipes or generated with web search results and source links. Items in saved-collection mode link directly to the recipe page; web suggestions cite their sources via Gemini grounding metadata.
+
+4. **Generate hero images with AI** — Any recipe without a photo can have one generated on-demand with Gemini 2.5 Flash Image. Generated images are watermarked "Generated with AI" and stored in private Blob storage. Click again to regenerate.
+
+5. **Refine with chat** — Per-recipe chat to tweak ingredients, swap techniques, or scale steps, with a one-click view of the original parsed version.
+
+6. **Save & browse** — All parsed recipes are saved and searchable.
 
 ## Tech stack
 
-- **Framework:** Next.js (App Router)
+- **Framework:** Next.js (App Router, Turbopack)
 - **Auth:** NextAuth.js with Google OAuth
-- **Database:** Vercel Postgres
-- **LLM:** Google Gemini API (free tier, with Google Search grounding for suggestions)
+- **Database:** Neon Postgres + Drizzle ORM
+- **Blob storage:** Vercel Blob (private access, served via authenticated proxy)
+- **LLM:** Google Gemini API
+  - `gemini-2.5-flash` for parsing, suggestions, and chat (with Google Search grounding for web suggestions)
+  - `gemini-2.5-flash-image` for generated hero images
+- **Image processing:** `sharp` (resize, EXIF rotate, JPEG re-encode, SVG watermark composite)
 - **YouTube transcripts:** `youtube-transcript` npm package
 - **URL scraping:** `cheerio`
 - **Styling:** Tailwind CSS

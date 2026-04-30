@@ -17,15 +17,16 @@ export async function GET(
 
   const { id } = await params;
   const [row] = await db
-    .select({ sourceUrl: recipes.sourceUrl, sourceType: recipes.sourceType })
+    .select({ images: recipes.images })
     .from(recipes)
     .where(and(eq(recipes.id, id), eq(recipes.userId, session.user.id)));
 
-  if (!row || row.sourceType !== "image" || !row.sourceUrl) {
+  const blobUrl = row?.images?.[0]?.blobUrl;
+  if (!blobUrl) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const blob = await get(row.sourceUrl, { access: "private" });
+  const blob = await get(blobUrl, { access: "private" });
   if (!blob || blob.statusCode !== 200) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

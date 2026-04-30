@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         const imageUrl = `/api/recipes/${saved.id}/image`;
         await db
           .update(recipes)
-          .set({ images: [{ url: imageUrl }] })
+          .set({ images: [{ url: imageUrl, blobUrl }] })
           .where(eq(recipes.id, saved.id));
 
         send({

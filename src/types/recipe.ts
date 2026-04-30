@@ -31,6 +31,9 @@ export interface Step {
 export interface RecipeImage {
   url: string;
   alt?: string;
+  // Private Vercel Blob URL. Present when the image is stored in our blob
+  // store and must be served through the authenticated proxy.
+  blobUrl?: string;
 }
 
 export interface ParsedRecipe {

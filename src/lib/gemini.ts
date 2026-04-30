@@ -156,6 +156,37 @@ export async function parseRecipeFromImage(
   return parsed as ParsedRecipe;
 }
 
+export async function generateRecipeHeroImage(
+  recipe: ParsedRecipe,
+): Promise<{ bytes: Buffer; mimeType: string }> {
+  const ai = getClient();
+
+  const topIngredients = recipe.ingredients
+    .slice(0, 6)
+    .map((i) => i.name)
+    .join(", ");
+
+  const prompt = `Photorealistic overhead food photography of "${recipe.title}", plated and ready to eat. Key ingredients visible: ${topIngredients}. Natural daylight, shallow depth of field, on a rustic wooden table with subtle props. Appetizing, magazine-quality. No text, no watermarks, no hands.`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-image",
+    contents: prompt,
+  });
+
+  const parts = response.candidates?.[0]?.content?.parts ?? [];
+  for (const part of parts) {
+    const inline = part.inlineData;
+    if (inline?.data && inline.mimeType?.startsWith("image/")) {
+      return {
+        bytes: Buffer.from(inline.data, "base64"),
+        mimeType: inline.mimeType,
+      };
+    }
+  }
+
+  throw new Error("Image generation returned no image data");
+}
+
 const RECIPE_UPDATE_PROMPT = `You are a recipe refinement assistant. You receive a structured recipe as JSON and a user message describing changes they want. Apply the requested changes to the recipe and return the updated JSON.
 
 Rules:
