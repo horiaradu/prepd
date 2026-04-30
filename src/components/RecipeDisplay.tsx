@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ParsedRecipe, Ingredient, Step } from "@/types/recipe";
 
 function formatScaledQuantity(ingredient: Ingredient, scale: number): string {
@@ -51,11 +51,13 @@ function StepList({
   steps,
   scale,
   videoBaseUrl,
+  onImageClick,
 }: {
   title: string;
   steps: Step[];
   scale: number;
   videoBaseUrl?: string;
+  onImageClick: (url: string) => void;
 }) {
   if (steps.length === 0) return null;
   return (
@@ -79,7 +81,8 @@ function StepList({
                 <img
                   src={step.imageUrl}
                   alt={step.instruction}
-                  className="mt-2 rounded-lg max-h-48 object-cover"
+                  className="mt-2 rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => onImageClick(step.imageUrl!)}
                 />
               )}
               {videoBaseUrl && step.videoTimestamp != null && (
@@ -108,7 +111,17 @@ export function RecipeDisplay({
   sourceUrl?: string;
 }) {
   const [servings, setServings] = useState<number | null>(recipe.servings);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const scale = recipe.servings && servings ? servings / recipe.servings : 1;
+
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxUrl(null);
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [lightboxUrl]);
   const videoBaseUrl = sourceUrl?.includes("youtube.com/watch")
     ? sourceUrl
     : sourceUrl?.includes("youtu.be/")
@@ -117,6 +130,20 @@ export function RecipeDisplay({
 
   return (
     <div className="space-y-8">
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-w-full max-h-full rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       <div>
         <h1 className="text-3xl font-bold">{recipe.title}</h1>
         {recipe.servings && (
@@ -161,12 +188,14 @@ export function RecipeDisplay({
         steps={recipe.prepSteps}
         scale={scale}
         videoBaseUrl={videoBaseUrl}
+        onImageClick={setLightboxUrl}
       />
       <StepList
         title="Cooking"
         steps={recipe.cookingSteps}
         scale={scale}
         videoBaseUrl={videoBaseUrl}
+        onImageClick={setLightboxUrl}
       />
     </div>
   );
