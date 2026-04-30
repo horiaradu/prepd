@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
 
 interface ChatMessage {
@@ -28,6 +29,7 @@ export default function RecipePage({
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [reparsing, setReparsing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,7 +111,8 @@ export default function RecipePage({
   }
 
   async function handleDelete() {
-    if (!recipe || !confirm("Delete this recipe?")) return;
+    if (!recipe) return;
+    setConfirmingDelete(false);
     setDeleting(true);
     await fetch(`/api/recipes/${recipe.id}`, { method: "DELETE" });
     router.push("/");
@@ -216,7 +219,7 @@ export default function RecipePage({
             </a>
           )}
           <button
-            onClick={handleDelete}
+            onClick={() => setConfirmingDelete(true)}
             disabled={deleting}
             className="text-sm text-red-400 hover:text-red-600 disabled:opacity-50"
           >
@@ -224,6 +227,15 @@ export default function RecipePage({
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete this recipe?"
+        message="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmingDelete(false)}
+      />
 
       {showOriginal && (
         <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
