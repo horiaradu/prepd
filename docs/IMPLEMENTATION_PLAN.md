@@ -129,16 +129,19 @@ Conversational recipe discovery. Leverages cooking history for personalized sugg
 
 ### Tasks
 
-- [ ] Create `/suggest` page with a chat-style UI (message input, scrollable message list)
-- [ ] Implement `POST /api/recipes/suggest` route:
-  - [ ] Send user message to Gemini with Search grounding enabled
-  - [ ] Include saved recipe titles + cook history as context
-  - [ ] Return markdown response with source links
-- [ ] Render markdown responses in the chat UI
-- [ ] Add "Parse this recipe" action on any URL that appears in suggestions
-- [ ] Add conversation history (in-memory per session is fine — no need to persist chats)
+- [x] Create `/suggest` page with a chat-style UI (message input, scrollable message list)
+- [x] Implement `POST /api/recipes/suggest` route:
+  - [x] Send user message to Gemini with Search grounding enabled
+  - [x] Include saved recipe titles + cook history as context
+  - [x] Return markdown response with source links
+- [x] Render markdown responses in the chat UI
+- [x] Add "Parse this recipe" action on any URL that appears in suggestions
+- [x] Add conversation history (in-memory per session is fine — no need to persist chats)
+- [x] Generate full recipes from LLM's "My own ideas" section
+- [x] Fix URL parsing: resolve Google redirect URLs before scraping, fall back to Gemini URL context
+- [x] Append grounding source URLs when model omits them from response text
 
-**Done when:** You can ask for recipe ideas, get suggestions that reference your cooking history, and parse any suggested recipe directly.
+**Status:** Complete.
 
 ## Phase 5: Polish
 
