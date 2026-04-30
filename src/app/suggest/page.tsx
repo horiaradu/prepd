@@ -89,7 +89,6 @@ export default function SuggestPage() {
 
     setInput("");
     setSending(true);
-    setSections(null);
 
     try {
       const res = await fetch("/api/recipes/suggest", {
