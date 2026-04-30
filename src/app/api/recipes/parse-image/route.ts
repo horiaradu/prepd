@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
           })
           .returning();
 
-        const imageUrl = `/api/recipes/${saved.id}/image`;
+        const imageUrl = `/api/recipes/${saved.id}/image?v=${Date.now()}`;
         await db
           .update(recipes)
           .set({ images: [{ url: imageUrl, blobUrl }] })

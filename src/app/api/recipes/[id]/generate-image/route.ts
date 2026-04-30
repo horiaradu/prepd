@@ -82,7 +82,7 @@ export async function POST(
     blobUrl = upload.url;
 
     const previousBlobUrl = row.images?.[0]?.blobUrl;
-    const imageUrl = `/api/recipes/${id}/image`;
+    const imageUrl = `/api/recipes/${id}/image?v=${Date.now()}`;
     await db
       .update(recipes)
       .set({ images: [{ url: imageUrl, blobUrl, alt: row.title }] })
@@ -94,8 +94,7 @@ export async function POST(
       await del(previousBlobUrl).catch(() => {});
     }
 
-    // Cache-bust so the <img> reloads even though the URL is unchanged.
-    return NextResponse.json({ imageUrl: `${imageUrl}?v=${Date.now()}` });
+    return NextResponse.json({ imageUrl });
   } catch (error) {
     if (blobUrl) await del(blobUrl).catch(() => {});
     console.error("Generate image error:", error);
