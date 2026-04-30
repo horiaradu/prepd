@@ -69,12 +69,20 @@ export default function Home() {
             Paste a recipe URL or YouTube video link
           </p>
         </div>
-        <button
-          onClick={() => signOut()}
-          className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/suggest"
+            className="text-sm text-blue-500 hover:text-blue-700"
+          >
+            Suggest recipes
+          </Link>
+          <button
+            onClick={() => signOut()}
+            className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       <form onSubmit={handleParse} className="flex gap-3 mb-8">

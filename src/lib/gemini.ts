@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import type { ParsedRecipe, RecipeImage } from "@/types/recipe";
 
 const RECIPE_PARSING_PROMPT = `You are a recipe extraction assistant. Your job is to take raw recipe content (from a webpage or video transcript) and return a clean, structured recipe.
@@ -48,26 +48,19 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
   ]
 }`;
 
-function getGeminiClient() {
+function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is not set");
   }
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 }
 
 export async function parseRecipeContent(
   content: string,
   images?: RecipeImage[],
 ): Promise<ParsedRecipe> {
-  const genAI = getGeminiClient();
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    systemInstruction: RECIPE_PARSING_PROMPT,
-    generationConfig: {
-      responseMimeType: "application/json",
-    },
-  });
+  const ai = getClient();
 
   let prompt = `Extract the recipe from the following content:\n\n---\n${content}\n---`;
 
@@ -81,9 +74,16 @@ export async function parseRecipeContent(
     prompt += `\n\nAvailable images from the source page (assign to the most relevant steps):\n${imageList}`;
   }
 
-  const result = await model.generateContent(prompt);
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      systemInstruction: RECIPE_PARSING_PROMPT,
+      responseMimeType: "application/json",
+    },
+  });
 
-  const responseText = result.response.text();
+  const responseText = response.text!;
   const parsed = JSON.parse(responseText);
 
   if (parsed.error) {
@@ -115,23 +115,73 @@ export async function updateRecipe(
   recipe: ParsedRecipe,
   message: string,
 ): Promise<{ recipe: ParsedRecipe; summary: string }> {
-  const genAI = getGeminiClient();
-  const model = genAI.getGenerativeModel({
+  const ai = getClient();
+
+  const prompt = `Current recipe:\n\n${JSON.stringify(recipe, null, 2)}\n\nUser message: ${message}`;
+
+  const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    systemInstruction: RECIPE_UPDATE_PROMPT,
-    generationConfig: {
+    contents: prompt,
+    config: {
+      systemInstruction: RECIPE_UPDATE_PROMPT,
       responseMimeType: "application/json",
     },
   });
 
-  const prompt = `Current recipe:\n\n${JSON.stringify(recipe, null, 2)}\n\nUser message: ${message}`;
-
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text();
+  const responseText = response.text!;
   const parsed = JSON.parse(responseText);
 
   return {
     recipe: parsed.recipe as ParsedRecipe,
     summary: parsed.summary as string,
   };
+}
+
+export async function suggestRecipes(
+  message: string,
+  conversationHistory: Array<{ role: "user" | "model"; content: string }>,
+  recipeContext: string,
+): Promise<{ text: string; sources: Array<{ uri: string; title: string }> }> {
+  const ai = getClient();
+
+  const contents = [
+    ...conversationHistory.map((msg) => ({
+      role: msg.role,
+      parts: [{ text: msg.content }],
+    })),
+    { role: "user" as const, parts: [{ text: message }] },
+  ];
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents,
+    config: {
+      systemInstruction: `You are a recipe suggestion assistant. The user wants ideas for what to cook. You have access to Google Search to find real recipes with URLs.
+
+The user's saved recipes and cooking history:
+${recipeContext}
+
+Guidelines:
+1. Suggest recipes based on what the user asks for (mood, ingredients, cuisine, occasion, etc.)
+2. Reference their cooking history when relevant (e.g., "since you liked X, try Y")
+3. Always include real URLs to recipe sources when suggesting specific recipes
+4. Keep responses concise and conversational
+5. When suggesting recipes, format them as a numbered list with the recipe name, a brief description, and the source URL on separate lines`,
+      tools: [{ googleSearch: {} }],
+    },
+  });
+
+  const text = response.text ?? "";
+  const sources: Array<{ uri: string; title: string }> = [];
+
+  const metadata = response.candidates?.[0]?.groundingMetadata;
+  if (metadata?.groundingChunks) {
+    for (const chunk of metadata.groundingChunks) {
+      if (chunk.web) {
+        sources.push({ uri: chunk.web.uri!, title: chunk.web.title ?? "" });
+      }
+    }
+  }
+
+  return { text, sources };
 }
