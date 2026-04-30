@@ -1,61 +1,110 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-interface Message {
-  role: "user" | "model";
-  content: string;
+type Tab = "collection" | "web" | "ideas";
+
+interface Source {
+  uri: string;
+  title: string;
+}
+
+interface Sections {
+  collection: string;
+  web: string;
+  ideas: string;
+}
+
+function parseSections(text: string): Sections {
+  const sections: Sections = { collection: "", web: "", ideas: "" };
+  const collectionMatch = text.match(
+    /## From your collection\n([\s\S]*?)(?=\n## |$)/,
+  );
+  const webMatch = text.match(/## From the web\n([\s\S]*?)(?=\n## |$)/);
+  const ideasMatch = text.match(/## My own ideas\n([\s\S]*?)(?=\n## |$)/);
+  if (collectionMatch) sections.collection = collectionMatch[1].trim();
+  if (webMatch) sections.web = webMatch[1].trim();
+  if (ideasMatch) sections.ideas = ideasMatch[1].trim();
+  return sections;
+}
+
+interface ParsedItem {
+  title: string;
+  description: string;
+  urls: string[];
+}
+
+function extractItems(text: string): ParsedItem[] {
+  const items: string[] = [];
+  let current = "";
+  for (const line of text.split("\n")) {
+    if (/^\d+\.\s|^[-*]\s/.test(line.trim())) {
+      if (current) items.push(current.trim());
+      current = line.replace(/^\s*(?:\d+\.\s|[-*]\s)/, "").trim();
+    } else if (current && line.trim()) {
+      current += "\n" + line.trim();
+    }
+  }
+  if (current) items.push(current.trim());
+
+  return items.map((block) => {
+    const urls = [...new Set(block.match(/https?:\/\/[^\s)]+/g) ?? [])];
+    const cleaned = block
+      .replace(/https?:\/\/[^\s)]+/g, "")
+      .replace(/[\[\]()]/g, "")
+      .replace(/\*\*/g, "")
+      .trim();
+    const parts = cleaned.split(/[:–—-]\s*/, 2);
+    const title = (parts[0] || "").replace(/^[-–—:,]+|[-–—:,]+$/g, "").trim();
+    const description = (parts[1] || "")
+      .replace(/^[-–—:,]+|[-–—:,]+$/g, "")
+      .trim();
+    return { title, description, urls };
+  });
 }
 
 export default function SuggestPage() {
   const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [parsing, setParsing] = useState<string | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("web");
+  const [sections, setSections] = useState<Sections | null>(null);
+  const [sources, setSources] = useState<Source[]>([]);
+  const [history, setHistory] = useState<
+    Array<{ role: "user" | "model"; content: string }>
+  >([]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const busy = parsing !== null || generating !== null;
 
   async function handleSend() {
     const message = input.trim();
     if (!message || sending) return;
 
-    const userMessage: Message = { role: "user", content: message };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
     setInput("");
     setSending(true);
+    setSections(null);
 
     try {
       const res = await fetch("/api/recipes/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          history: messages,
-        }),
+        body: JSON.stringify({ message, history }),
       });
       const data = await res.json();
       if (res.ok) {
-        let content = data.text ?? "";
-        const sources: Array<{ uri: string; title: string }> =
-          data.sources ?? [];
-        const inlineUrls = new Set(content.match(/https?:\/\/[^\s)]+/g) ?? []);
-        const missingLinks = sources.filter((s) => !inlineUrls.has(s.uri));
-        if (missingLinks.length > 0) {
-          content +=
-            "\n\nSources:\n" +
-            missingLinks
-              .map((s) => `- ${s.title || s.uri}: ${s.uri}`)
-              .join("\n");
-        }
-        setMessages([...updatedMessages, { role: "model", content }]);
+        const text: string = data.text ?? "";
+        const newSources: Source[] = data.sources ?? [];
+        setSections(parseSections(text));
+        setSources(newSources);
+        setHistory([
+          ...history,
+          { role: "user", content: message },
+          { role: "model", content: text },
+        ]);
       }
     } finally {
       setSending(false);
@@ -96,78 +145,86 @@ export default function SuggestPage() {
     }
   }
 
-  function extractUrls(text: string): string[] {
-    const urlRegex = /https?:\/\/[^\s)]+/g;
-    return [...new Set(text.match(urlRegex) ?? [])];
-  }
-
-  function extractOriginalIdeas(content: string): string[] {
-    const ideasMatch = content.match(/## My own ideas\n([\s\S]*?)(?=\n## |$)/);
-    if (!ideasMatch) return [];
-    const lines = ideasMatch[1].trim().split("\n");
-    return lines
-      .filter((line) => /^\d+\.\s|^[-*]\s/.test(line.trim()))
-      .map((line) => line.replace(/^\d+\.\s|^[-*]\s/, "").trim())
-      .filter(Boolean);
-  }
-
-  function renderMessageContent(content: string) {
-    const urls = extractUrls(content);
-    const originalIdeas = extractOriginalIdeas(content);
-    const parts = content.split(/(https?:\/\/[^\s)]+)/g);
+  function renderWebItem(item: ParsedItem, index: number) {
+    const url =
+      item.urls[0] ||
+      sources.find((s) =>
+        item.title.toLowerCase().includes(s.title.toLowerCase().slice(0, 20)),
+      )?.uri;
+    const source = url
+      ? sources.find((s) => s.uri === url || item.urls.includes(s.uri))
+      : null;
 
     return (
-      <div>
-        <p className="whitespace-pre-wrap text-gray-700">
-          {parts.map((part, i) =>
-            urls.includes(part) ? (
-              <a
-                key={i}
-                href={part}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-green-600 hover:underline break-all"
-              >
-                {part}
-              </a>
-            ) : (
-              <span key={i}>{part}</span>
-            ),
+      <div
+        key={index}
+        className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-gray-800">
+              {item.title || source?.title || "Recipe"}
+            </p>
+            {item.description && (
+              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+            )}
+          </div>
+          {url && (
+            <button
+              onClick={() => handleParseUrl(url)}
+              disabled={busy}
+              className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              {parsing === url ? "Parsing…" : "Save recipe"}
+            </button>
           )}
-        </p>
-        {urls.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {urls.map((url) => (
-              <button
-                key={url}
-                onClick={() => handleParseUrl(url)}
-                disabled={parsing !== null || generating !== null}
-                className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
-              >
-                {parsing === url ? "Parsing…" : "Parse this recipe"}
-              </button>
-            ))}
-          </div>
-        )}
-        {originalIdeas.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {originalIdeas.map((idea) => (
-              <button
-                key={idea}
-                onClick={() => handleGenerate(idea)}
-                disabled={parsing !== null || generating !== null}
-                className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
-              >
-                {generating === idea
-                  ? "Generating…"
-                  : `Generate: ${idea.slice(0, 40)}${idea.length > 40 ? "…" : ""}`}
-              </button>
-            ))}
-          </div>
+        </div>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-green-600 hover:underline break-all mt-1 inline-block"
+          >
+            {source?.title || new URL(url).hostname}
+          </a>
         )}
       </div>
     );
   }
+
+  function renderIdeaItem(item: ParsedItem, index: number) {
+    return (
+      <div
+        key={index}
+        className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-gray-800">
+              {item.title || "Recipe idea"}
+            </p>
+            {item.description && (
+              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+            )}
+          </div>
+          <button
+            onClick={() => handleGenerate(item.title)}
+            disabled={busy}
+            className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {generating === item.title ? "Generating…" : "Generate recipe"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "collection", label: "Your collection" },
+    { key: "web", label: "From the web" },
+    { key: "ideas", label: "Original ideas" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col max-w-3xl mx-auto p-6 sm:p-8">
@@ -184,38 +241,7 @@ export default function SuggestPage() {
         <div className="w-12" />
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-4 mb-6">
-        {messages.length === 0 && (
-          <p className="text-center text-gray-400 mt-20">
-            Ask me for recipe ideas — I can search the web and suggest based on
-            your cooking history.
-          </p>
-        )}
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`rounded-lg px-4 py-3 ${
-              msg.role === "user"
-                ? "bg-green-50 border border-green-200 ml-12"
-                : "bg-gray-50 border border-gray-100 mr-12"
-            }`}
-          >
-            {msg.role === "model" ? (
-              renderMessageContent(msg.content)
-            ) : (
-              <p className="text-gray-700">{msg.content}</p>
-            )}
-          </div>
-        ))}
-        {sending && (
-          <div className="bg-gray-50 border border-gray-100 rounded-lg px-4 py-3 mr-12">
-            <p className="text-gray-400 animate-pulse">Thinking…</p>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-100">
+      <div className="mb-6">
         <div className="flex gap-2">
           <input
             type="text"
@@ -236,10 +262,113 @@ export default function SuggestPage() {
             disabled={sending || !input.trim()}
             className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            Send
+            {sending ? "Searching…" : "Send"}
           </button>
         </div>
       </div>
+
+      {sending && !sections && (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-400 animate-pulse">Searching for recipes…</p>
+        </div>
+      )}
+
+      {!sending && !sections && (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-center text-gray-400">
+            Ask me for recipe ideas — I&apos;ll search the web and suggest based
+            on your cooking history.
+          </p>
+        </div>
+      )}
+
+      {sections && (
+        <div className="flex-1 flex flex-col">
+          <div className="flex gap-1 border-b border-gray-200 mb-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? "text-green-600 border-b-2 border-green-600 -mb-px"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-3">
+            {activeTab === "collection" && (
+              <>
+                {sections.collection ? (
+                  <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
+                    {sections.collection}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">
+                    No suggestions from your collection.
+                  </p>
+                )}
+              </>
+            )}
+
+            {activeTab === "web" && (
+              <>
+                {(() => {
+                  const items = sections.web ? extractItems(sections.web) : [];
+                  const itemUrls = new Set(items.flatMap((i) => i.urls));
+                  const extraSources = sources.filter(
+                    (s) => !itemUrls.has(s.uri),
+                  );
+                  return (
+                    <>
+                      {items.map((item, i) => renderWebItem(item, i))}
+                      {extraSources.map((s, i) =>
+                        renderWebItem(
+                          {
+                            title: s.title || "Recipe",
+                            description: "",
+                            urls: [s.uri],
+                          },
+                          items.length + i,
+                        ),
+                      )}
+                      {items.length === 0 && extraSources.length === 0 && (
+                        <p className="text-gray-400 text-sm">
+                          No web recipes found.
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
+              </>
+            )}
+
+            {activeTab === "ideas" && (
+              <>
+                {sections.ideas ? (
+                  extractItems(sections.ideas).length > 0 ? (
+                    extractItems(sections.ideas).map((item, i) =>
+                      renderIdeaItem(item, i),
+                    )
+                  ) : (
+                    <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
+                      {sections.ideas}
+                    </div>
+                  )
+                ) : (
+                  <p className="text-gray-400 text-sm">
+                    No original ideas suggested.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
