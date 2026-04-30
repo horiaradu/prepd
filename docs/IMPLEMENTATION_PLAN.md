@@ -147,12 +147,12 @@ Conversational recipe discovery. Leverages cooking history for personalized sugg
 
 ### Tasks
 
-- [ ] Responsive design (works on phone — useful in the kitchen)
-- [ ] Loading states and error handling for all async operations
-- [ ] Re-parse action on saved recipes (useful when prompts improve)
-- [ ] Search/filter recipes by title on home page
-- [ ] Visual cook timer indicators for steps that mention time
-- [ ] Print-friendly layout
+- [x] Responsive design (works on phone — useful in the kitchen)
+- [x] Loading states and error handling for all async operations
+- [x] Re-parse action on saved recipes (useful when prompts improve)
+- [x] Search/filter recipes by title on home page
+- [x] Visual cook timer indicators for steps that mention time
+- [x] Print-friendly layout
 - [x] Deploy to Vercel with production env vars
 - [ ] Custom domain (optional)
 
