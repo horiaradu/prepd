@@ -64,7 +64,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-6 sm:p-8 max-w-[960px] mx-auto">
+    <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
       <header className="mb-10 flex items-center justify-between pb-4 border-b border-gray-100">
         <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
           <img
