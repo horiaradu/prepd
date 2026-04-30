@@ -142,6 +142,51 @@ function findSourcesForItem(
     .filter((s): s is Source => Boolean(s));
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function linkifyRecipeTitles(
+  text: string,
+  recipes: Array<{ id: number; title: string }>,
+): React.ReactNode[] {
+  if (recipes.length === 0) return [text];
+  // Sort by length desc so longer titles match first.
+  const sorted = [...recipes].sort((a, b) => b.title.length - a.title.length);
+  const pattern = new RegExp(
+    `"?(${sorted.map((r) => escapeRegex(r.title)).join("|")})"?`,
+    "gi",
+  );
+
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  for (const match of text.matchAll(pattern)) {
+    const matchStart = match.index ?? 0;
+    const matchedText = match[0];
+    const titleText = match[1];
+    const recipe = sorted.find(
+      (r) => r.title.toLowerCase() === titleText.toLowerCase(),
+    );
+    if (!recipe) continue;
+    if (matchStart > lastIndex) {
+      nodes.push(text.slice(lastIndex, matchStart));
+    }
+    nodes.push(
+      <Link
+        key={key++}
+        href={`/recipe/${recipe.id}`}
+        className="text-green-600 hover:underline font-medium"
+      >
+        {matchedText}
+      </Link>,
+    );
+    lastIndex = matchStart + matchedText.length;
+  }
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+  return nodes;
+}
+
 export default function SuggestPage() {
   const router = useRouter();
   const [input, setInput] = useState("");
@@ -464,7 +509,7 @@ export default function SuggestPage() {
                     })
                   ) : (
                     <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-                      {sections.collection}
+                      {linkifyRecipeTitles(sections.collection, savedRecipes)}
                     </div>
                   )
                 ) : (
