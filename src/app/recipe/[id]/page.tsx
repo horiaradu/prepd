@@ -215,15 +215,37 @@ export default function RecipePage({
         };
 
   return (
-    <div className="min-h-screen p-6 sm:p-8 max-w-3xl w-full mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          href="/"
-          className="text-green-600 hover:text-green-700 text-sm font-medium"
-        >
-          ← Back
-        </Link>
-        <div className="flex items-center gap-4">
+    <div className="p-6 sm:p-8 max-w-3xl w-full mx-auto">
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete this recipe?"
+        message="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmingDelete(false)}
+      />
+
+      {reparseProgress && (
+        <div className="mb-4">
+          <ProgressBar
+            step={reparseProgress.step}
+            progress={reparseProgress.progress}
+          />
+        </div>
+      )}
+
+      {showOriginal && (
+        <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          Viewing the original recipe as first parsed
+        </div>
+      )}
+
+      <RecipeDisplay
+        recipe={displayRecipe}
+        sourceUrl={recipe.sourceUrl}
+        heroImageUrl={heroImageOverride ?? recipe.images?.[0]?.url}
+      >
+        <div className="flex flex-wrap items-center gap-3 pt-2">
           {hasOriginal && messages.length > 0 && (
             <button
               onClick={() => setShowOriginal(!showOriginal)}
@@ -275,42 +297,12 @@ export default function RecipePage({
           <button
             onClick={() => setConfirmingDelete(true)}
             disabled={deleting}
-            className="text-sm text-red-400 hover:text-red-600 disabled:opacity-50"
+            className="text-sm text-red-400 hover:text-red-600 disabled:opacity-50 ml-auto"
           >
             {deleting ? "Deleting…" : "Delete"}
           </button>
         </div>
-      </div>
-
-      {reparseProgress && (
-        <div className="mb-4">
-          <ProgressBar
-            step={reparseProgress.step}
-            progress={reparseProgress.progress}
-          />
-        </div>
-      )}
-
-      <ConfirmDialog
-        open={confirmingDelete}
-        title="Delete this recipe?"
-        message="This action cannot be undone."
-        confirmLabel="Delete"
-        onConfirm={handleDelete}
-        onCancel={() => setConfirmingDelete(false)}
-      />
-
-      {showOriginal && (
-        <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-          Viewing the original recipe as first parsed
-        </div>
-      )}
-
-      <RecipeDisplay
-        recipe={displayRecipe}
-        sourceUrl={recipe.sourceUrl}
-        heroImageUrl={heroImageOverride ?? recipe.images?.[0]?.url}
-      />
+      </RecipeDisplay>
 
       {!showOriginal && (
         <div className="mt-10 border-t border-gray-100 pt-6">

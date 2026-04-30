@@ -107,10 +107,12 @@ export function RecipeDisplay({
   recipe,
   sourceUrl,
   heroImageUrl,
+  children,
 }: {
   recipe: ParsedRecipe;
   sourceUrl?: string;
   heroImageUrl?: string;
+  children?: React.ReactNode;
 }) {
   const [servings, setServings] = useState<number | null>(recipe.servings);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -154,6 +156,8 @@ export function RecipeDisplay({
           onClick={() => setLightboxUrl(heroImageUrl)}
         />
       )}
+
+      {children}
 
       <div>
         <h1 className="text-3xl font-bold">{recipe.title}</h1>

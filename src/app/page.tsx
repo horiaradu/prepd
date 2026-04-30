@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
 import ProgressBar from "@/components/ProgressBar";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
@@ -134,31 +133,15 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-6 sm:p-8 max-w-3xl w-full mx-auto">
-      <header className="mb-10 flex items-center justify-between pb-4 border-b border-gray-100">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <img
-            src="/icons/icon-192.png"
-            alt=""
-            className="w-8 h-8 rounded-lg"
-          />
-          Prepd
-        </h1>
-        <nav className="flex items-center gap-6">
-          <Link
-            href="/suggest"
-            className="text-sm font-medium text-green-600 hover:text-green-700"
-          >
-            Suggest recipes
-          </Link>
-          <button
-            onClick={() => signOut()}
-            className="text-sm text-gray-400 hover:text-gray-600"
-          >
-            Sign out
-          </button>
-        </nav>
-      </header>
+    <div className="p-6 sm:p-8 max-w-3xl w-full mx-auto">
+      <nav className="mb-8 flex items-center gap-4">
+        <Link
+          href="/suggest"
+          className="text-sm font-medium text-green-600 hover:text-green-700"
+        >
+          Suggest recipes
+        </Link>
+      </nav>
 
       <form onSubmit={handleParse} className="flex gap-2 mb-10">
         <input

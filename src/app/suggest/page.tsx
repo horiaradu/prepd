@@ -374,19 +374,10 @@ export default function SuggestPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col max-w-3xl w-full mx-auto p-6 sm:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          href="/"
-          className="text-green-600 hover:text-green-700 text-sm font-medium"
-        >
-          ← Back
-        </Link>
-        <h1 className="text-lg font-semibold tracking-tight">
-          Recipe suggestions
-        </h1>
-        <div className="w-12" />
-      </div>
+    <div className="flex flex-col max-w-3xl w-full mx-auto p-6 sm:p-8">
+      <h1 className="text-lg font-semibold tracking-tight mb-6">
+        Recipe suggestions
+      </h1>
 
       <div className="mb-6">
         <div className="flex gap-2">
