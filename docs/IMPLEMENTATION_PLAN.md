@@ -140,6 +140,10 @@ Conversational recipe discovery. Leverages cooking history for personalized sugg
 - [x] Generate full recipes from LLM's "My own ideas" section
 - [x] Fix URL parsing: resolve Google redirect URLs before scraping, fall back to Gemini URL context
 - [x] Append grounding source URLs when model omits them from response text
+- [x] Refactor into tabbed UI (Your collection, From the web, Original ideas)
+- [x] Show brief description for each suggested recipe
+- [x] Link collection suggestions to saved recipe detail pages
+- [x] Enrich web items with grounding source URLs by position
 
 **Status:** Complete.
 
@@ -154,6 +158,10 @@ Conversational recipe discovery. Leverages cooking history for personalized sugg
 - [x] Visual cook timer indicators for steps that mention time
 - [x] Print-friendly layout
 - [x] Deploy to Vercel with production env vars
+- [x] Standardize page layout width (max-w-3xl w-full on all pages)
+- [x] Prevent scrollbar layout shift (overflow-y: scroll on html)
+- [x] Replace native confirm() with custom ConfirmDialog component
+- [x] Add cursor: pointer to all buttons and links
 - [ ] Custom domain (optional)
 
 ## Dependencies
