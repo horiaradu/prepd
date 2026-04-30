@@ -7,7 +7,7 @@ import {
   getYoutubeThumbnailUrl,
 } from "@/lib/youtube";
 import { extractWebPage } from "@/lib/scraper";
-import { parseRecipeContent } from "@/lib/gemini";
+import { parseRecipeContent, parseRecipeFromUrl } from "@/lib/gemini";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import type { ParseRequest, SourceType, RecipeImage } from "@/types/recipe";
@@ -50,9 +50,38 @@ export async function POST(request: NextRequest) {
       const thumb = getYoutubeThumbnailUrl(body.url);
       images = thumb ? [{ url: thumb }] : [];
     } else {
-      const extracted = await extractWebPage(body.url);
-      content = extracted.content;
-      images = extracted.images;
+      try {
+        const extracted = await extractWebPage(body.url);
+        content = extracted.content;
+        images = extracted.images;
+      } catch {
+        // Scraping failed (403, Cloudflare, etc.) — use Gemini URL context
+        const parsed = await parseRecipeFromUrl(body.url);
+        const [saved] = await db
+          .insert(recipes)
+          .values({
+            userId: session.user.id,
+            title: parsed.title,
+            sourceUrl: body.url,
+            sourceType,
+            servings: parsed.servings,
+            ingredients: parsed.ingredients,
+            prepSteps: parsed.prepSteps,
+            cookingSteps: parsed.cookingSteps,
+            images: [],
+            originalRecipe: parsed,
+            rawContent: null,
+          })
+          .returning();
+
+        return NextResponse.json({
+          id: saved.id,
+          recipe: parsed,
+          sourceUrl: body.url,
+          sourceType,
+          imageUrl: null,
+        });
+      }
     }
 
     if (!content || content.trim().length === 0) {

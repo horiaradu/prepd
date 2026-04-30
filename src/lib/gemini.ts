@@ -93,6 +93,29 @@ export async function parseRecipeContent(
   return parsed as ParsedRecipe;
 }
 
+export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
+  const ai = getClient();
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: `Extract the recipe from this URL: ${url}`,
+    config: {
+      systemInstruction: RECIPE_PARSING_PROMPT,
+      responseMimeType: "application/json",
+      tools: [{ urlContext: {} }],
+    },
+  });
+
+  const responseText = response.text!;
+  const parsed = JSON.parse(responseText);
+
+  if (parsed.error) {
+    throw new Error(parsed.error);
+  }
+
+  return parsed as ParsedRecipe;
+}
+
 const RECIPE_UPDATE_PROMPT = `You are a recipe refinement assistant. You receive a structured recipe as JSON and a user message describing changes they want. Apply the requested changes to the recipe and return the updated JSON.
 
 Rules:

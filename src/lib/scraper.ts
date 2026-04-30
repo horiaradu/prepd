@@ -14,14 +14,36 @@ export interface WebPageExtraction {
   images: RecipeImage[];
 }
 
+const BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+};
+
+async function resolveRedirects(url: string): Promise<string> {
+  let current = url;
+  for (let i = 0; i < 5; i++) {
+    const res = await fetch(current, {
+      method: "HEAD",
+      headers: BROWSER_HEADERS,
+      redirect: "manual",
+    });
+    const location = res.headers.get("location");
+    if (location && res.status >= 300 && res.status < 400) {
+      current = new URL(location, current).href;
+    } else {
+      break;
+    }
+  }
+  return current;
+}
+
 export async function extractWebPage(url: string): Promise<WebPageExtraction> {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
-    },
+  const resolvedUrl = await resolveRedirects(url);
+
+  const response = await fetch(resolvedUrl, {
+    headers: BROWSER_HEADERS,
     redirect: "follow",
   });
 
