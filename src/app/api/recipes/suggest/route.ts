@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes, cookLog } from "@/db/schema";
 import { eq, desc, count, max } from "drizzle-orm";
-import { suggestRecipes } from "@/lib/gemini";
+import { suggestRecipesStream } from "@/lib/gemini";
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -43,10 +43,33 @@ export async function POST(request: NextRequest) {
         .join("\n")
     : "No recipes saved yet.";
 
-  const result = await suggestRecipes(message, history, recipeContext);
+  const encoder = new TextEncoder();
+  const recipesPayload = rows.map((r) => ({ id: r.id, title: r.title }));
 
-  return NextResponse.json({
-    ...result,
-    recipes: rows.map((r) => ({ id: r.id, title: r.title })),
+  const stream = await suggestRecipesStream(message, history, recipeContext);
+
+  const wrappedStream = new ReadableStream({
+    async start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({ type: "recipes", recipes: recipesPayload })}\n\n`,
+        ),
+      );
+      const reader = stream.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        controller.enqueue(value);
+      }
+      controller.close();
+    },
+  });
+
+  return new Response(wrappedStream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
   });
 }

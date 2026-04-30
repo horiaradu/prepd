@@ -219,6 +219,88 @@ Guidelines:
   return { text, sources };
 }
 
+export async function suggestRecipesStream(
+  message: string,
+  conversationHistory: Array<{ role: "user" | "model"; content: string }>,
+  recipeContext: string,
+): Promise<ReadableStream<Uint8Array>> {
+  const ai = getClient();
+  const encoder = new TextEncoder();
+
+  const contents = [
+    ...conversationHistory.map((msg) => ({
+      role: msg.role,
+      parts: [{ text: msg.content }],
+    })),
+    { role: "user" as const, parts: [{ text: message }] },
+  ];
+
+  const response = await ai.models.generateContentStream({
+    model: "gemini-2.5-flash",
+    contents,
+    config: {
+      systemInstruction: `You are a recipe suggestion assistant. The user wants ideas for what to cook. You have access to Google Search to find real recipes with URLs.
+
+The user's saved recipes and cooking history:
+${recipeContext}
+
+Structure your response in THREE sections, using these exact headers:
+
+## From your collection
+Suggest recipes from the user's saved recipes list above that match what they're asking for. If none match, say so briefly.
+
+## From the web
+Search for and suggest real recipes with URLs. Include a brief description and the source link for each.
+
+## My own ideas
+Suggest 1-2 original recipe ideas you come up with yourself — brief description and key ingredients, no URL needed.
+
+Guidelines:
+- Keep each section concise (2-3 items max per section)
+- Reference their cooking history when relevant
+- Always include real URLs for the "From the web" section
+- For "From your collection", mention the recipe title exactly as it appears in their list`,
+      tools: [{ googleSearch: {} }],
+    },
+  });
+
+  return new ReadableStream({
+    async start(controller) {
+      let lastCandidate = null;
+      for await (const chunk of response) {
+        const text = chunk.text ?? "";
+        if (text) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "text", text })}\n\n`,
+            ),
+          );
+        }
+        lastCandidate = chunk.candidates?.[0] ?? lastCandidate;
+      }
+
+      const sources: Array<{ uri: string; title: string }> = [];
+      const metadata = lastCandidate?.groundingMetadata;
+      if (metadata?.groundingChunks) {
+        for (const grChunk of metadata.groundingChunks) {
+          if (grChunk.web) {
+            sources.push({
+              uri: grChunk.web.uri!,
+              title: grChunk.web.title ?? "",
+            });
+          }
+        }
+      }
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({ type: "done", sources })}\n\n`,
+        ),
+      );
+      controller.close();
+    },
+  });
+}
+
 export async function generateRecipe(
   description: string,
 ): Promise<ParsedRecipe> {

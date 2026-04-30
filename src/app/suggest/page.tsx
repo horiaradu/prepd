@@ -89,6 +89,8 @@ export default function SuggestPage() {
 
     setInput("");
     setSending(true);
+    setSections(null);
+    setSources([]);
 
     try {
       const res = await fetch("/api/recipes/suggest", {
@@ -96,21 +98,46 @@ export default function SuggestPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, history }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        const text: string = data.text ?? "";
-        const newSources: Source[] = data.sources ?? [];
-        const newRecipes: Array<{ id: number; title: string }> =
-          data.recipes ?? [];
-        setSections(parseSections(text));
-        setSources(newSources);
-        setSavedRecipes(newRecipes);
-        setHistory([
-          ...history,
-          { role: "user", content: message },
-          { role: "model", content: text },
-        ]);
+
+      if (!res.ok || !res.body) return;
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6);
+          try {
+            const event = JSON.parse(json);
+            if (event.type === "recipes") {
+              setSavedRecipes(event.recipes);
+            } else if (event.type === "text") {
+              fullText += event.text;
+              setSections(parseSections(fullText));
+            } else if (event.type === "done") {
+              setSources(event.sources ?? []);
+            }
+          } catch {
+            // skip malformed events
+          }
+        }
       }
+
+      setHistory([
+        ...history,
+        { role: "user", content: message },
+        { role: "model", content: fullText },
+      ]);
     } finally {
       setSending(false);
     }
@@ -339,9 +366,11 @@ export default function SuggestPage() {
                     </div>
                   )
                 ) : (
-                  <p className="text-gray-400 text-sm">
-                    No suggestions from your collection.
-                  </p>
+                  !sending && (
+                    <p className="text-gray-400 text-sm">
+                      No suggestions from your collection.
+                    </p>
+                  )
                 )}
               </>
             )}
@@ -360,11 +389,11 @@ export default function SuggestPage() {
                   });
                   return enriched.length > 0 ? (
                     enriched.map((item, i) => renderItem(item, i, "parse"))
-                  ) : (
+                  ) : !sending ? (
                     <p className="text-gray-400 text-sm">
                       No web recipes found.
                     </p>
-                  );
+                  ) : null;
                 })()}
               </>
             )}
@@ -382,9 +411,11 @@ export default function SuggestPage() {
                     </div>
                   )
                 ) : (
-                  <p className="text-gray-400 text-sm">
-                    No original ideas suggested.
-                  </p>
+                  !sending && (
+                    <p className="text-gray-400 text-sm">
+                      No original ideas suggested.
+                    </p>
+                  )
                 )}
               </>
             )}
