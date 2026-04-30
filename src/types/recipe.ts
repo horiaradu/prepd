@@ -64,6 +64,7 @@ export interface RecipeSummary {
 
 export interface ParseRequest {
   url: string;
+  replaceId?: string;
 }
 
 export interface ParseResponse {

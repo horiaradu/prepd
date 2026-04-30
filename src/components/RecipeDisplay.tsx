@@ -38,6 +38,14 @@ function formatTimestamp(seconds: number): string {
   return `${mm}:${ss}`;
 }
 
+function extractDuration(text: string): string | null {
+  const match = text.match(
+    /(\d+[\u2013\u2014-]\d+|\d+)\s*(minutes?|mins?|hours?|hrs?|seconds?|secs?)/i,
+  );
+  if (!match) return null;
+  return `${match[1]} ${match[2]}`;
+}
+
 function StepList({
   title,
   steps,
@@ -61,6 +69,11 @@ function StepList({
             </span>
             <div className="flex-1">
               <p>{step.instruction}</p>
+              {extractDuration(step.instruction) && (
+                <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                  ⏱ {extractDuration(step.instruction)}
+                </span>
+              )}
               <StepIngredients ingredients={step.ingredients} scale={scale} />
               {step.imageUrl && (
                 <img

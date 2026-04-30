@@ -9,13 +9,16 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingRecipes, setLoadingRecipes] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/recipes")
       .then((res) => res.json())
       .then((data) => setRecipes(data))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoadingRecipes(false));
   }, []);
 
   async function handleParse(e: React.FormEvent) {
@@ -111,56 +114,72 @@ export default function Home() {
         </div>
       )}
 
-      {recipes.length > 0 && (
+      {!loadingRecipes && recipes.length > 3 && (
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Filter recipes…"
+          className="w-full mb-6 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
+        />
+      )}
+
+      {loadingRecipes && (
+        <div className="text-center py-12 text-gray-400">Loading recipes…</div>
+      )}
+
+      {!loadingRecipes && recipes.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {recipes.map((recipe) => (
-            <Link
-              key={recipe.id}
-              href={`/recipe/${recipe.id}`}
-              className="block overflow-hidden border border-gray-100 rounded-xl hover:border-green-600 transition-colors"
-            >
-              {recipe.imageUrl ? (
-                <img
-                  src={recipe.imageUrl}
-                  alt={recipe.title}
-                  className="w-full h-40 object-cover"
-                />
-              ) : (
-                <div className="w-full h-40 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-4xl">
-                  🍽️
+          {recipes
+            .filter((r) => r.title.toLowerCase().includes(search.toLowerCase()))
+            .map((recipe) => (
+              <Link
+                key={recipe.id}
+                href={`/recipe/${recipe.id}`}
+                className="block overflow-hidden border border-gray-100 rounded-xl hover:border-green-600 transition-colors"
+              >
+                {recipe.imageUrl ? (
+                  <img
+                    src={recipe.imageUrl}
+                    alt={recipe.title}
+                    className="w-full h-40 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-40 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-4xl">
+                    🍽️
+                  </div>
+                )}
+                <div className="p-3.5">
+                  <h2 className="font-semibold text-[0.9rem] mb-1 line-clamp-2">
+                    {recipe.title}
+                  </h2>
+                  <div className="flex items-center gap-1.5 text-[0.7rem] text-gray-400">
+                    <span>
+                      {recipe.sourceType === "youtube" ? "YouTube" : "Web"}
+                    </span>
+                    <span>·</span>
+                    <span>
+                      {new Date(recipe.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    {recipe.cookCount > 0 && (
+                      <>
+                        <span>·</span>
+                        <span className="text-green-600 font-semibold">
+                          🍳 {recipe.cookCount}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div className="p-3.5">
-                <h2 className="font-semibold text-[0.9rem] mb-1 line-clamp-2">
-                  {recipe.title}
-                </h2>
-                <div className="flex items-center gap-1.5 text-[0.7rem] text-gray-400">
-                  <span>
-                    {recipe.sourceType === "youtube" ? "YouTube" : "Web"}
-                  </span>
-                  <span>·</span>
-                  <span>
-                    {new Date(recipe.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                  {recipe.cookCount > 0 && (
-                    <>
-                      <span>·</span>
-                      <span className="text-green-600 font-semibold">
-                        🍳 {recipe.cookCount}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
         </div>
       )}
 
-      {!loading && recipes.length === 0 && (
+      {!loading && !loadingRecipes && recipes.length === 0 && (
         <p className="text-center text-gray-400 py-12">
           No recipes yet. Paste a URL above to get started.
         </p>

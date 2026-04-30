@@ -27,6 +27,7 @@ export default function RecipePage({
   const [showOriginal, setShowOriginal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [reparsing, setReparsing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -114,6 +115,35 @@ export default function RecipePage({
     router.push("/");
   }
 
+  async function handleReparse() {
+    if (!recipe?.sourceUrl || !recipeId) return;
+    setReparsing(true);
+    try {
+      const res = await fetch("/api/recipes/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: recipe.sourceUrl, replaceId: recipeId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRecipe((prev) =>
+          prev
+            ? {
+                ...prev,
+                title: data.recipe.title,
+                servings: data.recipe.servings,
+                ingredients: data.recipe.ingredients,
+                prepSteps: data.recipe.prepSteps,
+                cookingSteps: data.recipe.cookingSteps,
+              }
+            : prev,
+        );
+      }
+    } finally {
+      setReparsing(false);
+    }
+  }
+
   if (error) {
     return (
       <div className="min-h-screen p-6 sm:p-8 max-w-3xl mx-auto">
@@ -164,6 +194,15 @@ export default function RecipePage({
               className="text-sm text-gray-400 hover:text-gray-600"
             >
               {showOriginal ? "View current" : "View original"}
+            </button>
+          )}
+          {recipe.sourceUrl && (
+            <button
+              onClick={handleReparse}
+              disabled={reparsing}
+              className="text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
+            >
+              {reparsing ? "Re-parsing…" : "Re-parse"}
             </button>
           )}
           {recipe.sourceUrl && (
