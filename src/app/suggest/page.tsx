@@ -15,6 +15,7 @@ export default function SuggestPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [parsing, setParsing] = useState<string | null>(null);
+  const [generating, setGenerating] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,13 +70,41 @@ export default function SuggestPage() {
     }
   }
 
+  async function handleGenerate(description: string) {
+    setGenerating(description);
+    try {
+      const res = await fetch("/api/recipes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        router.push(`/recipe/${data.id}`);
+      }
+    } finally {
+      setGenerating(null);
+    }
+  }
+
   function extractUrls(text: string): string[] {
     const urlRegex = /https?:\/\/[^\s)]+/g;
     return [...new Set(text.match(urlRegex) ?? [])];
   }
 
+  function extractOriginalIdeas(content: string): string[] {
+    const ideasMatch = content.match(/## My own ideas\n([\s\S]*?)(?=\n## |$)/);
+    if (!ideasMatch) return [];
+    const lines = ideasMatch[1].trim().split("\n");
+    return lines
+      .filter((line) => /^\d+\.\s|^[-*]\s/.test(line.trim()))
+      .map((line) => line.replace(/^\d+\.\s|^[-*]\s/, "").trim())
+      .filter(Boolean);
+  }
+
   function renderMessageContent(content: string) {
     const urls = extractUrls(content);
+    const originalIdeas = extractOriginalIdeas(content);
     const parts = content.split(/(https?:\/\/[^\s)]+)/g);
 
     return (
@@ -103,10 +132,26 @@ export default function SuggestPage() {
               <button
                 key={url}
                 onClick={() => handleParseUrl(url)}
-                disabled={parsing !== null}
+                disabled={parsing !== null || generating !== null}
                 className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 disabled:opacity-50"
               >
                 {parsing === url ? "Parsing…" : "Parse this recipe"}
+              </button>
+            ))}
+          </div>
+        )}
+        {originalIdeas.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {originalIdeas.map((idea) => (
+              <button
+                key={idea}
+                onClick={() => handleGenerate(idea)}
+                disabled={parsing !== null || generating !== null}
+                className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded hover:bg-green-200 dark:hover:bg-green-900/50 disabled:opacity-50"
+              >
+                {generating === idea
+                  ? "Generating…"
+                  : `Generate: ${idea.slice(0, 40)}${idea.length > 40 ? "…" : ""}`}
               </button>
             ))}
           </div>

@@ -161,12 +161,22 @@ export async function suggestRecipes(
 The user's saved recipes and cooking history:
 ${recipeContext}
 
+Structure your response in THREE sections, using these exact headers:
+
+## From your collection
+Suggest recipes from the user's saved recipes list above that match what they're asking for. If none match, say so briefly.
+
+## From the web
+Search for and suggest real recipes with URLs. Include a brief description and the source link for each.
+
+## My own ideas
+Suggest 1-2 original recipe ideas you come up with yourself — brief description and key ingredients, no URL needed.
+
 Guidelines:
-1. Suggest recipes based on what the user asks for (mood, ingredients, cuisine, occasion, etc.)
-2. Reference their cooking history when relevant (e.g., "since you liked X, try Y")
-3. Always include real URLs to recipe sources when suggesting specific recipes
-4. Keep responses concise and conversational
-5. When suggesting recipes, format them as a numbered list with the recipe name, a brief description, and the source URL on separate lines`,
+- Keep each section concise (2-3 items max per section)
+- Reference their cooking history when relevant
+- Always include real URLs for the "From the web" section
+- For "From your collection", mention the recipe title exactly as it appears in their list`,
       tools: [{ googleSearch: {} }],
     },
   });
@@ -184,4 +194,32 @@ Guidelines:
   }
 
   return { text, sources };
+}
+
+export async function generateRecipe(
+  description: string,
+): Promise<ParsedRecipe> {
+  const ai = getClient();
+
+  const prompt = `Create a detailed recipe for: ${description}
+
+Be specific with quantities, timings, and techniques. This should be a complete, cookable recipe.`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      systemInstruction: RECIPE_PARSING_PROMPT,
+      responseMimeType: "application/json",
+    },
+  });
+
+  const responseText = response.text!;
+  const parsed = JSON.parse(responseText);
+
+  if (parsed.error) {
+    throw new Error(parsed.error);
+  }
+
+  return parsed as ParsedRecipe;
 }
