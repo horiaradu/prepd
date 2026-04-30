@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
+import ProgressBar from "@/components/ProgressBar";
+import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import type { RecipeSummary, ParseResponse } from "@/types/recipe";
 
 export default function Home() {
@@ -12,6 +14,7 @@ export default function Home() {
   const [loadingRecipes, setLoadingRecipes] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [progress, setProgress] = useState<ProgressEvent | null>(null);
 
   useEffect(() => {
     fetch("/api/recipes")
@@ -27,6 +30,7 @@ export default function Home() {
 
     setLoading(true);
     setError(null);
+    setProgress(null);
 
     try {
       const response = await fetch("/api/recipes/parse", {
@@ -35,13 +39,14 @@ export default function Home() {
         body: JSON.stringify({ url: url.trim() }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to parse recipe");
+      if (!response.ok || !response.body) {
+        throw new Error("Failed to parse recipe");
       }
 
-      const parsed = data as ParseResponse;
+      const parsed = await readProgressStream<ParseResponse>(
+        response,
+        setProgress,
+      );
       setRecipes((prev) => [
         {
           id: parsed.id,
@@ -60,6 +65,7 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   }
 
@@ -109,9 +115,11 @@ export default function Home() {
       </form>
 
       {loading && (
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-lg">Extracting and structuring recipe…</p>
-          <p className="text-sm mt-1">This may take a few seconds</p>
+        <div className="py-8">
+          <ProgressBar
+            step={progress?.step ?? "Starting…"}
+            progress={progress?.progress ?? 5}
+          />
         </div>
       )}
 

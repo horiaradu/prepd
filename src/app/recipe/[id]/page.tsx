@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import ProgressBar from "@/components/ProgressBar";
+import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
 
 interface ChatMessage {
@@ -30,6 +32,9 @@ export default function RecipePage({
   const [deleting, setDeleting] = useState(false);
   const [reparsing, setReparsing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [reparseProgress, setReparseProgress] = useState<ProgressEvent | null>(
+    null,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -121,29 +126,33 @@ export default function RecipePage({
   async function handleReparse() {
     if (!recipe?.sourceUrl || !recipeId) return;
     setReparsing(true);
+    setReparseProgress(null);
     try {
       const res = await fetch("/api/recipes/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: recipe.sourceUrl, replaceId: recipeId }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setRecipe((prev) =>
-          prev
-            ? {
-                ...prev,
-                title: data.recipe.title,
-                servings: data.recipe.servings,
-                ingredients: data.recipe.ingredients,
-                prepSteps: data.recipe.prepSteps,
-                cookingSteps: data.recipe.cookingSteps,
-              }
-            : prev,
-        );
-      }
+      if (!res.ok || !res.body) return;
+      const data = await readProgressStream<{ recipe: ParsedRecipe }>(
+        res,
+        setReparseProgress,
+      );
+      setRecipe((prev) =>
+        prev
+          ? {
+              ...prev,
+              title: data.recipe.title,
+              servings: data.recipe.servings,
+              ingredients: data.recipe.ingredients,
+              prepSteps: data.recipe.prepSteps,
+              cookingSteps: data.recipe.cookingSteps,
+            }
+          : prev,
+      );
     } finally {
       setReparsing(false);
+      setReparseProgress(null);
     }
   }
 
@@ -227,6 +236,15 @@ export default function RecipePage({
           </button>
         </div>
       </div>
+
+      {reparseProgress && (
+        <div className="mb-4">
+          <ProgressBar
+            step={reparseProgress.step}
+            progress={reparseProgress.progress}
+          />
+        </div>
+      )}
 
       <ConfirmDialog
         open={confirmingDelete}

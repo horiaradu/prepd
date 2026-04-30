@@ -5,6 +5,10 @@ import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { generateRecipe } from "@/lib/gemini";
 
+function sseEvent(data: Record<string, unknown>): string {
+  return `data: ${JSON.stringify(data)}\n\n`;
+}
+
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -22,24 +26,61 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsed = await generateRecipe(description);
+  const userId = session.user.id;
 
-  const [saved] = await db
-    .insert(recipes)
-    .values({
-      userId: session.user.id,
-      title: parsed.title,
-      sourceUrl: "",
-      sourceType: "web",
-      servings: parsed.servings,
-      ingredients: parsed.ingredients,
-      prepSteps: parsed.prepSteps,
-      cookingSteps: parsed.cookingSteps,
-      images: [],
-      originalRecipe: parsed,
-      rawContent: description,
-    })
-    .returning();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: Record<string, unknown>) =>
+        controller.enqueue(new TextEncoder().encode(sseEvent(data)));
 
-  return NextResponse.json({ id: saved.id, recipe: parsed }, { status: 201 });
+      try {
+        send({
+          type: "progress",
+          step: "Generating recipe…",
+          progress: 20,
+        });
+
+        const parsed = await generateRecipe(description);
+
+        send({ type: "progress", step: "Saving recipe…", progress: 80 });
+
+        const [saved] = await db
+          .insert(recipes)
+          .values({
+            userId,
+            title: parsed.title,
+            sourceUrl: "",
+            sourceType: "web",
+            servings: parsed.servings,
+            ingredients: parsed.ingredients,
+            prepSteps: parsed.prepSteps,
+            cookingSteps: parsed.cookingSteps,
+            images: [],
+            originalRecipe: parsed,
+            rawContent: description,
+          })
+          .returning();
+
+        send({
+          type: "done",
+          data: { id: saved.id, recipe: parsed },
+        });
+      } catch (error) {
+        console.error("Recipe generate error:", error);
+        const message =
+          error instanceof Error ? error.message : "Failed to generate recipe";
+        send({ type: "error", error: message });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ProgressBar from "@/components/ProgressBar";
+import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 
 type Tab = "collection" | "web" | "ideas";
 
@@ -80,6 +82,7 @@ export default function SuggestPage() {
   const [history, setHistory] = useState<
     Array<{ role: "user" | "model"; content: string }>
   >([]);
+  const [progress, setProgress] = useState<ProgressEvent | null>(null);
 
   const busy = parsing !== null || generating !== null;
 
@@ -145,35 +148,37 @@ export default function SuggestPage() {
 
   async function handleParseUrl(url: string) {
     setParsing(url);
+    setProgress(null);
     try {
       const res = await fetch("/api/recipes/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        router.push(`/recipe/${data.id}`);
-      }
+      if (!res.ok || !res.body) return;
+      const data = await readProgressStream<{ id: string }>(res, setProgress);
+      router.push(`/recipe/${data.id}`);
     } finally {
       setParsing(null);
+      setProgress(null);
     }
   }
 
   async function handleGenerate(description: string) {
     setGenerating(description);
+    setProgress(null);
     try {
       const res = await fetch("/api/recipes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        router.push(`/recipe/${data.id}`);
-      }
+      if (!res.ok || !res.body) return;
+      const data = await readProgressStream<{ id: string }>(res, setProgress);
+      router.push(`/recipe/${data.id}`);
     } finally {
       setGenerating(null);
+      setProgress(null);
     }
   }
 
@@ -288,6 +293,12 @@ export default function SuggestPage() {
           </button>
         </div>
       </div>
+
+      {progress && (
+        <div className="mb-6">
+          <ProgressBar step={progress.step} progress={progress.progress} />
+        </div>
+      )}
 
       {sending && !sections && (
         <div className="flex-1 flex items-center justify-center">
