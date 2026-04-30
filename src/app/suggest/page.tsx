@@ -43,10 +43,19 @@ export default function SuggestPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessages([
-          ...updatedMessages,
-          { role: "model", content: data.text },
-        ]);
+        let content = data.text ?? "";
+        const sources: Array<{ uri: string; title: string }> =
+          data.sources ?? [];
+        const inlineUrls = new Set(content.match(/https?:\/\/[^\s)]+/g) ?? []);
+        const missingLinks = sources.filter((s) => !inlineUrls.has(s.uri));
+        if (missingLinks.length > 0) {
+          content +=
+            "\n\nSources:\n" +
+            missingLinks
+              .map((s) => `- ${s.title || s.uri}: ${s.uri}`)
+              .join("\n");
+        }
+        setMessages([...updatedMessages, { role: "model", content }]);
       }
     } finally {
       setSending(false);
