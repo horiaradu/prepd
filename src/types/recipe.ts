@@ -11,7 +11,7 @@ export const UNITS = [
 ] as const;
 export type Unit = (typeof UNITS)[number];
 
-export const SOURCE_TYPES = ["youtube", "web"] as const;
+export const SOURCE_TYPES = ["youtube", "web", "image"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export interface Ingredient {

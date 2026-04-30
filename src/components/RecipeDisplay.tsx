@@ -106,9 +106,11 @@ function StepList({
 export function RecipeDisplay({
   recipe,
   sourceUrl,
+  heroImageUrl,
 }: {
   recipe: ParsedRecipe;
   sourceUrl?: string;
+  heroImageUrl?: string;
 }) {
   const [servings, setServings] = useState<number | null>(recipe.servings);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -142,6 +144,15 @@ export function RecipeDisplay({
             onClick={(e) => e.stopPropagation()}
           />
         </div>
+      )}
+
+      {heroImageUrl && (
+        <img
+          src={heroImageUrl}
+          alt={recipe.title}
+          className="w-full max-h-96 object-cover rounded-lg cursor-zoom-in"
+          onClick={() => setLightboxUrl(heroImageUrl)}
+        />
       )}
 
       <div>

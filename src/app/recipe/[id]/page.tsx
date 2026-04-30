@@ -208,7 +208,7 @@ export default function RecipePage({
               {showOriginal ? "View current" : "View original"}
             </button>
           )}
-          {recipe.sourceUrl && (
+          {recipe.sourceUrl && recipe.sourceType !== "image" && (
             <button
               onClick={handleReparse}
               disabled={reparsing}
@@ -217,7 +217,7 @@ export default function RecipePage({
               {reparsing ? "Re-parsing…" : "Re-parse"}
             </button>
           )}
-          {recipe.sourceUrl && (
+          {recipe.sourceUrl && recipe.sourceType !== "image" && (
             <a
               href={recipe.sourceUrl}
               target="_blank"
@@ -261,7 +261,11 @@ export default function RecipePage({
         </div>
       )}
 
-      <RecipeDisplay recipe={displayRecipe} sourceUrl={recipe.sourceUrl} />
+      <RecipeDisplay
+        recipe={displayRecipe}
+        sourceUrl={recipe.sourceUrl}
+        heroImageUrl={recipe.images?.[0]?.url}
+      />
 
       {!showOriginal && (
         <div className="mt-10 border-t border-gray-100 pt-6">
