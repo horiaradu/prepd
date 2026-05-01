@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -39,13 +39,14 @@ export default function RecipeDetails({
   const loadMessages = useCallback(() => {
     fetch(`/api/recipes/${recipeId}/chat`)
       .then((res) => res.json())
-      .then((data) => setMessages(data))
+      .then((data) => {
+        setMessages(data);
+        requestAnimationFrame(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        });
+      })
       .catch(() => {});
   }, [recipeId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   async function handleSendMessage(extraAction?: "cook") {
     if (!chatInput.trim() && !extraAction) return;
@@ -202,18 +203,53 @@ export default function RecipeDetails({
           {hasOriginal && messages.length > 0 && (
             <button
               onClick={() => setShowOriginal(!showOriginal)}
-              className="text-sm text-gray-400 hover:text-gray-600"
+              title={showOriginal ? "View current" : "View original"}
+              className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
             >
-              {showOriginal ? "View current" : "View original"}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+                <path d="M12 7v5l4 2" />
+              </svg>
+              <span className="hidden sm:inline">
+                {showOriginal ? "View current" : "View original"}
+              </span>
             </button>
           )}
           {recipe.sourceUrl && recipe.sourceType !== "image" && (
             <button
               onClick={handleReparse}
               disabled={reparsing}
-              className="text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
+              title={reparsing ? "Re-parsing…" : "Re-parse"}
+              className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
             >
-              {reparsing ? "Re-parsing…" : "Re-parse"}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              <span className="hidden sm:inline">
+                {reparsing ? "Re-parsing…" : "Re-parse"}
+              </span>
             </button>
           )}
           {recipe.sourceUrl && recipe.sourceType !== "image" && (
@@ -221,9 +257,25 @@ export default function RecipeDetails({
               href={recipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-gray-400 hover:text-gray-600"
+              title="Source"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
             >
-              Source
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 3h6v6" />
+                <path d="M10 14 21 3" />
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              </svg>
+              <span className="hidden sm:inline">Source</span>
             </a>
           )}
           {recipe.sourceType === "image" && (
@@ -231,28 +283,94 @@ export default function RecipeDetails({
               href={`/api/recipes/${recipe.id}/source-image`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-gray-400 hover:text-gray-600"
+              title="Source"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
             >
-              Source
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 3h6v6" />
+                <path d="M10 14 21 3" />
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              </svg>
+              <span className="hidden sm:inline">Source</span>
             </a>
           )}
           <button
             onClick={handleGenerateImage}
             disabled={generatingImage}
-            className="text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
+            title={
+              generatingImage
+                ? "Generating…"
+                : heroImageOverride || recipe.images?.[0]?.url
+                  ? "Regenerate image"
+                  : "Generate image"
+            }
+            className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
           >
-            {generatingImage
-              ? "Generating…"
-              : heroImageOverride || recipe.images?.[0]?.url
-                ? "Regenerate image"
-                : "Generate image"}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+              <path d="M20 3v4" />
+              <path d="M22 5h-4" />
+            </svg>
+            {generatingImage ? (
+              <span>Generating…</span>
+            ) : heroImageOverride || recipe.images?.[0]?.url ? (
+              <>
+                <span className="sm:hidden">Image</span>
+                <span className="hidden sm:inline">Regenerate image</span>
+              </>
+            ) : (
+              <>
+                <span className="sm:hidden">Image</span>
+                <span className="hidden sm:inline">Generate image</span>
+              </>
+            )}
           </button>
           <button
             onClick={() => setConfirmingDelete(true)}
             disabled={deleting}
-            className="text-sm text-red-400 hover:text-red-600 disabled:opacity-50 ml-auto"
+            title={deleting ? "Deleting…" : "Delete"}
+            className="inline-flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 disabled:opacity-50 ml-auto"
           >
-            {deleting ? "Deleting…" : "Delete"}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              <line x1="10" x2="10" y1="11" y2="17" />
+              <line x1="14" x2="14" y1="11" y2="17" />
+            </svg>
+            <span className="hidden sm:inline">
+              {deleting ? "Deleting…" : "Delete"}
+            </span>
           </button>
         </div>
       </RecipeDisplay>
