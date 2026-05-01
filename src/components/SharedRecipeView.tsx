@@ -55,7 +55,9 @@ export default function SharedRecipeView({
     }
   }
 
-  const heroUrl = recipe.images?.[0]?.url ?? undefined;
+  const heroUrl = recipe.images?.[0]?.blobUrl
+    ? `/api/inbox/${shareId}/image`
+    : (recipe.images?.[0]?.url ?? undefined);
 
   return (
     <div className="space-y-4">

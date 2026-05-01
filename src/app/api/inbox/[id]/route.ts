@@ -43,17 +43,34 @@ export async function PATCH(
 
   if (action === "accept") {
     const snap = share.recipeSnapshot;
-    await db.insert(recipes).values({
-      userId: session.user.id,
-      title: snap.title,
-      servings: snap.servings,
-      ingredients: snap.ingredients,
-      prepSteps: snap.prepSteps,
-      cookingSteps: snap.cookingSteps,
-      images: snap.images,
-      sourceUrl: snap.sourceUrl,
-      sourceType: snap.sourceType as SourceType,
-    });
+    const [inserted] = await db
+      .insert(recipes)
+      .values({
+        userId: session.user.id,
+        title: snap.title,
+        servings: snap.servings,
+        ingredients: snap.ingredients,
+        prepSteps: snap.prepSteps,
+        cookingSteps: snap.cookingSteps,
+        images: snap.images,
+        sourceUrl: snap.sourceUrl,
+        sourceType: snap.sourceType as SourceType,
+      })
+      .returning({ id: recipes.id });
+
+    // Update image urls to reference the new recipe's image endpoint so they
+    // remain accessible to the recipient after the share is consumed.
+    if (inserted && snap.images?.length) {
+      const updatedImages = snap.images.map((img, i) =>
+        i === 0 && img.blobUrl
+          ? { ...img, url: `/api/recipes/${inserted.id}/image` }
+          : img,
+      );
+      await db
+        .update(recipes)
+        .set({ images: updatedImages })
+        .where(eq(recipes.id, inserted.id));
+    }
   }
 
   await db
