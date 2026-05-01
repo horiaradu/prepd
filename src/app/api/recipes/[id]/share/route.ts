@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes, recipeShares } from "@/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { sendPushToUser } from "@/lib/push";
 
 export async function POST(
   request: NextRequest,
@@ -49,6 +50,12 @@ export async function POST(
       },
     })
     .returning({ id: recipeShares.id });
+
+  sendPushToUser(recipientEmail, {
+    title: "Recipe shared with you!",
+    body: `${session.user.email} sent you "${recipe.title}"`,
+    url: "/inbox",
+  });
 
   return NextResponse.json({ id: share.id });
 }

@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeftIcon, MailIcon } from "@/components/icons";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export function AppHeader() {
   const { data: session } = useSession();
@@ -12,6 +13,7 @@ export function AppHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { state: pushState, subscribe } = usePushNotifications();
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -98,6 +100,17 @@ export function AppHeader() {
                   <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100 truncate sm:hidden">
                     {session.user.email}
                   </div>
+                  {pushState === "prompt" && (
+                    <button
+                      onClick={() => {
+                        subscribe();
+                        setMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Enable notifications
+                    </button>
+                  )}
                   <button
                     onClick={() => signOut()}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
