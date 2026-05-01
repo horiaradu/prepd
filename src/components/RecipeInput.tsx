@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import ProgressBar from "@/components/ProgressBar";
+import { CameraIcon } from "@/components/icons";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import type { ParseResponse, RecipeSummary } from "@/types/recipe";
 
@@ -146,20 +147,7 @@ export default function RecipeInput({
           title="Upload a photo of a recipe"
           className="px-3 py-2.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-            <circle cx="12" cy="13" r="3" />
-          </svg>
+          <CameraIcon />
         </button>
         <button
           type="submit"
