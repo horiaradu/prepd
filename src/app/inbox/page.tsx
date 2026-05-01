@@ -20,7 +20,7 @@ export default async function InboxPage() {
       recipeSnapshot: recipeShares.recipeSnapshot,
       status: recipeShares.status,
       createdAt: recipeShares.createdAt,
-    })     
+    })
     .from(recipeShares)
     .leftJoin(users, eq(recipeShares.senderUserId, users.id))
     .where(eq(recipeShares.recipientEmail, session.user.email.toLowerCase()))
@@ -33,7 +33,9 @@ export default async function InboxPage() {
     title: s.recipeSnapshot.title,
     servings: s.recipeSnapshot.servings,
     ingredientCount: s.recipeSnapshot.ingredients.length,
-    imageUrl: s.recipeSnapshot.images?.[0]?.url ?? null,
+    imageUrl: s.recipeSnapshot.images?.[0]?.blobUrl
+      ? `/api/inbox/${s.id}/image`
+      : (s.recipeSnapshot.images?.[0]?.url ?? null),
     sourceType: s.recipeSnapshot.sourceType,
     status: s.status,
     createdAt: s.createdAt.toISOString(),
