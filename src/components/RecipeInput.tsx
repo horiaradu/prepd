@@ -124,13 +124,13 @@ export default function RecipeInput({
 
   return (
     <>
-      <form onSubmit={handleParse} className="flex gap-2 mb-10">
+      <form onSubmit={handleParse} className="mb-10 space-y-2">
         <input
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Paste a recipe URL or YouTube link"
-          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
           required
         />
         <input
@@ -140,22 +140,24 @@ export default function RecipeInput({
           onChange={handlePhotoSelected}
           className="hidden"
         />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={loading}
-          title="Upload a photo of a recipe"
-          className="px-3 py-2.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <CameraIcon />
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? "Parsing…" : "Parse"}
-        </button>
+        <div className="flex justify-between">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            title="Upload a photo of a recipe"
+            className="px-3 py-2.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <CameraIcon />
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? "Parsing…" : "Parse"}
+          </button>
+        </div>
       </form>
 
       {loading && (
