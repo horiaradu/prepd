@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ShareDialog } from "@/components/ShareDialog";
 import ProgressBar from "@/components/ProgressBar";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
@@ -34,6 +35,7 @@ export default function RecipeDetails({
   const [heroImageOverride, setHeroImageOverride] = useState<string | null>(
     null,
   );
+  const [showShare, setShowShare] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadMessages = useCallback(() => {
@@ -171,6 +173,12 @@ export default function RecipeDetails({
         confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setConfirmingDelete(false)}
+      />
+
+      <ShareDialog
+        open={showShare}
+        recipeId={recipeId}
+        onClose={() => setShowShare(false)}
       />
 
       {error && (
@@ -329,19 +337,29 @@ export default function RecipeDetails({
               <path d="M20 3v4" />
               <path d="M22 5h-4" />
             </svg>
-            {generatingImage ? (
-              <span>Generating…</span>
-            ) : heroImageOverride || recipe.images?.[0]?.url ? (
-              <>
-                <span className="sm:hidden">Image</span>
-                <span className="hidden sm:inline">Regenerate image</span>
-              </>
-            ) : (
-              <>
-                <span className="sm:hidden">Image</span>
-                <span className="hidden sm:inline">Generate image</span>
-              </>
-            )}
+            {generatingImage ? <span>Generating…</span> : <span>Image</span>}
+          </button>
+          <button
+            onClick={() => setShowShare(true)}
+            title="Share"
+            className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" x2="12" y1="2" y2="15" />
+            </svg>
+            <span className="hidden sm:inline">Share</span>
           </button>
           <button
             onClick={() => setConfirmingDelete(true)}

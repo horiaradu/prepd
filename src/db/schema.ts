@@ -136,3 +136,34 @@ export const recipeMessages = pgTable(
 );
 
 export type RecipeMessageRow = typeof recipeMessages.$inferSelect;
+
+export const recipeShares = pgTable(
+  "recipe_shares",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    senderUserId: text("sender_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recipientEmail: text("recipient_email").notNull(),
+    recipeSnapshot: jsonb("recipe_snapshot")
+      .$type<{
+        title: string;
+        servings: number | null;
+        ingredients: Ingredient[];
+        prepSteps: Step[];
+        cookingSteps: Step[];
+        images: RecipeImage[];
+        sourceUrl: string;
+        sourceType: string;
+      }>()
+      .notNull(),
+    status: text("status").notNull().default("pending"), // "pending" | "accepted" | "discarded"
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_recipe_shares_recipient").on(table.recipientEmail),
+    index("idx_recipe_shares_sender").on(table.senderUserId),
+  ],
+);
+
+export type RecipeShareRow = typeof recipeShares.$inferSelect;
