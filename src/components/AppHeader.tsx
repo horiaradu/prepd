@@ -13,7 +13,7 @@ export function AppHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { state: pushState, subscribe } = usePushNotifications();
+  const { state: pushState, hasSubscription, subscribe } = usePushNotifications();
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -109,6 +109,31 @@ export function AppHeader() {
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       Enable notifications
+                    </button>
+                  )}
+                  {pushState === "denied" && (
+                    <button
+                      onClick={() => {
+                        subscribe();
+                        setMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <span className="block">Re-enable notifications</span>
+                      <span className="block text-xs text-gray-400 mt-0.5">
+                        If blocked, update device settings then tap here
+                      </span>
+                    </button>
+                  )}
+                  {pushState === "granted" && !hasSubscription && (
+                    <button
+                      onClick={() => {
+                        subscribe();
+                        setMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Re-enable notifications
                     </button>
                   )}
                   <button
