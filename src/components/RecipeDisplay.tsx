@@ -164,16 +164,39 @@ export function RecipeDisplay({
         {recipe.servings && (
           <div className="flex items-center gap-2 mt-1 text-gray-500">
             <span>Serves</span>
-            <input
-              type="number"
-              min={1}
-              value={servings ?? recipe.servings}
-              onChange={(e) => {
-                const v = parseInt(e.target.value, 10);
-                setServings(v > 0 ? v : null);
-              }}
-              className="w-16 px-2 py-0.5 text-center border border-gray-200 rounded bg-gray-50 focus:outline-none focus:border-green-600"
-            />
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() =>
+                  setServings((s) => {
+                    const cur = s ?? recipe.servings ?? 1;
+                    return cur > 1 ? cur - 1 : 1;
+                  })
+                }
+                className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-l bg-gray-50 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={1}
+                value={servings ?? recipe.servings}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  setServings(v > 0 ? v : null);
+                }}
+                className="w-12 h-8 px-1 text-center border-y border-gray-200 bg-gray-50 focus:outline-none focus:border-green-600 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setServings((s) => (s ?? recipe.servings ?? 1) + 1)
+                }
+                className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-r bg-gray-50 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                +
+              </button>
+            </div>
             {servings !== recipe.servings && (
               <button
                 onClick={() => setServings(recipe.servings)}
