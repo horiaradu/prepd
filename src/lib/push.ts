@@ -9,6 +9,8 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!,
 );
 
+const PUSH_MESSAGE_TTL_SECONDS = 60 * 60 * 24; // 24 hours
+
 export async function sendPushToUser(
   recipientEmail: string,
   payload: { title: string; body: string; url?: string },
@@ -33,6 +35,7 @@ export async function sendPushToUser(
           keys: { p256dh: sub.p256dh, auth: sub.auth },
         },
         JSON.stringify(payload),
+        { TTL: PUSH_MESSAGE_TTL_SECONDS },
       );
     } catch (err: unknown) {
       if (
