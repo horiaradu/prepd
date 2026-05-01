@@ -17,6 +17,7 @@ type PushState = "unsupported" | "prompt" | "granted" | "denied";
 
 export function usePushNotifications() {
   const [state, setState] = useState<PushState>("unsupported");
+  const [hasSubscription, setHasSubscription] = useState(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -25,6 +26,15 @@ export function usePushNotifications() {
     }
     const perm = Notification.permission;
     setState(perm === "default" ? "prompt" : perm);
+
+    if (perm === "granted") {
+      let mounted = true;
+      navigator.serviceWorker.ready
+        .then((reg) => reg.pushManager.getSubscription())
+        .then((sub) => { if (mounted) setHasSubscription(sub !== null); })
+        .catch(() => { if (mounted) setHasSubscription(false); });
+      return () => { mounted = false; };
+    }
   }, []);
 
   const subscribe = useCallback(async () => {
@@ -49,6 +59,7 @@ export function usePushNotifications() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription.toJSON()),
       });
+      setHasSubscription(true);
     } catch (err) {
       console.error("Push subscription failed:", err);
     }
@@ -66,11 +77,12 @@ export function usePushNotifications() {
         });
         await subscription.unsubscribe();
       }
+      setHasSubscription(false);
       setState("prompt");
     } catch (err) {
       console.error("Push unsubscribe failed:", err);
     }
   }, []);
 
-  return { state, subscribe, unsubscribe };
+  return { state, hasSubscription, subscribe, unsubscribe };
 }
