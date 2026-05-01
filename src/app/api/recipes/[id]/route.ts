@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getRecipe } from "@/lib/recipes";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
@@ -15,17 +16,13 @@ export async function GET(
   }
 
   const { id } = await params;
+  const recipe = await getRecipe(id, session.user.id);
 
-  const [row] = await db
-    .select()
-    .from(recipes)
-    .where(and(eq(recipes.id, id), eq(recipes.userId, session.user.id)));
-
-  if (!row) {
+  if (!recipe) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(row);
+  return NextResponse.json(recipe);
 }
 
 export async function DELETE(
