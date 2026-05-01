@@ -231,7 +231,7 @@ export default function RecipeDetails({
               onClick={handleReparse}
               disabled={reparsing}
               title={reparsing ? "Re-parsing…" : "Re-parse"}
-              className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 disabled:opacity-50"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -247,9 +247,7 @@ export default function RecipeDetails({
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />
               </svg>
-              <span className="hidden sm:inline">
-                {reparsing ? "Re-parsing…" : "Re-parse"}
-              </span>
+              <span>{reparsing ? "Re-parsing…" : "Re-parse"}</span>
             </button>
           )}
           {recipe.sourceUrl && recipe.sourceType !== "image" && (
