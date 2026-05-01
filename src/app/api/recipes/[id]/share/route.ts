@@ -51,7 +51,7 @@ export async function POST(
     })
     .returning({ id: recipeShares.id });
 
-  sendPushToUser(recipientEmail, {
+  await sendPushToUser(recipientEmail, {
     title: "Recipe shared with you!",
     body: `${session.user.email} sent you "${recipe.title}"`,
     url: "/inbox",
