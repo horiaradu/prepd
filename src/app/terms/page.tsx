@@ -37,7 +37,7 @@ export default function TermsOfService() {
       <p>
         We may suspend or terminate accounts that violate these terms. You can
         delete your account at any time by contacting{" "}
-        <a href="mailto:horia.radu23@gmail.com">horia.radu23@gmail.com</a>.
+        <a href="mailto:horia@prepd.app">horia@prepd.app</a>.
       </p>
 
       <h2>Liability</h2>
@@ -54,7 +54,7 @@ export default function TermsOfService() {
 
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href="mailto:horia.radu23@gmail.com">horia.radu23@gmail.com</a>.
+        Questions? Email <a href="mailto:horia@prepd.app">horia@prepd.app</a>.
       </p>
     </div>
   );
