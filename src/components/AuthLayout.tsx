@@ -8,7 +8,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   const isLoginPage = pathname === "/login";
 
   if (isLoginPage) {
-    return <>{children}</>;
+    return <main className="flex-1 flex flex-col">{children}</main>;
   }
 
   return (

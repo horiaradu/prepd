@@ -10,7 +10,7 @@ function LoginContent() {
   const error = searchParams.get("error");
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex-1 flex items-center justify-center">
       <div className="text-center space-y-6">
         <h1 className="flex items-center justify-center gap-3 text-3xl font-bold tracking-tight">
           <img
