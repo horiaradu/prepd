@@ -1,8 +1,11 @@
 import type { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+
+const ADMIN_EMAIL = "horia.radu23@gmail.com";
 
 export const authOptions: AuthOptions = {
   adapter: DrizzleAdapter(db, {
@@ -21,15 +24,29 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+      }
+      if (user || trigger === "update" || token.activated === undefined) {
+        const email = token.email ?? user?.email;
+        if (email === ADMIN_EMAIL) {
+          token.activated = true;
+        } else {
+          const [used] = await db
+            .select({ id: schema.invitationCodes.id })
+            .from(schema.invitationCodes)
+            .where(eq(schema.invitationCodes.usedByUserId, token.id as string))
+            .limit(1);
+          token.activated = !!used;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
+        session.user.activated = token.activated as boolean;
       }
       return session;
     },

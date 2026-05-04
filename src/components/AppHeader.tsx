@@ -13,7 +13,11 @@ export function AppHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { state: pushState, hasSubscription, subscribe } = usePushNotifications();
+  const {
+    state: pushState,
+    hasSubscription,
+    subscribe,
+  } = usePushNotifications();
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -61,6 +65,15 @@ export function AppHeader() {
 
         {session?.user && (
           <div className="flex items-center gap-3">
+            {session.user.email === "horia.radu23@gmail.com" && (
+              <Link
+                href="/invitations"
+                className="text-gray-500 hover:text-gray-900 transition-colors p-1 text-xs font-medium"
+                aria-label="Invitations"
+              >
+                Codes
+              </Link>
+            )}
             <Link
               href="/inbox"
               className="relative text-gray-500 hover:text-gray-900 transition-colors p-1"

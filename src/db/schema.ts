@@ -182,3 +182,13 @@ export const pushSubscriptions = pgTable(
   },
   (table) => [index("idx_push_subscriptions_user_id").on(table.userId)],
 );
+
+export const invitationCodes = pgTable("invitation_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  code: text("code").notNull().unique(),
+  usedByUserId: text("used_by_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { requireActivation } from "@/lib/activation";
 import { getRecipeSummaries } from "@/lib/recipes";
 import RecipeList from "@/components/RecipeList";
 
@@ -9,6 +10,8 @@ export default async function Home() {
   if (!session?.user?.id) {
     redirect("/login");
   }
+
+  await requireActivation();
 
   const recipes = await getRecipeSummaries(session.user.id);
 
