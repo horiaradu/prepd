@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { recipes, cookLog, recipeMessages } from "@/db/schema";
-import { and, eq, desc, asc, count, max } from "drizzle-orm";
+import { and, eq, desc, asc, count, max, sql } from "drizzle-orm";
 import type { Recipe, RecipeSummary, SourceType } from "@/types/recipe";
 
 export async function getRecipe(
@@ -81,7 +81,10 @@ export async function getRecipeSummaries(
     .leftJoin(cookLog, eq(recipes.id, cookLog.recipeId))
     .where(eq(recipes.userId, userId))
     .groupBy(recipes.id)
-    .orderBy(desc(max(cookLog.cookedAt)), desc(recipes.createdAt));
+    .orderBy(
+      sql`${max(cookLog.cookedAt)} desc nulls last`,
+      desc(recipes.createdAt),
+    );
 
   return rows.map((row) => ({
     id: row.id,
