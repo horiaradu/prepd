@@ -53,6 +53,15 @@ export default function RootLayout({
         <Providers>
           <AuthLayout>{children}</AuthLayout>
         </Providers>
+        <footer className="mt-auto border-t border-gray-100 py-4 text-center text-xs text-gray-400">
+          <a href="/privacy" className="hover:text-gray-600">
+            Privacy
+          </a>
+          <span className="mx-2">·</span>
+          <a href="/terms" className="hover:text-gray-600">
+            Terms
+          </a>
+        </footer>
       </body>
     </html>
   );
