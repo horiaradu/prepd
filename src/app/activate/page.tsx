@@ -60,7 +60,7 @@ export default function ActivatePage() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Invitation code"
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-center font-mono text-lg tracking-widest uppercase focus:outline-none focus:border-green-500 text-[16px]"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-center text-lg tracking-widest uppercase focus:outline-none focus:border-green-500 text-[16px]"
             autoFocus
           />
           {error && <p className="text-red-500 text-sm">{error}</p>}

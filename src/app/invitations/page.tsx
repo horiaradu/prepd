@@ -134,7 +134,7 @@ export default function InvitationsPage() {
                       className="rounded"
                     />
                   </td>
-                  <td className="p-3 font-mono">
+                  <td className="p-3">
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(code.code);

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeftIcon, MailIcon } from "@/components/icons";
+import { ArrowLeftIcon, ChevronDownIcon, MailIcon } from "@/components/icons";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export function AppHeader() {
@@ -57,7 +57,7 @@ export function AppHeader() {
             <img
               src="/icons/icon-nav.png"
               alt=""
-              className="w-7 h-7 rounded-lg"
+              className="w-10 h-10"
             />
             <span className="text-lg font-bold tracking-tight">Mintdish</span>
           </Link>
@@ -103,9 +103,13 @@ export function AppHeader() {
                     {session.user.email?.[0]?.toUpperCase() ?? "?"}
                   </div>
                 )}
-                <span className="text-xs text-gray-500 hidden sm:inline max-w-[140px] truncate">
+                <span className="text-xs text-gray-500 hidden sm:inline max-w-[220px] truncate">
                   {session.user.email}
                 </span>
+                <ChevronDownIcon
+                  size={14}
+                  className={`text-gray-400 transition-transform ${menuOpen ? "rotate-180" : ""}`}
+                />
               </button>
 
               {menuOpen && (

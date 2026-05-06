@@ -1,5 +1,6 @@
 export type { IconProps } from "./types";
 export { ArrowLeftIcon } from "./ArrowLeftIcon";
+export { ChevronDownIcon } from "./ChevronDownIcon";
 export { MailIcon } from "./MailIcon";
 export { HistoryIcon } from "./HistoryIcon";
 export { RotateCcwIcon } from "./RotateCcwIcon";
