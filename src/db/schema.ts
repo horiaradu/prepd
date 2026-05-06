@@ -130,12 +130,17 @@ export const recipeMessages = pgTable(
       .references(() => recipes.id, { onDelete: "cascade" }),
     role: text("role").notNull(), // "user" | "assistant"
     content: text("content").notNull(),
+    // Populated only on assistant messages that represent recipe edits
+    status: text("status").notNull().default("applied"), // "pending" | "applied" | "discarded" | "reverted"
+    operations: jsonb("operations").$type<import("@/lib/recipe-operations").Operation[]>(),
+    previousRecipe: jsonb("previous_recipe").$type<ParsedRecipe>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("idx_recipe_messages_recipe_id").on(table.recipeId)],
 );
 
 export type RecipeMessageRow = typeof recipeMessages.$inferSelect;
+export type NewRecipeMessage = typeof recipeMessages.$inferInsert;
 
 export const recipeShares = pgTable(
   "recipe_shares",
