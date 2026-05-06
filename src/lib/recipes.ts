@@ -1,7 +1,8 @@
 import { db } from "@/db";
 import { recipes, cookLog, recipeMessages } from "@/db/schema";
 import { and, eq, desc, asc, count, max, sql } from "drizzle-orm";
-import type { Recipe, RecipeSummary, SourceType } from "@/types/recipe";
+import type { Recipe, RecipeSummary, SourceType, ParsedRecipe } from "@/types/recipe";
+import type { Operation } from "@/lib/recipe-operations";
 
 export async function getRecipe(
   id: string,
@@ -40,6 +41,9 @@ export interface ChatMessage {
   id: string;
   role: string;
   content: string;
+  status: string;
+  operations: Operation[] | null;
+  previousRecipe: ParsedRecipe | null;
   createdAt: string;
 }
 
@@ -56,6 +60,9 @@ export async function getRecipeMessages(
     id: row.id,
     role: row.role,
     content: row.content,
+    status: row.status,
+    operations: row.operations as Operation[] | null,
+    previousRecipe: row.previousRecipe as ParsedRecipe | null,
     createdAt:
       row.createdAt instanceof Date
         ? row.createdAt.toISOString()
