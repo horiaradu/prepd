@@ -280,8 +280,8 @@ function Waitlist() {
           Get on the waitlist.
         </h2>
         <p className="text-lg text-green-50/90">
-          Mintdish is invite-only while we tune the parser. Drop your email and
-          we&apos;ll send a code when a spot opens.
+          Mintdish is invite-only while we tune the parser. Drop your email —
+          we&apos;ll keep you in the loop at launch and get you into beta early.
         </p>
         <WaitlistForm />
       </div>
