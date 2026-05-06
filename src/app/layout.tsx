@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Prepd",
+  title: "Mintdish",
   description: "Recipe organizer with metric conversions and structured steps",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Prepd",
+    title: "Mintdish",
   },
   icons: {
     icon: "/icons/icon-192.png",

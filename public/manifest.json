@@ -1,6 +1,6 @@
 {
-  "name": "Prepd",
-  "short_name": "Prepd",
+  "name": "Mintdish",
+  "short_name": "Mintdish",
   "description": "Recipe organizer with metric conversions and structured steps",
   "start_url": "/",
   "display": "standalone",

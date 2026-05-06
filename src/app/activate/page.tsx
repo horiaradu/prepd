@@ -47,7 +47,7 @@ export default function ActivatePage() {
               alt=""
               className="w-9 h-9 rounded-lg"
             />
-            Welcome to Prepd
+            Welcome to Mintdish
           </h1>
           <p className="text-gray-500 mt-2">
             Enter your invitation code to get started.

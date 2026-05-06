@@ -48,7 +48,7 @@ export default function PrivacyPolicy() {
       <p>
         Your data is retained as long as your account exists. To delete your
         account and all associated data, contact us at{" "}
-        <a href="mailto:horia@prepd.app">horia@prepd.app</a>.
+        <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
       </p>
 
       <h2>Cookies</h2>
@@ -59,7 +59,7 @@ export default function PrivacyPolicy() {
 
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href="mailto:horia@prepd.app">horia@prepd.app</a>.
+        Questions? Email <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
       </p>
     </div>
   );

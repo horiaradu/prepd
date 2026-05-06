@@ -59,7 +59,7 @@ export function AppHeader() {
               alt=""
               className="w-7 h-7 rounded-lg"
             />
-            <span className="text-lg font-bold tracking-tight">Prepd</span>
+            <span className="text-lg font-bold tracking-tight">Mintdish</span>
           </Link>
         </div>
 

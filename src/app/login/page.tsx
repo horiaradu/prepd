@@ -18,7 +18,7 @@ function LoginContent() {
             alt=""
             className="w-10 h-10 rounded-lg"
           />
-          Prepd
+          Mintdish
         </h1>
         <p className="text-gray-500">Sign in to access your recipes</p>
 

@@ -314,7 +314,7 @@ export default function RecipeDetails({
                   }`}
                 >
                   <span className="font-medium text-xs text-gray-500 uppercase">
-                    {msg.role === "user" ? "You" : "Prepd"}
+                    {msg.role === "user" ? "You" : "Mintdish"}
                   </span>
                   <p className="mt-0.5 text-gray-700">{msg.content}</p>
                 </div>
