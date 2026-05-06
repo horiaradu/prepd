@@ -39,7 +39,10 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   if (!message || !message.operations) {
-    return NextResponse.json({ error: "Pending edit not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Pending edit not found" },
+      { status: 404 },
+    );
   }
 
   const currentRecipe: ParsedRecipe = {
@@ -59,24 +62,22 @@ export async function POST(
     );
   }
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(recipes)
-      .set({
-        title: updated.title,
-        servings: updated.servings,
-        ingredients: updated.ingredients,
-        prepSteps: updated.prepSteps,
-        cookingSteps: updated.cookingSteps,
-        updatedAt: new Date(),
-      })
-      .where(eq(recipes.id, id));
+  await db
+    .update(recipes)
+    .set({
+      title: updated.title,
+      servings: updated.servings,
+      ingredients: updated.ingredients,
+      prepSteps: updated.prepSteps,
+      cookingSteps: updated.cookingSteps,
+      updatedAt: new Date(),
+    })
+    .where(eq(recipes.id, id));
 
-    await tx
-      .update(recipeMessages)
-      .set({ status: "applied" })
-      .where(eq(recipeMessages.id, messageId));
-  });
+  await db
+    .update(recipeMessages)
+    .set({ status: "applied" })
+    .where(eq(recipeMessages.id, messageId));
 
   return NextResponse.json({ recipe: updated });
 }

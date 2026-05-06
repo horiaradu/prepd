@@ -15,7 +15,7 @@ import {
   TrashIcon,
 } from "@/components/icons";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
-import { describeOperation, type Operation } from "@/lib/recipe-operations";
+import { describeOperation, applyOperations } from "@/lib/recipe-operations";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
 import type { ChatMessage } from "@/lib/recipes";
 
@@ -48,10 +48,21 @@ export default function RecipeDetails({
   );
   const [showShare, setShowShare] = useState(false);
 
-  // Pending edit state
-  const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
-  const [previewRecipe, setPreviewRecipe] = useState<ParsedRecipe | null>(null);
-  const [pendingOperations, setPendingOperations] = useState<Operation[] | null>(null);
+  // Pending edit state — restored from DB on mount if a pending message exists
+  const initialPending = initialMessages.find(
+    (m) => m.role === "assistant" && m.status === "pending",
+  );
+  const [pendingMessageId, setPendingMessageId] = useState<string | null>(
+    initialPending?.id ?? null,
+  );
+  const [previewRecipe, setPreviewRecipe] = useState<ParsedRecipe | null>(
+    initialPending?.operations && initialPending?.previousRecipe
+      ? applyOperations(
+          initialPending.previousRecipe,
+          initialPending.operations,
+        )
+      : null,
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +81,6 @@ export default function RecipeDetails({
   function clearPending() {
     setPendingMessageId(null);
     setPreviewRecipe(null);
-    setPendingOperations(null);
   }
 
   async function handleSendMessage(extraAction?: "cook") {
@@ -101,14 +111,13 @@ export default function RecipeDetails({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           setError(data.error ?? "Something went wrong");
           return;
         }
         setPendingMessageId(data.messageId);
         setPreviewRecipe(data.preview);
-        setPendingOperations(data.operations);
         loadMessages();
         requestAnimationFrame(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,7 +138,7 @@ export default function RecipeDetails({
         `/api/recipes/${recipeId}/chat/${pendingMessageId}/apply`,
         { method: "POST" },
       );
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "Failed to apply changes");
         return;
@@ -151,7 +160,7 @@ export default function RecipeDetails({
       { method: "POST" },
     );
     if (!res.ok) {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Failed to discard");
       return;
     }
@@ -168,7 +177,7 @@ export default function RecipeDetails({
       const res = await fetch(`/api/recipes/${recipeId}/chat/undo`, {
         method: "POST",
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "Nothing to undo");
         return;
@@ -222,7 +231,7 @@ export default function RecipeDetails({
       const res = await fetch(`/api/recipes/${recipeId}/generate-image`, {
         method: "POST",
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "Failed to generate image");
         return;
@@ -252,14 +261,15 @@ export default function RecipeDetails({
           };
 
   // Most recent applied assistant message with stored state = undoable
-  const undoableMessage = [...messages]
-    .reverse()
-    .find(
-      (m) =>
-        m.role === "assistant" &&
-        m.status === "applied" &&
-        m.previousRecipe !== null,
-    ) ?? null;
+  const undoableMessage =
+    [...messages]
+      .reverse()
+      .find(
+        (m) =>
+          m.role === "assistant" &&
+          m.status === "applied" &&
+          m.previousRecipe !== null,
+      ) ?? null;
 
   const hasPending = pendingMessageId !== null;
 
@@ -479,19 +489,9 @@ export default function RecipeDetails({
 
           {hasPending ? (
             <div className="space-y-3">
-              {pendingOperations && pendingOperations.length > 0 && (
-                <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-medium text-blue-800 mb-2">
-                    Proposed changes
-                  </p>
-                  <ul className="space-y-1">
-                    {pendingOperations.map((op, i) => (
-                      <li key={i} className="text-sm text-blue-700 flex gap-1.5">
-                        <span className="text-blue-400">·</span>
-                        {describeOperation(op)}
-                      </li>
-                    ))}
-                  </ul>
+              {error && (
+                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {error}
                 </div>
               )}
               <div className="flex gap-3">
@@ -513,6 +513,11 @@ export default function RecipeDetails({
             </div>
           ) : (
             <div className="space-y-3">
+              {error && (
+                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {error}
+                </div>
+              )}
               <textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
@@ -540,7 +545,9 @@ export default function RecipeDetails({
                   disabled={sending}
                   className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50 transition-colors"
                 >
-                  {chatInput.trim() ? "I cooked this + update" : "I cooked this"}
+                  {chatInput.trim()
+                    ? "I cooked this + update"
+                    : "I cooked this"}
                 </button>
               </div>
             </div>

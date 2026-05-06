@@ -103,41 +103,45 @@ export async function POST(
 
     if (attempt === 1) {
       return NextResponse.json(
-        { error: `Could not produce valid operations: ${validation.errors.join(", ")}` },
+        {
+          error: `Could not produce valid operations: ${validation.errors.join(", ")}`,
+        },
         { status: 422 },
       );
     }
   }
 
   const preview = applyOperations(currentRecipe, operations!);
-  const postApplyValidation = validateRecipe(preview);
-  if (!postApplyValidation.ok) {
+  const previewValidation = validateRecipe(preview);
+  if (!previewValidation.ok) {
     return NextResponse.json(
-      { error: `Preview recipe is invalid: ${postApplyValidation.errors.join(", ")}` },
+      {
+        error: `Could not produce a valid recipe: ${previewValidation.errors.join(", ")}`,
+      },
       { status: 422 },
     );
   }
 
-  const [, assistantMsg] = await db.transaction(async (tx) => {
-    const [user] = await tx
-      .insert(recipeMessages)
-      .values({ recipeId: id, role: "user", content: message, status: "applied" })
-      .returning();
+  await db
+    .insert(recipeMessages)
+    .values({
+      recipeId: id,
+      role: "user",
+      content: message,
+      status: "applied",
+    });
 
-    const [assistant] = await tx
-      .insert(recipeMessages)
-      .values({
-        recipeId: id,
-        role: "assistant",
-        content: summary!,
-        status: "pending",
-        operations: operations!,
-        previousRecipe: currentRecipe,
-      })
-      .returning();
-
-    return [user, assistant];
-  });
+  const [assistantMsg] = await db
+    .insert(recipeMessages)
+    .values({
+      recipeId: id,
+      role: "assistant",
+      content: summary!,
+      status: "pending",
+      operations: operations!,
+      previousRecipe: currentRecipe,
+    })
+    .returning();
 
   return NextResponse.json({
     messageId: assistantMsg.id,

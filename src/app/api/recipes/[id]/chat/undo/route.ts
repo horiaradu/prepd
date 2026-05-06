@@ -41,32 +41,27 @@ export async function POST(
     .limit(1);
 
   if (!message || !message.previousRecipe) {
-    return NextResponse.json(
-      { error: "Nothing to undo" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Nothing to undo" }, { status: 404 });
   }
 
   const previous = message.previousRecipe;
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(recipes)
-      .set({
-        title: previous.title,
-        servings: previous.servings,
-        ingredients: previous.ingredients,
-        prepSteps: previous.prepSteps,
-        cookingSteps: previous.cookingSteps,
-        updatedAt: new Date(),
-      })
-      .where(eq(recipes.id, id));
+  await db
+    .update(recipes)
+    .set({
+      title: previous.title,
+      servings: previous.servings,
+      ingredients: previous.ingredients,
+      prepSteps: previous.prepSteps,
+      cookingSteps: previous.cookingSteps,
+      updatedAt: new Date(),
+    })
+    .where(eq(recipes.id, id));
 
-    await tx
-      .update(recipeMessages)
-      .set({ status: "reverted" })
-      .where(eq(recipeMessages.id, message.id));
-  });
+  await db
+    .update(recipeMessages)
+    .set({ status: "reverted" })
+    .where(eq(recipeMessages.id, message.id));
 
   return NextResponse.json({ recipe: previous });
 }

@@ -1,7 +1,15 @@
 import type { Ingredient, ParsedRecipe, Step } from "@/types/recipe";
 
 const VALID_UNITS = new Set<string>([
-  "g", "kg", "ml", "l", "tsp", "tbsp", "piece", "pinch", "to taste",
+  "g",
+  "kg",
+  "ml",
+  "l",
+  "tsp",
+  "tbsp",
+  "piece",
+  "pinch",
+  "to taste",
 ]);
 
 // ── Operation types ──────────────────────────────────────────────────────────
@@ -63,9 +71,7 @@ export type Operation =
 
 // ── Validation ───────────────────────────────────────────────────────────────
 
-export type ValidationResult =
-  | { ok: true }
-  | { ok: false; errors: string[] };
+export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 function ingredientNames(recipe: ParsedRecipe): Set<string> {
   return new Set(recipe.ingredients.map((i) => i.name.toLowerCase()));
@@ -74,9 +80,7 @@ function ingredientNames(recipe: ParsedRecipe): Set<string> {
 function validateIngredient(ing: Ingredient, path: string): string[] {
   const errors: string[] = [];
   if (!ing.name?.trim()) errors.push(`${path}: name is required`);
-  if (typeof ing.quantity !== "number" || ing.quantity < 0)
-    errors.push(`${path}: quantity must be a non-negative number`);
-  if (!VALID_UNITS.has(ing.unit))
+  if (ing.unit && !VALID_UNITS.has(ing.unit))
     errors.push(`${path}: invalid unit "${ing.unit}"`);
   return errors;
 }
@@ -126,11 +130,6 @@ export function validateOperations(
           errors.push(`${prefix}: ingredient "${op.name}" not found`);
         if (op.changes.unit && !VALID_UNITS.has(op.changes.unit))
           errors.push(`${prefix}: invalid unit "${op.changes.unit}"`);
-        if (
-          op.changes.quantity !== undefined &&
-          (typeof op.changes.quantity !== "number" || op.changes.quantity < 0)
-        )
-          errors.push(`${prefix}: quantity must be a non-negative number`);
         break;
 
       case "replace_ingredient":
@@ -162,6 +161,18 @@ export function validateOperations(
         const section = recipe[op.section];
         if (op.index < 0 || op.index >= section.length)
           errors.push(`${prefix}: index ${op.index} out of range`);
+        if (
+          op.changes.instruction !== undefined &&
+          !op.changes.instruction.trim()
+        )
+          errors.push(`${prefix}: instruction cannot be empty`);
+        if (op.changes.ingredients) {
+          op.changes.ingredients.forEach((ing, j) =>
+            errors.push(
+              ...validateIngredient(ing, `${prefix}.ingredients[${j}]`),
+            ),
+          );
+        }
         break;
       }
 
@@ -171,6 +182,11 @@ export function validateOperations(
           errors.push(`${prefix}: from.index out of range`);
         break;
       }
+
+      default:
+        errors.push(
+          `${prefix}: missing or unknown "op" field (got ${JSON.stringify((op as { op?: unknown }).op)})`,
+        );
     }
   }
 

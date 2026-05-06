@@ -190,34 +190,45 @@ export async function generateRecipeHeroImage(
 
 const RECIPE_EDIT_PLANNER_PROMPT = `You are a recipe refinement assistant. You receive a recipe as JSON and a user request. Your job is to produce a precise list of operations that transform the recipe to match the request.
 
-You MUST use the operation types below — do not invent new types. Each operation targets a specific part of the recipe; you never rewrite the whole recipe.
+Return a JSON object with this exact shape:
+{
+  "summary": "one-sentence summary of the overall change",
+  "operations": [ /* array of operation objects, each matching one of the schemas below */ ]
+}
+
+EVERY operation object MUST include the "op" field set to one of the type names below, plus the fields listed for that type, plus a "rationale" string. Do not return empty operation objects.
 
 Valid units: g, kg, ml, l, tsp, tbsp, piece, pinch, to taste
 Step sections: "prepSteps" or "cookingSteps"
 Step indexes are 0-based.
 
-Operation types:
-- set_title: { op, title, rationale }
-- set_servings: { op, servings, scaleIngredients (boolean — true when user wants proportional quantity scaling), rationale }
-- scale: { op, factor (number), rationale }  — use for "double the recipe", "halve quantities", etc. without changing servings
-- add_ingredient: { op, ingredient: { name, quantity, unit, notes? }, position? (0-based, omit to append), rationale }
-- remove_ingredient: { op, name (exact name from ingredients list), rationale }
-- update_ingredient: { op, name (exact), changes: { quantity?, unit?, notes? }, rationale }
-- replace_ingredient: { op, from (exact name), to: { name, quantity, unit, notes? }, rationale }  — also propagates to step ingredient lists
-- add_step: { op, section, step: { instruction, ingredients: [] }, position? (0-based, omit to append), rationale }
-- remove_step: { op, section, index (0-based), rationale }
-- update_step: { op, section, index (0-based), changes: { instruction?, ingredients? }, rationale }
-- move_step: { op, from: { section, index }, to: { section, index }, rationale }
+Operation schemas (each shows ALL required fields):
+- { "op": "set_title", "title": string, "rationale": string }
+- { "op": "set_servings", "servings": number, "scaleIngredients": boolean, "rationale": string }
+- { "op": "scale", "factor": number, "rationale": string }  — for "double the recipe", "halve quantities" etc. without changing servings
+- { "op": "add_ingredient", "ingredient": { "name": string, "quantity": number, "unit": string, "notes"?: string }, "position"?: number, "rationale": string }
+- { "op": "remove_ingredient", "name": string, "rationale": string }  — name must match exactly from the ingredients list
+- { "op": "update_ingredient", "name": string, "changes": { "quantity"?: number, "unit"?: string, "notes"?: string }, "rationale": string }
+- { "op": "replace_ingredient", "from": string, "to": { "name": string, "quantity": number, "unit": string, "notes"?: string }, "rationale": string }  — also propagates to step ingredient lists
+- { "op": "add_step", "section": string, "step": { "instruction": string, "ingredients": [] }, "position"?: number, "rationale": string }
+- { "op": "remove_step", "section": string, "index": number, "rationale": string }
+- { "op": "update_step", "section": string, "index": number, "changes": { "instruction"?: string, "ingredients"?: array }, "rationale": string }
+- { "op": "move_step", "from": { "section": string, "index": number }, "to": { "section": string, "index": number }, "rationale": string }
 
 Rules:
-1. Use the MINIMUM set of operations to satisfy the request.
+1. Use the MINIMUM set of operations to satisfy the request, but DO emit operations — never return an empty operations array if the user asked for a change.
 2. When replacing an ingredient, also emit update_step ops to reword any instructions that name the old ingredient.
 3. Keep all quantities metric. If the user specifies non-metric, convert.
 4. Emit set_title if and only if the core subject of the recipe changes (e.g. swapping the protein).
 5. Preserve imageUrl and videoTimestamp — do not emit ops that would overwrite them unless the step itself is being removed.
-6. Each operation must include a short human-readable "rationale" (one phrase, not a sentence).
-7. Return a one-sentence "summary" of the overall change.`;
+6. The "rationale" field is a short human-readable phrase, not a sentence.`;
 
+// Future improvement: two-stage intent classification before planRecipeEdit.
+// For vague requests like "make it healthier" or "make it more summer-y", a first
+// LLM call could interpret the intent and rewrite it as a concrete list of changes
+// (e.g. "swap butter for olive oil, reduce sugar by 20%"). The rewritten message is
+// then passed to planRecipeEdit as normal. This avoids hallucinated operations when
+// the model tries to satisfy an abstract goal in one shot.
 export async function planRecipeEdit(
   recipe: ParsedRecipe,
   message: string,
@@ -231,7 +242,9 @@ export async function planRecipeEdit(
     { role: "user" as const, parts: [{ text: recipeContext }] },
     {
       role: "model" as const,
-      parts: [{ text: "Understood. I have the recipe. What changes would you like?" }],
+      parts: [
+        { text: "Understood. I have the recipe. What changes would you like?" },
+      ],
     },
     ...history.map((msg) => ({
       role: msg.role,
@@ -246,17 +259,6 @@ export async function planRecipeEdit(
     config: {
       systemInstruction: RECIPE_EDIT_PLANNER_PROMPT,
       responseMimeType: "application/json",
-      responseSchema: {
-        type: "object" as const,
-        properties: {
-          summary: { type: "string" as const },
-          operations: {
-            type: "array" as const,
-            items: { type: "object" as const },
-          },
-        },
-        required: ["summary", "operations"],
-      },
     },
   });
 
