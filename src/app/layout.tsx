@@ -10,8 +10,15 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Mintdish",
-  description: "Recipe organizer with metric conversions and structured steps",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  ),
+  title: {
+    default: "Mintdish",
+    template: "%s — Mintdish",
+  },
+  description:
+    "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -24,6 +31,13 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
+  },
+  openGraph: {
+    siteName: "Mintdish",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
   },
 };
 

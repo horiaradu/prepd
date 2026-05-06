@@ -1,7 +1,7 @@
 {
   "name": "Mintdish",
   "short_name": "Mintdish",
-  "description": "Recipe organizer with metric conversions and structured steps",
+  "description": "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
