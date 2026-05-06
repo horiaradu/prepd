@@ -1,4 +1,4 @@
-import type { Ingredient, ParsedRecipe, Step, Unit, UNITS } from "@/types/recipe";
+import type { Ingredient, ParsedRecipe, Step } from "@/types/recipe";
 
 const VALID_UNITS = new Set<string>([
   "g", "kg", "ml", "l", "tsp", "tbsp", "piece", "pinch", "to taste",

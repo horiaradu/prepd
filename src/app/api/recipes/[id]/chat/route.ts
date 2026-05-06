@@ -118,7 +118,7 @@ export async function POST(
     );
   }
 
-  const [userMsg, assistantMsg] = await db.transaction(async (tx) => {
+  const [, assistantMsg] = await db.transaction(async (tx) => {
     const [user] = await tx
       .insert(recipeMessages)
       .values({ recipeId: id, role: "user", content: message, status: "applied" })
