@@ -55,7 +55,7 @@ export function AppHeader() {
           )}
           <Link href="/" className="flex items-center gap-2">
             <img
-              src="/icons/icon-192.png"
+              src="/icons/icon-nav.png"
               alt=""
               className="w-7 h-7 rounded-lg"
             />
