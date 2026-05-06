@@ -15,7 +15,7 @@ import {
   TrashIcon,
 } from "@/components/icons";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
-import { describeOperation, applyOperations } from "@/lib/recipe-operations";
+import { applyOperations } from "@/lib/recipe-operations";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
 import type { ChatMessage } from "@/lib/recipes";
 
@@ -312,8 +312,8 @@ export default function RecipeDetails({
       )}
 
       {previewRecipe && (
-        <div className="mb-4 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-          Previewing proposed changes — not saved yet
+        <div className="mb-4 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+          Showing a preview — apply to save or discard to go back
         </div>
       )}
 
@@ -429,55 +429,24 @@ export default function RecipeDetails({
                     key={msg.id}
                     className={`text-sm rounded-lg px-3 py-2 ${
                       isPending
-                        ? "bg-blue-50 border border-blue-200"
+                        ? "bg-green-50 border border-green-200"
                         : msg.role === "user"
-                          ? "bg-green-50 border border-green-200"
-                          : "bg-gray-50 border border-gray-100"
-                    } ${isReverted ? "opacity-50" : ""}`}
+                          ? "bg-gray-50 border border-gray-100"
+                          : "bg-white border border-gray-100"
+                    } ${isReverted ? "opacity-40" : ""}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-xs text-gray-500 uppercase">
-                        {msg.role === "user" ? "You" : "Mintdish"}
-                      </span>
-                      {isReverted && (
-                        <span className="text-xs text-gray-400 line-through">
-                          {msg.status}
-                        </span>
-                      )}
-                      {isPending && (
-                        <span className="text-xs text-blue-500 font-medium">
-                          pending
-                        </span>
-                      )}
-                    </div>
                     <p
-                      className={`mt-0.5 text-gray-700 ${isReverted ? "line-through" : ""}`}
+                      className={`text-gray-700 ${isReverted ? "line-through" : ""}`}
                     >
                       {msg.content}
                     </p>
-                    {msg.role === "assistant" &&
-                      msg.operations &&
-                      msg.operations.length > 0 &&
-                      !isReverted && (
-                        <ul className="mt-1.5 space-y-0.5">
-                          {msg.operations.map((op, i) => (
-                            <li
-                              key={i}
-                              className="text-xs text-gray-500 flex gap-1"
-                            >
-                              <span className="text-gray-300">·</span>
-                              {describeOperation(op)}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
                     {isUndoable && (
                       <button
                         onClick={handleUndo}
                         disabled={undoing}
-                        className="mt-2 text-xs text-amber-600 hover:text-amber-700 disabled:opacity-50"
+                        className="mt-2 text-xs text-gray-400 hover:text-gray-600 disabled:opacity-50"
                       >
-                        {undoing ? "Undoing…" : "Undo this change"}
+                        {undoing ? "Undoing…" : "Undo"}
                       </button>
                     )}
                   </div>
