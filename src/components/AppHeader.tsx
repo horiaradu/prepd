@@ -30,7 +30,7 @@ export function AppHeader() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
-  const isSubpage = pathname !== "/";
+  const isSubpage = pathname !== "/" && pathname !== "/welcome";
 
   useEffect(() => {
     if (!session?.user) return;
