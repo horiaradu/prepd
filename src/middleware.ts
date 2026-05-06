@@ -5,12 +5,12 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow auth routes, login page, and static assets
+  // Routes that never touch the session — fast path, no getToken call
   if (
     pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/login") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/icons") ||
+    pathname.startsWith("/landing") ||
     pathname === "/favicon.ico" ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
@@ -22,9 +22,21 @@ export async function middleware(request: NextRequest) {
 
   const token = await getToken({ req: request });
 
+  // Public landing — signed-in visitors go straight to the app
+  if (pathname.startsWith("/welcome")) {
+    if (token) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/login")) {
+    return NextResponse.next();
+  }
+
   if (!token) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    const target = pathname === "/" ? "/welcome" : "/login";
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   return NextResponse.next();

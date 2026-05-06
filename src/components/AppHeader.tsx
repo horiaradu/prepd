@@ -63,6 +63,15 @@ export function AppHeader() {
           </Link>
         </div>
 
+        {!session?.user && (
+          <Link
+            href="/login"
+            className="text-sm font-medium text-gray-700 hover:text-green-700 transition-colors"
+          >
+            Sign in
+          </Link>
+        )}
+
         {session?.user && (
           <div className="flex items-center gap-3">
             {session.user.email === "horia.radu23@gmail.com" && (

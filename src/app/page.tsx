@@ -8,7 +8,7 @@ import RecipeList from "@/components/RecipeList";
 export default async function Home() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect("/welcome");
   }
 
   await requireActivation();
