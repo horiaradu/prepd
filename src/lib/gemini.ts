@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import type { ParsedRecipe, RecipeImage } from "@/types/recipe";
+import type { Operation } from "@/lib/recipe-operations";
 
 const RECIPE_PARSING_PROMPT = `You are a recipe extraction assistant. Your job is to take raw recipe content (from a webpage or video transcript) and return a clean, structured recipe.
 
@@ -187,47 +188,81 @@ export async function generateRecipeHeroImage(
   throw new Error("Image generation returned no image data");
 }
 
-const RECIPE_UPDATE_PROMPT = `You are a recipe refinement assistant. You receive a structured recipe as JSON and a user message describing changes they want. Apply the requested changes to the recipe and return the updated JSON.
+const RECIPE_EDIT_PLANNER_PROMPT = `You are a recipe refinement assistant. You receive a recipe as JSON and a user request. Your job is to produce a precise list of operations that transform the recipe to match the request.
+
+You MUST use the operation types below — do not invent new types. Each operation targets a specific part of the recipe; you never rewrite the whole recipe.
+
+Valid units: g, kg, ml, l, tsp, tbsp, piece, pinch, to taste
+Step sections: "prepSteps" or "cookingSteps"
+Step indexes are 0-based.
+
+Operation types:
+- set_title: { op, title, rationale }
+- set_servings: { op, servings, scaleIngredients (boolean — true when user wants proportional quantity scaling), rationale }
+- scale: { op, factor (number), rationale }  — use for "double the recipe", "halve quantities", etc. without changing servings
+- add_ingredient: { op, ingredient: { name, quantity, unit, notes? }, position? (0-based, omit to append), rationale }
+- remove_ingredient: { op, name (exact name from ingredients list), rationale }
+- update_ingredient: { op, name (exact), changes: { quantity?, unit?, notes? }, rationale }
+- replace_ingredient: { op, from (exact name), to: { name, quantity, unit, notes? }, rationale }  — also propagates to step ingredient lists
+- add_step: { op, section, step: { instruction, ingredients: [] }, position? (0-based, omit to append), rationale }
+- remove_step: { op, section, index (0-based), rationale }
+- update_step: { op, section, index (0-based), changes: { instruction?, ingredients? }, rationale }
+- move_step: { op, from: { section, index }, to: { section, index }, rationale }
 
 Rules:
-1. Preserve all fields and structure exactly as received, only modifying what the user asks for.
-2. If a change affects a core ingredient referenced in the title, update the title to reflect the new ingredient (e.g. "Tofu Stir Fry" → "Chicken Stir Fry").
-3. Keep all quantities in the metric system. If the user specifies non-metric, convert to metric.
-4. Use these units only: g, kg, ml, l, tsp, tbsp, piece, pinch, to taste
-5. Maintain the separation between prepSteps and cookingSteps.
-6. Keep ingredient quantities in each step consistent with the total ingredients list.
-7. Preserve imageUrl and videoTimestamp on steps unless the step is being removed or fundamentally changed.
-8. Return ONLY valid JSON matching the exact same structure as the input. No markdown, no explanation.
-9. Also return a brief summary of what you changed as a separate "summary" field (one sentence).
+1. Use the MINIMUM set of operations to satisfy the request.
+2. When replacing an ingredient, also emit update_step ops to reword any instructions that name the old ingredient.
+3. Keep all quantities metric. If the user specifies non-metric, convert.
+4. Emit set_title if and only if the core subject of the recipe changes (e.g. swapping the protein).
+5. Preserve imageUrl and videoTimestamp — do not emit ops that would overwrite them unless the step itself is being removed.
+6. Each operation must include a short human-readable "rationale" (one phrase, not a sentence).
+7. Return a one-sentence "summary" of the overall change.`;
 
-Return JSON with this structure:
-{
-  "recipe": { ... the full updated recipe ... },
-  "summary": "Changed garlic from 2 to 4 cloves and added a toasting step."
-}`;
-
-export async function updateRecipe(
+export async function planRecipeEdit(
   recipe: ParsedRecipe,
   message: string,
-): Promise<{ recipe: ParsedRecipe; summary: string }> {
+  history: Array<{ role: "user" | "model"; content: string }>,
+): Promise<{ operations: Operation[]; summary: string }> {
   const ai = getClient();
 
-  const prompt = `Current recipe:\n\n${JSON.stringify(recipe, null, 2)}\n\nUser message: ${message}`;
+  const recipeContext = `Current recipe:\n${JSON.stringify(recipe, null, 2)}`;
+
+  const contents = [
+    { role: "user" as const, parts: [{ text: recipeContext }] },
+    {
+      role: "model" as const,
+      parts: [{ text: "Understood. I have the recipe. What changes would you like?" }],
+    },
+    ...history.map((msg) => ({
+      role: msg.role,
+      parts: [{ text: msg.content }],
+    })),
+    { role: "user" as const, parts: [{ text: message }] },
+  ];
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: prompt,
+    contents,
     config: {
-      systemInstruction: RECIPE_UPDATE_PROMPT,
+      systemInstruction: RECIPE_EDIT_PLANNER_PROMPT,
       responseMimeType: "application/json",
+      responseSchema: {
+        type: "object" as const,
+        properties: {
+          summary: { type: "string" as const },
+          operations: {
+            type: "array" as const,
+            items: { type: "object" as const },
+          },
+        },
+        required: ["summary", "operations"],
+      },
     },
   });
 
-  const responseText = response.text!;
-  const parsed = JSON.parse(responseText);
-
+  const parsed = JSON.parse(response.text!);
   return {
-    recipe: parsed.recipe as ParsedRecipe,
+    operations: parsed.operations as Operation[],
     summary: parsed.summary as string,
   };
 }

@@ -4,7 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes, recipeMessages } from "@/db/schema";
 import { and, eq, asc } from "drizzle-orm";
-import { updateRecipe } from "@/lib/gemini";
+import { planRecipeEdit } from "@/lib/gemini";
+import {
+  validateOperations,
+  applyOperations,
+  validateRecipe,
+} from "@/lib/recipe-operations";
 import type { ParsedRecipe } from "@/types/recipe";
 
 export async function POST(
@@ -34,6 +39,24 @@ export async function POST(
     return NextResponse.json({ error: "Message is required" }, { status: 400 });
   }
 
+  // Reject if there is already a pending edit for this recipe
+  const [existingPending] = await db
+    .select({ id: recipeMessages.id })
+    .from(recipeMessages)
+    .where(
+      and(
+        eq(recipeMessages.recipeId, id),
+        eq(recipeMessages.status, "pending"),
+      ),
+    );
+
+  if (existingPending) {
+    return NextResponse.json(
+      { error: "A pending edit already exists. Apply or discard it first." },
+      { status: 409 },
+    );
+  }
+
   const currentRecipe: ParsedRecipe = {
     title: recipe.title,
     servings: recipe.servings,
@@ -42,31 +65,85 @@ export async function POST(
     cookingSteps: recipe.cookingSteps,
   };
 
-  const { recipe: updatedRecipe, summary } = await updateRecipe(
-    currentRecipe,
-    message,
-  );
+  // Load conversation history (last 20 exchanges)
+  const history = await db
+    .select()
+    .from(recipeMessages)
+    .where(
+      and(
+        eq(recipeMessages.recipeId, id),
+        eq(recipeMessages.status, "applied"),
+      ),
+    )
+    .orderBy(asc(recipeMessages.createdAt))
+    .limit(40);
 
-  await db
-    .update(recipes)
-    .set({
-      title: updatedRecipe.title,
-      servings: updatedRecipe.servings,
-      ingredients: updatedRecipe.ingredients,
-      prepSteps: updatedRecipe.prepSteps,
-      cookingSteps: updatedRecipe.cookingSteps,
-      updatedAt: new Date(),
-    })
-    .where(eq(recipes.id, id));
+  const conversationHistory = history.map((m) => ({
+    role: m.role as "user" | "model",
+    content: m.content,
+  }));
 
-  await db.insert(recipeMessages).values([
-    { recipeId: id, role: "user", content: message },
-    { recipeId: id, role: "assistant", content: summary },
-  ]);
+  // Plan the edit (with retry on validation failure)
+  let operations;
+  let summary;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const result = await planRecipeEdit(
+      currentRecipe,
+      attempt === 0
+        ? message
+        : `${message}\n\nPrevious attempt had validation errors: ${(validateOperations(currentRecipe, operations!) as { ok: false; errors: string[] }).errors.join(", ")}. Please fix these.`,
+      conversationHistory,
+    );
+    operations = result.operations;
+    summary = result.summary;
+
+    const validation = validateOperations(currentRecipe, operations);
+    if (validation.ok) break;
+
+    if (attempt === 1) {
+      return NextResponse.json(
+        { error: `Could not produce valid operations: ${validation.errors.join(", ")}` },
+        { status: 422 },
+      );
+    }
+  }
+
+  const preview = applyOperations(currentRecipe, operations!);
+  const postApplyValidation = validateRecipe(preview);
+  if (!postApplyValidation.ok) {
+    return NextResponse.json(
+      { error: `Preview recipe is invalid: ${postApplyValidation.errors.join(", ")}` },
+      { status: 422 },
+    );
+  }
+
+  const [userMsg, assistantMsg] = await db.transaction(async (tx) => {
+    const [user] = await tx
+      .insert(recipeMessages)
+      .values({ recipeId: id, role: "user", content: message, status: "applied" })
+      .returning();
+
+    const [assistant] = await tx
+      .insert(recipeMessages)
+      .values({
+        recipeId: id,
+        role: "assistant",
+        content: summary!,
+        status: "pending",
+        operations: operations!,
+        previousRecipe: currentRecipe,
+      })
+      .returning();
+
+    return [user, assistant];
+  });
 
   return NextResponse.json({
-    recipe: updatedRecipe,
-    summary,
+    messageId: assistantMsg.id,
+    operations: operations!,
+    preview,
+    summary: summary!,
   });
 }
 
