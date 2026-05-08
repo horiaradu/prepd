@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
         );
 
         const uploads = await Promise.all(
-          resizedImages.map((resized) =>
-            put(`recipes/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`, resized, {
+          resizedImages.map((resized, i) =>
+            put(`recipes/${userId}/${Date.now()}-${i}.jpg`, resized, {
               access: "private",
               contentType: "image/jpeg",
             }),
@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
           .returning();
 
         const imageUrl = `/api/recipes/${saved.id}/image?v=${Date.now()}`;
+        // First image uses the proxy URL for serving; additional images
+        // reference their blob URLs directly.
         const imageEntries = blobUrls.map((url, i) => ({
           url: i === 0 ? imageUrl : url,
           blobUrl: url,
