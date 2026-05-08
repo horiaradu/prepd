@@ -86,9 +86,9 @@ export default function RecipeInput({
   }
 
   async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!files || files.length === 0) return;
+    if (files.length === 0) return;
 
     setLoading(true);
     setError(null);
@@ -96,7 +96,7 @@ export default function RecipeInput({
 
     try {
       const resizedBlobs = await Promise.all(
-        Array.from(files).map((file) => resizeImageForUpload(file)),
+        files.map((file) => resizeImageForUpload(file)),
       );
 
       const formData = new FormData();
