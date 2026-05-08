@@ -118,8 +118,20 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
 }
 
 export async function parseRecipeFromImage(
+  imageBytes: Buffer,
+  mimeType: string,
+): Promise<ParsedRecipe>;
+export async function parseRecipeFromImage(
   images: { bytes: Buffer; mimeType: string }[],
+): Promise<ParsedRecipe>;
+export async function parseRecipeFromImage(
+  bytesOrImages: Buffer | { bytes: Buffer; mimeType: string }[],
+  mimeType?: string,
 ): Promise<ParsedRecipe> {
+  const images = Array.isArray(bytesOrImages)
+    ? bytesOrImages
+    : [{ bytes: bytesOrImages, mimeType: mimeType! }];
+
   const ai = getClient();
 
   const imageParts = images.map((img) => ({
