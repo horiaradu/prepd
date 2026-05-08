@@ -18,14 +18,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let originalBytes: Buffer;
+  let imageFiles: File[];
   try {
     const formData = await request.formData();
-    const file = formData.get("image");
-    if (!(file instanceof File)) {
+    const files = formData.getAll("image");
+    imageFiles = files.filter((f): f is File => f instanceof File);
+    if (imageFiles.length === 0) {
       return NextResponse.json({ error: "image is required" }, { status: 400 });
     }
-    originalBytes = Buffer.from(await file.arrayBuffer());
   } catch {
     return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
   }
@@ -37,33 +37,47 @@ export async function POST(request: NextRequest) {
       const send = (data: Record<string, unknown>) =>
         controller.enqueue(new TextEncoder().encode(sseEvent(data)));
 
-      let blobUrl: string | null = null;
+      let blobUrls: string[] = [];
 
       try {
-        send({ type: "progress", step: "Processing image…", progress: 15 });
+        send({ type: "progress", step: "Processing images…", progress: 15 });
 
         // Server-side safety resize: keeps stored copies bounded while
         // remaining readable for OCR.
-        const resized = await sharp(originalBytes)
-          .rotate()
-          .resize({
-            width: 1600,
-            height: 1600,
-            fit: "inside",
-            withoutEnlargement: true,
-          })
-          .jpeg({ quality: 82, mozjpeg: true })
-          .toBuffer();
-
-        const upload = await put(
-          `recipes/${userId}/${Date.now()}.jpg`,
-          resized,
-          { access: "private", contentType: "image/jpeg" },
+        const resizedImages = await Promise.all(
+          imageFiles.map(async (file) => {
+            const bytes = Buffer.from(await file.arrayBuffer());
+            const resized = await sharp(bytes)
+              .rotate()
+              .resize({
+                width: 1600,
+                height: 1600,
+                fit: "inside",
+                withoutEnlargement: true,
+              })
+              .jpeg({ quality: 82, mozjpeg: true })
+              .toBuffer();
+            return resized;
+          }),
         );
-        blobUrl = upload.url;
+
+        const uploads = await Promise.all(
+          resizedImages.map((resized, i) =>
+            put(`recipes/${userId}/${Date.now()}-${i}.jpg`, resized, {
+              access: "private",
+              contentType: "image/jpeg",
+            }),
+          ),
+        );
+        blobUrls = uploads.map((u) => u.url);
 
         send({ type: "progress", step: "Reading recipe…", progress: 40 });
-        const parsed = await parseRecipeFromImage(resized, "image/jpeg");
+        const parsed = await parseRecipeFromImage(
+          resizedImages.map((resized) => ({
+            bytes: resized,
+            mimeType: "image/jpeg",
+          })),
+        );
 
         send({ type: "progress", step: "Saving recipe…", progress: 85 });
         const [saved] = await db
@@ -71,7 +85,7 @@ export async function POST(request: NextRequest) {
           .values({
             userId,
             title: parsed.title,
-            sourceUrl: blobUrl,
+            sourceUrl: blobUrls[0],
             sourceType: "image",
             servings: parsed.servings,
             ingredients: parsed.ingredients,
@@ -84,9 +98,15 @@ export async function POST(request: NextRequest) {
           .returning();
 
         const imageUrl = `/api/recipes/${saved.id}/image?v=${Date.now()}`;
+        // First image uses the proxy URL for serving; additional images
+        // reference their blob URLs directly.
+        const imageEntries = blobUrls.map((url, i) => ({
+          url: i === 0 ? imageUrl : url,
+          blobUrl: url,
+        }));
         await db
           .update(recipes)
-          .set({ images: [{ url: imageUrl, blobUrl }] })
+          .set({ images: imageEntries })
           .where(eq(recipes.id, saved.id));
 
         send({
@@ -94,14 +114,14 @@ export async function POST(request: NextRequest) {
           data: {
             id: saved.id,
             recipe: parsed,
-            sourceUrl: blobUrl,
+            sourceUrl: blobUrls[0],
             sourceType: "image",
             imageUrl,
           },
         });
       } catch (error) {
         console.error("Recipe parse-image error:", error);
-        if (blobUrl) await del(blobUrl).catch(() => {});
+        if (blobUrls.length > 0) await Promise.all(blobUrls.map((u) => del(u).catch(() => {})));
         const message =
           error instanceof Error ? error.message : "Failed to parse recipe";
         send({ type: "error", error: message });
