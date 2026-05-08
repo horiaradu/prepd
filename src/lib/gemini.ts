@@ -118,10 +118,16 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
 }
 
 export async function parseRecipeFromImage(
-  imageBytes: Buffer,
-  mimeType: string,
+  images: { bytes: Buffer; mimeType: string }[],
 ): Promise<ParsedRecipe> {
   const ai = getClient();
+
+  const imageParts = images.map((img) => ({
+    inlineData: {
+      mimeType: img.mimeType,
+      data: img.bytes.toString("base64"),
+    },
+  }));
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
@@ -129,14 +135,12 @@ export async function parseRecipeFromImage(
       {
         role: "user",
         parts: [
+          ...imageParts,
           {
-            inlineData: {
-              mimeType,
-              data: imageBytes.toString("base64"),
-            },
-          },
-          {
-            text: "Extract the recipe shown in this image. The image may be a photo of a cookbook page, handwritten recipe, screenshot, or printed recipe.",
+            text:
+              images.length > 1
+                ? "Extract the recipe shown across these images. The images may be photos of cookbook pages, handwritten recipes, screenshots, or printed recipes. Combine the information from all images into a single recipe."
+                : "Extract the recipe shown in this image. The image may be a photo of a cookbook page, handwritten recipe, screenshot, or printed recipe.",
           },
         ],
       },

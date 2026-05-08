@@ -86,19 +86,23 @@ export default function RecipeInput({
   }
 
   async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = e.target.files;
     e.target.value = "";
-    if (!file) return;
+    if (!files || files.length === 0) return;
 
     setLoading(true);
     setError(null);
-    setProgress({ step: "Preparing photo…", progress: 5 });
+    setProgress({ step: "Preparing photos…", progress: 5 });
 
     try {
-      const resized = await resizeImageForUpload(file);
+      const resizedBlobs = await Promise.all(
+        Array.from(files).map((file) => resizeImageForUpload(file)),
+      );
 
       const formData = new FormData();
-      formData.append("image", resized, "recipe.jpg");
+      resizedBlobs.forEach((blob, i) => {
+        formData.append("image", blob, `recipe-${i}.jpg`);
+      });
 
       const response = await fetch("/api/recipes/parse-image", {
         method: "POST",
@@ -137,6 +141,7 @@ export default function RecipeInput({
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple
           onChange={handlePhotoSelected}
           className="hidden"
         />
