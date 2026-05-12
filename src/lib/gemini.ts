@@ -9,6 +9,7 @@ Rules:
 2. Use these units only: g, kg, ml, l, tsp, tbsp, piece, pinch, to taste
    - Keep tsp and tbsp as-is (they are practical for small quantities)
    - Convert cups, ounces, pounds, quarts, etc. to metric equivalents
+   - "quantity" MUST be a number. If the source does not specify an amount for an ingredient (e.g. "currants for garnish"), use unit "to taste" with quantity 0. Never omit quantity, never return null, never return a string.
 3. Separate steps into two categories:
    - PREP STEPS: anything done before heat is applied — washing, cutting, chopping, slicing, dicing, marinating, mixing dry ingredients, whisking, zesting, measuring, etc.
    - COOKING STEPS: anything involving heat or time-dependent processes — sautéing, boiling, baking, frying, simmering, resting, chilling, etc.
@@ -57,6 +58,37 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
+function normalizeIngredient(ing: unknown): unknown {
+  if (!ing || typeof ing !== "object") return ing;
+  const obj = ing as Record<string, unknown>;
+  const q = obj.quantity;
+  const quantity = typeof q === "number" && Number.isFinite(q) ? q : null;
+  if (quantity === null) {
+    return { ...obj, quantity: 0, unit: "to taste" };
+  }
+  return { ...obj, quantity };
+}
+
+function normalizeRecipe(recipe: unknown): ParsedRecipe {
+  const r = recipe as Record<string, unknown>;
+  const normalizeStep = (s: unknown) => {
+    if (!s || typeof s !== "object") return s;
+    const step = s as Record<string, unknown>;
+    const ings = Array.isArray(step.ingredients) ? step.ingredients : [];
+    return { ...step, ingredients: ings.map(normalizeIngredient) };
+  };
+  return {
+    ...r,
+    ingredients: Array.isArray(r.ingredients)
+      ? r.ingredients.map(normalizeIngredient)
+      : [],
+    prepSteps: Array.isArray(r.prepSteps) ? r.prepSteps.map(normalizeStep) : [],
+    cookingSteps: Array.isArray(r.cookingSteps)
+      ? r.cookingSteps.map(normalizeStep)
+      : [],
+  } as ParsedRecipe;
+}
+
 export async function parseRecipeContent(
   content: string,
   images?: RecipeImage[],
@@ -91,7 +123,7 @@ export async function parseRecipeContent(
     throw new Error(parsed.error);
   }
 
-  return parsed as ParsedRecipe;
+  return normalizeRecipe(parsed);
 }
 
 export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
@@ -114,7 +146,7 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
     throw new Error(parsed.error);
   }
 
-  return parsed as ParsedRecipe;
+  return normalizeRecipe(parsed);
 }
 
 export async function parseRecipeFromYoutube(
@@ -148,7 +180,7 @@ export async function parseRecipeFromYoutube(
     throw new Error(parsed.error);
   }
 
-  return parsed as ParsedRecipe;
+  return normalizeRecipe(parsed);
 }
 
 export async function parseRecipeFromImage(
@@ -204,7 +236,7 @@ export async function parseRecipeFromImage(
     throw new Error(parsed.error);
   }
 
-  return parsed as ParsedRecipe;
+  return normalizeRecipe(parsed);
 }
 
 export async function generateRecipeHeroImage(
@@ -506,5 +538,5 @@ Be specific with quantities, timings, and techniques. This should be a complete,
     throw new Error(parsed.error);
   }
 
-  return parsed as ParsedRecipe;
+  return normalizeRecipe(parsed);
 }
