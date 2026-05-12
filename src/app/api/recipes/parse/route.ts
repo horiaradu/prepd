@@ -1,17 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import {
-  isYoutubeUrl,
-  extractYoutubeTranscript,
-  getYoutubeThumbnailUrl,
-} from "@/lib/youtube";
+import { isYoutubeUrl, getYoutubeThumbnailUrl } from "@/lib/youtube";
 import { extractWebPage } from "@/lib/scraper";
-import { parseRecipeContent, parseRecipeFromUrl } from "@/lib/gemini";
+import {
+  parseRecipeContent,
+  parseRecipeFromUrl,
+  parseRecipeFromYoutube,
+} from "@/lib/gemini";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import type { ParseRequest, SourceType, RecipeImage } from "@/types/recipe";
+import type {
+  ParseRequest,
+  SourceType,
+  RecipeImage,
+  ParsedRecipe,
+} from "@/types/recipe";
+
+async function upsertRecipe(args: {
+  userId: string;
+  replaceId: string | undefined;
+  sourceUrl: string;
+  sourceType: SourceType;
+  parsed: ParsedRecipe;
+  images: RecipeImage[];
+  rawContent: string | null;
+}): Promise<string> {
+  const {
+    userId,
+    replaceId,
+    sourceUrl,
+    sourceType,
+    parsed,
+    images,
+    rawContent,
+  } = args;
+
+  if (replaceId) {
+    await db
+      .update(recipes)
+      .set({
+        title: parsed.title,
+        servings: parsed.servings,
+        ingredients: parsed.ingredients,
+        prepSteps: parsed.prepSteps,
+        cookingSteps: parsed.cookingSteps,
+        images,
+        originalRecipe: parsed,
+        rawContent,
+      })
+      .where(and(eq(recipes.id, replaceId), eq(recipes.userId, userId)));
+    return replaceId;
+  }
+
+  const [saved] = await db
+    .insert(recipes)
+    .values({
+      userId,
+      title: parsed.title,
+      sourceUrl,
+      sourceType,
+      servings: parsed.servings,
+      ingredients: parsed.ingredients,
+      prepSteps: parsed.prepSteps,
+      cookingSteps: parsed.cookingSteps,
+      images,
+      originalRecipe: parsed,
+      rawContent,
+    })
+    .returning();
+  return saved.id;
+}
 
 function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -57,129 +117,63 @@ export async function POST(request: NextRequest) {
       try {
         send({ type: "progress", step: "Extracting content…", progress: 15 });
 
-        let content: string;
+        let parsed: ParsedRecipe;
         let images: RecipeImage[];
+        let rawContent: string | null;
 
         if (sourceType === "youtube") {
-          content = await extractYoutubeTranscript(body.url);
+          send({
+            type: "progress",
+            step: "Analyzing video…",
+            progress: 40,
+          });
+          parsed = await parseRecipeFromYoutube(body.url);
           const thumb = getYoutubeThumbnailUrl(body.url);
           images = thumb ? [{ url: thumb }] : [];
+          rawContent = null;
         } else {
+          let extracted: { content: string; images: RecipeImage[] } | null;
           try {
-            const extracted = await extractWebPage(body.url);
-            content = extracted.content;
-            images = extracted.images;
+            extracted = await extractWebPage(body.url);
           } catch {
-            // Scraping failed (403, Cloudflare, etc.) — use Gemini URL context
+            extracted = null;
+          }
+
+          if (extracted && extracted.content.trim().length > 0) {
+            send({
+              type: "progress",
+              step: "Analyzing recipe…",
+              progress: 40,
+            });
+            parsed = await parseRecipeContent(
+              extracted.content,
+              extracted.images,
+            );
+            images = extracted.images;
+            rawContent = extracted.content;
+          } else {
+            // Scraping failed or returned empty — fall back to Gemini URL context
             send({
               type: "progress",
               step: "Analyzing recipe from URL…",
               progress: 40,
             });
-            const parsed = await parseRecipeFromUrl(body.url);
-
-            send({ type: "progress", step: "Saving recipe…", progress: 85 });
-            let savedId: string;
-            if (replaceId) {
-              await db
-                .update(recipes)
-                .set({
-                  title: parsed.title,
-                  servings: parsed.servings,
-                  ingredients: parsed.ingredients,
-                  prepSteps: parsed.prepSteps,
-                  cookingSteps: parsed.cookingSteps,
-                  images: [],
-                  originalRecipe: parsed,
-                  rawContent: null,
-                })
-                .where(
-                  and(eq(recipes.id, replaceId), eq(recipes.userId, userId)),
-                );
-              savedId = replaceId;
-            } else {
-              const [saved] = await db
-                .insert(recipes)
-                .values({
-                  userId,
-                  title: parsed.title,
-                  sourceUrl: body.url,
-                  sourceType,
-                  servings: parsed.servings,
-                  ingredients: parsed.ingredients,
-                  prepSteps: parsed.prepSteps,
-                  cookingSteps: parsed.cookingSteps,
-                  images: [],
-                  originalRecipe: parsed,
-                  rawContent: null,
-                })
-                .returning();
-              savedId = saved.id;
-            }
-
-            send({
-              type: "done",
-              data: {
-                id: savedId,
-                recipe: parsed,
-                sourceUrl: body.url,
-                sourceType,
-                imageUrl: null,
-              },
-            });
-            controller.close();
-            return;
+            parsed = await parseRecipeFromUrl(body.url);
+            images = [];
+            rawContent = null;
           }
         }
 
-        if (!content || content.trim().length === 0) {
-          send({
-            type: "error",
-            error: "Could not extract content from the URL",
-          });
-          controller.close();
-          return;
-        }
-
-        send({ type: "progress", step: "Analyzing recipe…", progress: 40 });
-        const parsed = await parseRecipeContent(content, images);
-
         send({ type: "progress", step: "Saving recipe…", progress: 85 });
-        let savedId: string;
-        if (replaceId) {
-          await db
-            .update(recipes)
-            .set({
-              title: parsed.title,
-              servings: parsed.servings,
-              ingredients: parsed.ingredients,
-              prepSteps: parsed.prepSteps,
-              cookingSteps: parsed.cookingSteps,
-              images,
-              originalRecipe: parsed,
-              rawContent: content,
-            })
-            .where(and(eq(recipes.id, replaceId), eq(recipes.userId, userId)));
-          savedId = replaceId;
-        } else {
-          const [saved] = await db
-            .insert(recipes)
-            .values({
-              userId,
-              title: parsed.title,
-              sourceUrl: body.url,
-              sourceType,
-              servings: parsed.servings,
-              ingredients: parsed.ingredients,
-              prepSteps: parsed.prepSteps,
-              cookingSteps: parsed.cookingSteps,
-              images,
-              originalRecipe: parsed,
-              rawContent: content,
-            })
-            .returning();
-          savedId = saved.id;
-        }
+        const savedId = await upsertRecipe({
+          userId,
+          replaceId,
+          sourceUrl: body.url,
+          sourceType,
+          parsed,
+          images,
+          rawContent,
+        });
 
         send({
           type: "done",

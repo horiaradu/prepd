@@ -117,6 +117,40 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
   return parsed as ParsedRecipe;
 }
 
+export async function parseRecipeFromYoutube(
+  url: string,
+): Promise<ParsedRecipe> {
+  const ai = getClient();
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { fileData: { fileUri: url, mimeType: "video/*" } },
+          {
+            text: "Extract the recipe from this video. For each step, assign a videoTimestamp (in seconds) marking where in the video the step is demonstrated.",
+          },
+        ],
+      },
+    ],
+    config: {
+      systemInstruction: RECIPE_PARSING_PROMPT,
+      responseMimeType: "application/json",
+    },
+  });
+
+  const responseText = response.text!;
+  const parsed = JSON.parse(responseText);
+
+  if (parsed.error) {
+    throw new Error(parsed.error);
+  }
+
+  return parsed as ParsedRecipe;
+}
+
 export async function parseRecipeFromImage(
   imageBytes: Buffer,
   mimeType: string,
