@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import type { ParsedRecipe, RecipeImage } from "@/types/recipe";
 import type { Operation } from "@/lib/recipe-operations";
 
-const RECIPE_PARSING_PROMPT = `You are a recipe extraction assistant. Your job is to take raw recipe content (from a webpage or video transcript) and return a clean, structured recipe.
+const RECIPE_PARSING_PROMPT_BASE = `You are a recipe extraction assistant. Your job is to take raw recipe content (from a webpage or video transcript) and return a clean, structured recipe.
 
 Rules:
 1. Convert ALL quantities to the metric system (grams, kilograms, milliliters, liters). Convert Fahrenheit to Celsius.
@@ -50,6 +50,17 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
   ]
 }`;
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: "English",
+  ro: "Romanian",
+};
+
+function getRecipeParsingPrompt(language = "en"): string {
+  const langName = LANGUAGE_NAMES[language] ?? "English";
+  return `${RECIPE_PARSING_PROMPT_BASE}
+11. LANGUAGE: Output all recipe text (title, ingredient names, step instructions, notes) in ${langName}.`;
+}
+
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -92,6 +103,7 @@ function normalizeRecipe(recipe: unknown): ParsedRecipe {
 export async function parseRecipeContent(
   content: string,
   images?: RecipeImage[],
+  language = "en",
 ): Promise<ParsedRecipe> {
   const ai = getClient();
 
@@ -111,7 +123,7 @@ export async function parseRecipeContent(
     model: "gemini-2.5-flash",
     contents: prompt,
     config: {
-      systemInstruction: RECIPE_PARSING_PROMPT,
+      systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
     },
   });
@@ -126,14 +138,17 @@ export async function parseRecipeContent(
   return normalizeRecipe(parsed);
 }
 
-export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
+export async function parseRecipeFromUrl(
+  url: string,
+  language = "en",
+): Promise<ParsedRecipe> {
   const ai = getClient();
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: `Extract the recipe from this URL: ${url}`,
     config: {
-      systemInstruction: RECIPE_PARSING_PROMPT,
+      systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
       tools: [{ urlContext: {} }],
     },
@@ -151,6 +166,7 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
 
 export async function parseRecipeFromYoutube(
   url: string,
+  language = "en",
 ): Promise<ParsedRecipe> {
   const ai = getClient();
 
@@ -168,7 +184,7 @@ export async function parseRecipeFromYoutube(
       },
     ],
     config: {
-      systemInstruction: RECIPE_PARSING_PROMPT,
+      systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
     },
   });
@@ -186,17 +202,27 @@ export async function parseRecipeFromYoutube(
 export async function parseRecipeFromImage(
   imageBytes: Buffer,
   mimeType: string,
+  language?: string,
 ): Promise<ParsedRecipe>;
 export async function parseRecipeFromImage(
   images: { bytes: Buffer; mimeType: string }[],
+  language?: string,
 ): Promise<ParsedRecipe>;
 export async function parseRecipeFromImage(
   bytesOrImages: Buffer | { bytes: Buffer; mimeType: string }[],
-  mimeType?: string,
+  mimeTypeOrLanguage?: string,
+  language?: string,
 ): Promise<ParsedRecipe> {
-  const images = Array.isArray(bytesOrImages)
-    ? bytesOrImages
-    : [{ bytes: bytesOrImages, mimeType: mimeType! }];
+  let images: { bytes: Buffer; mimeType: string }[];
+  let lang: string;
+
+  if (Array.isArray(bytesOrImages)) {
+    images = bytesOrImages;
+    lang = mimeTypeOrLanguage ?? "en";
+  } else {
+    images = [{ bytes: bytesOrImages, mimeType: mimeTypeOrLanguage! }];
+    lang = language ?? "en";
+  }
 
   const ai = getClient();
 
@@ -224,7 +250,7 @@ export async function parseRecipeFromImage(
       },
     ],
     config: {
-      systemInstruction: RECIPE_PARSING_PROMPT,
+      systemInstruction: getRecipeParsingPrompt(lang),
       responseMimeType: "application/json",
     },
   });
@@ -270,7 +296,7 @@ export async function generateRecipeHeroImage(
   throw new Error("Image generation returned no image data");
 }
 
-const RECIPE_EDIT_PLANNER_PROMPT = `You are a recipe refinement assistant. You receive a recipe as JSON and a user request. Your job is to produce a precise list of operations that transform the recipe to match the request.
+const RECIPE_EDIT_PLANNER_PROMPT_BASE = `You are a recipe refinement assistant. You receive a recipe as JSON and a user request. Your job is to produce a precise list of operations that transform the recipe to match the request.
 
 Return a JSON object with this exact shape:
 {
@@ -305,6 +331,41 @@ Rules:
 5. Preserve imageUrl and videoTimestamp — do not emit ops that would overwrite them unless the step itself is being removed.
 6. The "rationale" field is a short human-readable phrase, not a sentence.`;
 
+function getRecipeEditPlannerPrompt(language = "en"): string {
+  const langName = LANGUAGE_NAMES[language] ?? "English";
+  return `${RECIPE_EDIT_PLANNER_PROMPT_BASE}
+7. LANGUAGE: Write the "summary" and all step "instruction" text in ${langName}. Ingredient names should match the recipe's existing language.`;
+}
+
+function getSuggestSystemInstruction(
+  recipeContext: string,
+  language = "en",
+): string {
+  const langName = LANGUAGE_NAMES[language] ?? "English";
+  return `You are a recipe suggestion assistant. The user wants ideas for what to cook. You have access to Google Search to find real recipes with URLs.
+
+The user's saved recipes and cooking history:
+${recipeContext}
+
+Structure your response in THREE sections, using these exact headers (do not translate the headers):
+
+## From your collection
+Suggest recipes from the user's saved recipes list above that match what they're asking for. If none match, say so briefly.
+
+## From the web
+Search for and suggest real recipes with URLs. Include a brief description and the source link for each.
+
+## My own ideas
+Suggest 1-2 original recipe ideas you come up with yourself — brief description and key ingredients, no URL needed.
+
+Guidelines:
+- Keep each section concise (2-3 items max per section)
+- Reference their cooking history when relevant
+- Always include real URLs for the "From the web" section
+- For "From your collection", mention the recipe title exactly as it appears in their list
+- Write all descriptions and content in ${langName}`;
+}
+
 // Future improvement: two-stage intent classification before planRecipeEdit.
 // For vague requests like "make it healthier" or "make it more summer-y", a first
 // LLM call could interpret the intent and rewrite it as a concrete list of changes
@@ -315,6 +376,7 @@ export async function planRecipeEdit(
   recipe: ParsedRecipe,
   message: string,
   history: Array<{ role: "user" | "model"; content: string }>,
+  language = "en",
 ): Promise<{ operations: Operation[]; summary: string }> {
   const ai = getClient();
 
@@ -339,7 +401,7 @@ export async function planRecipeEdit(
     model: "gemini-2.5-flash",
     contents,
     config: {
-      systemInstruction: RECIPE_EDIT_PLANNER_PROMPT,
+      systemInstruction: getRecipeEditPlannerPrompt(language),
       responseMimeType: "application/json",
     },
   });
@@ -355,6 +417,7 @@ export async function suggestRecipes(
   message: string,
   conversationHistory: Array<{ role: "user" | "model"; content: string }>,
   recipeContext: string,
+  language = "en",
 ): Promise<{ text: string; sources: Array<{ uri: string; title: string }> }> {
   const ai = getClient();
 
@@ -370,27 +433,7 @@ export async function suggestRecipes(
     model: "gemini-2.5-flash",
     contents,
     config: {
-      systemInstruction: `You are a recipe suggestion assistant. The user wants ideas for what to cook. You have access to Google Search to find real recipes with URLs.
-
-The user's saved recipes and cooking history:
-${recipeContext}
-
-Structure your response in THREE sections, using these exact headers:
-
-## From your collection
-Suggest recipes from the user's saved recipes list above that match what they're asking for. If none match, say so briefly.
-
-## From the web
-Search for and suggest real recipes with URLs. Include a brief description and the source link for each.
-
-## My own ideas
-Suggest 1-2 original recipe ideas you come up with yourself — brief description and key ingredients, no URL needed.
-
-Guidelines:
-- Keep each section concise (2-3 items max per section)
-- Reference their cooking history when relevant
-- Always include real URLs for the "From the web" section
-- For "From your collection", mention the recipe title exactly as it appears in their list`,
+      systemInstruction: getSuggestSystemInstruction(recipeContext, language),
       tools: [{ googleSearch: {} }],
     },
   });
@@ -414,6 +457,7 @@ export async function suggestRecipesStream(
   message: string,
   conversationHistory: Array<{ role: "user" | "model"; content: string }>,
   recipeContext: string,
+  language = "en",
 ): Promise<ReadableStream<Uint8Array>> {
   const ai = getClient();
   const encoder = new TextEncoder();
@@ -430,27 +474,7 @@ export async function suggestRecipesStream(
     model: "gemini-2.5-flash",
     contents,
     config: {
-      systemInstruction: `You are a recipe suggestion assistant. The user wants ideas for what to cook. You have access to Google Search to find real recipes with URLs.
-
-The user's saved recipes and cooking history:
-${recipeContext}
-
-Structure your response in THREE sections, using these exact headers:
-
-## From your collection
-Suggest recipes from the user's saved recipes list above that match what they're asking for. If none match, say so briefly.
-
-## From the web
-Search for and suggest real recipes with URLs. Include a brief description and the source link for each.
-
-## My own ideas
-Suggest 1-2 original recipe ideas you come up with yourself — brief description and key ingredients, no URL needed.
-
-Guidelines:
-- Keep each section concise (2-3 items max per section)
-- Reference their cooking history when relevant
-- Always include real URLs for the "From the web" section
-- For "From your collection", mention the recipe title exactly as it appears in their list`,
+      systemInstruction: getSuggestSystemInstruction(recipeContext, language),
       tools: [{ googleSearch: {} }],
     },
   });
@@ -515,6 +539,7 @@ Guidelines:
 
 export async function generateRecipe(
   description: string,
+  language = "en",
 ): Promise<ParsedRecipe> {
   const ai = getClient();
 
@@ -526,7 +551,7 @@ Be specific with quantities, timings, and techniques. This should be a complete,
     model: "gemini-2.5-flash",
     contents: prompt,
     config: {
-      systemInstruction: RECIPE_PARSING_PROMPT,
+      systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
     },
   });

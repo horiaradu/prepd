@@ -78,7 +78,8 @@ export const recipes = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     sourceUrl: text("source_url").notNull(),
-    sourceType: text("source_type").notNull(), // "youtube" | "web"
+    sourceType: text("source_type").notNull(), // "youtube" | "web" | "image"
+    language: text("language").notNull().default("en"), // "en" | "ro"
     servings: integer("servings"),
     ingredients: jsonb("ingredients").$type<Ingredient[]>().notNull(),
     prepSteps: jsonb("prep_steps").$type<Step[]>().notNull(),

@@ -11,6 +11,7 @@ import {
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
 import type {
   ParseRequest,
   SourceType,
@@ -23,6 +24,7 @@ async function upsertRecipe(args: {
   replaceId: string | undefined;
   sourceUrl: string;
   sourceType: SourceType;
+  language: string;
   parsed: ParsedRecipe;
   images: RecipeImage[];
   rawContent: string | null;
@@ -32,6 +34,7 @@ async function upsertRecipe(args: {
     replaceId,
     sourceUrl,
     sourceType,
+    language,
     parsed,
     images,
     rawContent,
@@ -49,6 +52,7 @@ async function upsertRecipe(args: {
         images,
         originalRecipe: parsed,
         rawContent,
+        language,
       })
       .where(and(eq(recipes.id, replaceId), eq(recipes.userId, userId)));
     return replaceId;
@@ -61,6 +65,7 @@ async function upsertRecipe(args: {
       title: parsed.title,
       sourceUrl,
       sourceType,
+      language,
       servings: parsed.servings,
       ingredients: parsed.ingredients,
       prepSteps: parsed.prepSteps,
@@ -108,6 +113,8 @@ export async function POST(request: NextRequest) {
 
   const userId = session.user.id;
   const sourceType: SourceType = isYoutubeUrl(body.url) ? "youtube" : "web";
+  const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
+  const language = isValidLocale(rawLocale) ? rawLocale : "en";
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -127,7 +134,7 @@ export async function POST(request: NextRequest) {
             step: "Analyzing video…",
             progress: 40,
           });
-          parsed = await parseRecipeFromYoutube(body.url);
+          parsed = await parseRecipeFromYoutube(body.url, language);
           const thumb = getYoutubeThumbnailUrl(body.url);
           images = thumb ? [{ url: thumb }] : [];
           rawContent = null;
@@ -148,6 +155,7 @@ export async function POST(request: NextRequest) {
             parsed = await parseRecipeContent(
               extracted.content,
               extracted.images,
+              language,
             );
             images = extracted.images;
             rawContent = extracted.content;
@@ -158,7 +166,7 @@ export async function POST(request: NextRequest) {
               step: "Analyzing recipe from URL…",
               progress: 40,
             });
-            parsed = await parseRecipeFromUrl(body.url);
+            parsed = await parseRecipeFromUrl(body.url, language);
             images = [];
             rawContent = null;
           }
@@ -170,6 +178,7 @@ export async function POST(request: NextRequest) {
           replaceId,
           sourceUrl: body.url,
           sourceType,
+          language,
           parsed,
           images,
           rawContent,

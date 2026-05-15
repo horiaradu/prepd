@@ -87,6 +87,8 @@ export async function POST(
   let operations;
   let summary;
 
+  const language = recipe.language ?? "en";
+
   for (let attempt = 0; attempt < 2; attempt++) {
     const result = await planRecipeEdit(
       currentRecipe,
@@ -94,6 +96,7 @@ export async function POST(
         ? message
         : `${message}\n\nPrevious attempt had validation errors: ${(validateOperations(currentRecipe, operations!) as { ok: false; errors: string[] }).errors.join(", ")}. Please fix these.`,
       conversationHistory,
+      language,
     );
     operations = result.operations;
     summary = result.summary;
@@ -122,14 +125,12 @@ export async function POST(
     );
   }
 
-  await db
-    .insert(recipeMessages)
-    .values({
-      recipeId: id,
-      role: "user",
-      content: message,
-      status: "applied",
-    });
+  await db.insert(recipeMessages).values({
+    recipeId: id,
+    role: "user",
+    content: message,
+    status: "applied",
+  });
 
   const [assistantMsg] = await db
     .insert(recipeMessages)

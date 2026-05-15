@@ -7,6 +7,7 @@ import { parseRecipeFromImage } from "@/lib/gemini";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
+import { isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
 
 function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
+  const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
+  const language = isValidLocale(rawLocale) ? rawLocale : "en";
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest) {
             bytes: resized,
             mimeType: "image/jpeg",
           })),
+          language,
         );
 
         send({ type: "progress", step: "Saving recipe…", progress: 85 });
@@ -87,6 +91,7 @@ export async function POST(request: NextRequest) {
             title: parsed.title,
             sourceUrl: blobUrls[0],
             sourceType: "image",
+            language,
             servings: parsed.servings,
             ingredients: parsed.ingredients,
             prepSteps: parsed.prepSteps,
@@ -121,7 +126,8 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         console.error("Recipe parse-image error:", error);
-        if (blobUrls.length > 0) await Promise.all(blobUrls.map((u) => del(u).catch(() => {})));
+        if (blobUrls.length > 0)
+          await Promise.all(blobUrls.map((u) => del(u).catch(() => {})));
         const message =
           error instanceof Error ? error.message : "Failed to parse recipe";
         send({ type: "error", error: message });

@@ -1,0 +1,1 @@
+ALTER TABLE "recipes" ADD COLUMN "language" text DEFAULT 'en' NOT NULL;

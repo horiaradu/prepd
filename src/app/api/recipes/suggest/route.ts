@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { recipes, cookLog } from "@/db/schema";
 import { eq, desc, count, max } from "drizzle-orm";
 import { suggestRecipesStream } from "@/lib/gemini";
+import { isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest) {
   if (!message) {
     return NextResponse.json({ error: "Message is required" }, { status: 400 });
   }
+
+  const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
+  const language = isValidLocale(rawLocale) ? rawLocale : "en";
 
   const rows = await db
     .select({
@@ -46,7 +50,12 @@ export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   const recipesPayload = rows.map((r) => ({ id: r.id, title: r.title }));
 
-  const stream = await suggestRecipesStream(message, history, recipeContext);
+  const stream = await suggestRecipesStream(
+    message,
+    history,
+    recipeContext,
+    language,
+  );
 
   const wrappedStream = new ReadableStream({
     async start(controller) {
