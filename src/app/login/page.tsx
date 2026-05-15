@@ -4,8 +4,10 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { GoogleIcon } from "@/components/icons";
+import { useLanguage } from "@/context/LanguageContext";
 
 function LoginContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -20,12 +22,10 @@ function LoginContent() {
           />
           Mintdish
         </h1>
-        <p className="text-gray-500">Sign in to access your recipes</p>
+        <p className="text-gray-500">{t.signInToAccess}</p>
 
         {error === "AccessDenied" && (
-          <p className="text-red-500 text-sm">
-            Access denied. Only authorized accounts can sign in.
-          </p>
+          <p className="text-red-500 text-sm">{t.accessDenied}</p>
         )}
 
         <button
@@ -33,7 +33,7 @@ function LoginContent() {
           className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:border-green-600 transition-colors flex items-center gap-3 mx-auto"
         >
           <GoogleIcon className="w-5 h-5" />
-          Sign in with Google
+          {t.signInWithGoogle}
         </button>
       </div>
     </div>

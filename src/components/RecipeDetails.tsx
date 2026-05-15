@@ -18,6 +18,7 @@ import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import { applyOperations } from "@/lib/recipe-operations";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
 import type { ChatMessage } from "@/lib/recipes";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function RecipeDetails({
   initialRecipe,
@@ -26,6 +27,7 @@ export default function RecipeDetails({
   initialRecipe: Recipe;
   initialMessages: ChatMessage[];
 }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const recipeId = initialRecipe.id;
   const [recipe, setRecipe] = useState<Recipe>(initialRecipe);
@@ -113,7 +115,7 @@ export default function RecipeDetails({
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setError(data.error ?? "Something went wrong");
+          setError(data.error ?? t.somethingWentWrong);
           return;
         }
         setPendingMessageId(data.messageId);
@@ -140,7 +142,7 @@ export default function RecipeDetails({
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Failed to apply changes");
+        setError(data.error ?? t.failedToApply);
         return;
       }
       setRecipe((prev) => ({ ...prev, ...data.recipe }));
@@ -161,7 +163,7 @@ export default function RecipeDetails({
     );
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to discard");
+      setError(data.error ?? t.failedToDiscard);
       return;
     }
     setChatInput("");
@@ -179,7 +181,7 @@ export default function RecipeDetails({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Nothing to undo");
+        setError(data.error ?? t.nothingToUndo);
         return;
       }
       setRecipe((prev) => ({ ...prev, ...data.recipe }));
@@ -233,12 +235,12 @@ export default function RecipeDetails({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Failed to generate image");
+        setError(data.error ?? t.failedToGenerateImage);
         return;
       }
       setHeroImageOverride(data.imageUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate image");
+      setError(err instanceof Error ? err.message : t.failedToGenerateImage);
     } finally {
       setGeneratingImage(false);
     }
@@ -277,9 +279,9 @@ export default function RecipeDetails({
     <div className="p-6 sm:p-8 max-w-3xl w-full mx-auto">
       <ConfirmDialog
         open={confirmingDelete}
-        title="Delete this recipe?"
-        message="This action cannot be undone."
-        confirmLabel="Delete"
+        title={t.deleteRecipeTitle}
+        message={t.deleteRecipeMessage}
+        confirmLabel={t.delete}
         onConfirm={handleDelete}
         onCancel={() => setConfirmingDelete(false)}
       />
@@ -307,13 +309,13 @@ export default function RecipeDetails({
 
       {showOriginal && (
         <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-          Viewing the original recipe as first parsed
+          {t.viewingOriginal}
         </div>
       )}
 
       {previewRecipe && (
         <div className="mb-4 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-          Showing a preview — apply to save or discard to go back
+          {t.showingPreview}
         </div>
       )}
 
@@ -326,12 +328,12 @@ export default function RecipeDetails({
           {hasOriginal && messages.length > 0 && !hasPending && (
             <button
               onClick={() => setShowOriginal(!showOriginal)}
-              title={showOriginal ? "View current" : "View original"}
+              title={showOriginal ? t.viewCurrent : t.viewOriginal}
               className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
             >
               <HistoryIcon />
               <span className="hidden sm:inline">
-                {showOriginal ? "View current" : "View original"}
+                {showOriginal ? t.viewCurrent : t.viewOriginal}
               </span>
             </button>
           )}
@@ -339,11 +341,11 @@ export default function RecipeDetails({
             <button
               onClick={handleReparse}
               disabled={reparsing}
-              title={reparsing ? "Re-parsing…" : "Re-parse"}
+              title={reparsing ? t.reparsing : t.reparse}
               className="inline-flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-600 disabled:opacity-50"
             >
               <RotateCcwIcon />
-              <span>{reparsing ? "Re-parsing…" : "Re-parse"}</span>
+              <span>{reparsing ? t.reparsing : t.reparse}</span>
             </button>
           )}
           {recipe.sourceUrl && recipe.sourceType !== "image" && !hasPending && (
@@ -351,11 +353,11 @@ export default function RecipeDetails({
               href={recipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              title="Source"
+              title={t.source}
               className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
             >
               <ExternalLinkIcon />
-              <span className="hidden sm:inline">Source</span>
+              <span className="hidden sm:inline">{t.source}</span>
             </a>
           )}
           {recipe.sourceType === "image" && !hasPending && (
@@ -363,11 +365,11 @@ export default function RecipeDetails({
               href={`/api/recipes/${recipe.id}/source-image`}
               target="_blank"
               rel="noopener noreferrer"
-              title="Source"
+              title={t.source}
               className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
             >
               <ExternalLinkIcon />
-              <span className="hidden sm:inline">Source</span>
+              <span className="hidden sm:inline">{t.source}</span>
             </a>
           )}
           {!hasPending && (
@@ -376,36 +378,40 @@ export default function RecipeDetails({
               disabled={generatingImage}
               title={
                 generatingImage
-                  ? "Generating…"
+                  ? t.generating
                   : heroImageOverride || recipe.images?.[0]?.url
-                    ? "Regenerate image"
-                    : "Generate image"
+                    ? t.regenerateImage
+                    : t.generateImage
               }
               className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 disabled:opacity-50"
             >
               <SparklesIcon />
-              {generatingImage ? <span>Generating…</span> : <span>Image</span>}
+              {generatingImage ? (
+                <span>{t.generating}</span>
+              ) : (
+                <span>{t.image}</span>
+              )}
             </button>
           )}
           {!hasPending && (
             <button
               onClick={() => setShowShare(true)}
-              title="Share"
+              title={t.share}
               className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700"
             >
               <ShareIcon />
-              <span className="hidden sm:inline">Share</span>
+              <span className="hidden sm:inline">{t.share}</span>
             </button>
           )}
           <button
             onClick={() => setConfirmingDelete(true)}
             disabled={deleting || hasPending}
-            title={deleting ? "Deleting…" : "Delete"}
+            title={deleting ? t.deleting : t.delete}
             className="inline-flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 disabled:opacity-50 ml-auto"
           >
             <TrashIcon />
             <span className="hidden sm:inline">
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? t.deleting : t.delete}
             </span>
           </button>
         </div>
@@ -446,7 +452,7 @@ export default function RecipeDetails({
                         disabled={undoing}
                         className="mt-2 text-xs text-gray-400 hover:text-gray-600 disabled:opacity-50"
                       >
-                        {undoing ? "Undoing…" : "Undo"}
+                        {undoing ? t.undoing : t.undo}
                       </button>
                     )}
                   </div>
@@ -469,14 +475,14 @@ export default function RecipeDetails({
                   disabled={applying}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {applying ? "Applying…" : "Apply changes"}
+                  {applying ? t.applying : t.applyChanges}
                 </button>
                 <button
                   onClick={handleDiscard}
                   disabled={applying}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
                 >
-                  Discard
+                  {t.discard}
                 </button>
               </div>
             </div>
@@ -490,7 +496,7 @@ export default function RecipeDetails({
               <textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Tweak the recipe… e.g. 'use coconut milk instead of cream' or 'double the garlic'"
+                placeholder={t.tweakPlaceholder}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
                 rows={2}
                 disabled={sending}
@@ -507,16 +513,14 @@ export default function RecipeDetails({
                   disabled={sending || !chatInput.trim()}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {sending ? "Thinking…" : "Update recipe"}
+                  {sending ? t.thinking : t.updateRecipe}
                 </button>
                 <button
                   onClick={() => handleSendMessage("cook")}
                   disabled={sending}
                   className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50 transition-colors"
                 >
-                  {chatInput.trim()
-                    ? "I cooked this + update"
-                    : "I cooked this"}
+                  {chatInput.trim() ? t.iCookedThisUpdate : t.iCookedThis}
                 </button>
               </div>
             </div>

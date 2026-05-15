@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function ShareDialog({
   open,
@@ -11,6 +12,7 @@ export function ShareDialog({
   recipeId: string;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
@@ -47,13 +49,13 @@ export function ShareDialog({
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Failed to share");
+        setError(data.error ?? t.failedToShare);
         return;
       }
 
       setSent(true);
     } catch {
-      setError("Failed to share");
+      setError(t.failedToShare);
     } finally {
       setSending(false);
     }
@@ -74,18 +76,18 @@ export function ShareDialog({
         className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-semibold mb-4">Share recipe</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.shareRecipeTitle}</h3>
 
         {sent ? (
           <div className="space-y-4">
             <p className="text-green-600 text-sm">
-              Recipe shared with {email}!
+              {t.recipeSharedWith.replace("{email}", email)}
             </p>
             <button
               onClick={onClose}
               className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
-              Done
+              {t.done}
             </button>
           </div>
         ) : (
@@ -102,7 +104,7 @@ export function ShareDialog({
                     handleSend();
                   }
                 }}
-                placeholder="Recipient email"
+                placeholder={t.recipientEmail}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
               />
               {email && filtered.length > 0 && (
@@ -128,14 +130,14 @@ export function ShareDialog({
                 onClick={onClose}
                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 onClick={handleSend}
                 disabled={sending || !email.trim()}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
-                {sending ? "Sending…" : "Send"}
+                {sending ? t.sending : t.send}
               </button>
             </div>
           </div>

@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import type { ParsedRecipe, Ingredient, Step } from "@/types/recipe";
+import { useLanguage } from "@/context/LanguageContext";
 
-function formatScaledQuantity(ingredient: Ingredient, scale: number): string {
+function formatScaledQuantity(ingredient: Ingredient, scale: number, toTasteLabel: string): string {
   if (ingredient.unit === "to taste") {
     const notes = ingredient.notes ? ` (${ingredient.notes})` : "";
-    return `${ingredient.unit} ${ingredient.name}${notes}`.trim();
+    return `${toTasteLabel} ${ingredient.name}${notes}`.trim();
   }
   const scaled = ingredient.quantity * scale;
   const display = Number.isInteger(scaled) ? scaled : +scaled.toFixed(2);
@@ -18,15 +19,17 @@ function formatScaledQuantity(ingredient: Ingredient, scale: number): string {
 function StepIngredients({
   ingredients,
   scale,
+  toTasteLabel,
 }: {
   ingredients: Ingredient[];
   scale: number;
+  toTasteLabel: string;
 }) {
   if (ingredients.length === 0) return null;
   return (
     <ul className="mt-1 ml-6 text-sm text-gray-500">
       {ingredients.map((ing, i) => (
-        <li key={i}>{formatScaledQuantity(ing, scale)}</li>
+        <li key={i}>{formatScaledQuantity(ing, scale, toTasteLabel)}</li>
       ))}
     </ul>
   );
@@ -40,7 +43,7 @@ function formatTimestamp(seconds: number): string {
 
 function extractDuration(text: string): string | null {
   const match = text.match(
-    /(\d+[\u2013\u2014-]\d+|\d+)\s*(minutes?|mins?|hours?|hrs?|seconds?|secs?)/i,
+    /(\d+[–—-]\d+|\d+)\s*(minutes?|mins?|hours?|hrs?|seconds?|secs?)/i,
   );
   if (!match) return null;
   return `${match[1]} ${match[2]}`;
@@ -52,12 +55,16 @@ function StepList({
   scale,
   videoBaseUrl,
   onImageClick,
+  toTasteLabel,
+  watchAtTemplate,
 }: {
   title: string;
   steps: Step[];
   scale: number;
   videoBaseUrl?: string;
   onImageClick: (url: string) => void;
+  toTasteLabel: string;
+  watchAtTemplate: string;
 }) {
   if (steps.length === 0) return null;
   return (
@@ -76,7 +83,11 @@ function StepList({
                   ⏱ {extractDuration(step.instruction)}
                 </span>
               )}
-              <StepIngredients ingredients={step.ingredients} scale={scale} />
+              <StepIngredients
+                ingredients={step.ingredients}
+                scale={scale}
+                toTasteLabel={toTasteLabel}
+              />
               {step.imageUrl && (
                 <img
                   src={step.imageUrl}
@@ -92,7 +103,7 @@ function StepList({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 mt-1.5 text-xs text-red-500 hover:text-red-600"
                 >
-                  ▶ Watch at {formatTimestamp(step.videoTimestamp)}
+                  {watchAtTemplate.replace("{time}", formatTimestamp(step.videoTimestamp))}
                 </a>
               )}
             </div>
@@ -114,6 +125,7 @@ export function RecipeDisplay({
   heroImageUrl?: string;
   children?: React.ReactNode;
 }) {
+  const { t } = useLanguage();
   const [servings, setServings] = useState<number | null>(recipe.servings);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const scale = recipe.servings && servings ? servings / recipe.servings : 1;
@@ -126,6 +138,7 @@ export function RecipeDisplay({
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [lightboxUrl]);
+
   const videoBaseUrl = sourceUrl?.includes("youtube.com/watch")
     ? sourceUrl
     : sourceUrl?.includes("youtu.be/")
@@ -163,7 +176,7 @@ export function RecipeDisplay({
         <h1 className="text-3xl font-bold">{recipe.title}</h1>
         {recipe.servings && (
           <div className="flex items-center gap-2 mt-1 text-gray-500">
-            <span>Serves</span>
+            <span>{t.serves}</span>
             <div className="flex items-center">
               <button
                 type="button"
@@ -202,7 +215,7 @@ export function RecipeDisplay({
                 onClick={() => setServings(recipe.servings)}
                 className="text-xs text-green-600 hover:underline"
               >
-                Reset
+                {t.reset}
               </button>
             )}
           </div>
@@ -210,30 +223,34 @@ export function RecipeDisplay({
       </div>
 
       <section>
-        <h2 className="text-xl font-semibold mb-3">Ingredients</h2>
+        <h2 className="text-xl font-semibold mb-3">{t.ingredients}</h2>
         <ul className="space-y-1">
           {recipe.ingredients.map((ing, i) => (
             <li key={i} className="flex items-start gap-2">
               <span className="text-gray-400">•</span>
-              <span>{formatScaledQuantity(ing, scale)}</span>
+              <span>{formatScaledQuantity(ing, scale, t.toTaste)}</span>
             </li>
           ))}
         </ul>
       </section>
 
       <StepList
-        title="Preparation"
+        title={t.preparation}
         steps={recipe.prepSteps}
         scale={scale}
         videoBaseUrl={videoBaseUrl}
         onImageClick={setLightboxUrl}
+        toTasteLabel={t.toTaste}
+        watchAtTemplate={t.watchAt}
       />
       <StepList
-        title="Cooking"
+        title={t.cooking}
         steps={recipe.cookingSteps}
         scale={scale}
         videoBaseUrl={videoBaseUrl}
         onImageClick={setLightboxUrl}
+        toTasteLabel={t.toTaste}
+        watchAtTemplate={t.watchAt}
       />
     </div>
   );

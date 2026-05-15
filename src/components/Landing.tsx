@@ -1,45 +1,55 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { CameraIcon, ExternalLinkIcon, SparklesIcon } from "@/components/icons";
 import { WaitlistForm } from "@/components/WaitlistForm";
+import {
+  getTranslations,
+  isValidLocale,
+  LOCALE_COOKIE,
+  type Translations,
+} from "@/lib/i18n";
 
-export function Landing() {
+export async function Landing() {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(LOCALE_COOKIE)?.value ?? "en";
+  const locale = isValidLocale(raw) ? raw : "en";
+  const t = getTranslations(locale);
+
   return (
     <div className="flex-1 flex flex-col">
-      <Hero />
-      <InputModes />
-      <OutputShowcase />
-      <Waitlist />
+      <Hero t={t} />
+      <InputModes t={t} />
+      <OutputShowcase t={t} />
+      <Waitlist t={t} />
     </div>
   );
 }
 
-function Hero() {
+function Hero({ t }: { t: Translations }) {
   return (
     <section className="px-6 sm:px-8 pt-12 sm:pt-20 pb-16 sm:pb-24">
       <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="space-y-7">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-            Skip the food blog.
+            {t.heroLine1}
             <br />
-            <span className="text-green-600">Just the recipe.</span>
+            <span className="text-green-600">{t.heroLine2}</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-xl">
-            Paste a recipe link, drop a YouTube cooking video, or snap a photo.
-            Mintdish parses it into clean ingredients, prep steps, and cooking
-            times — ready to follow.
+            {t.heroSubtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
               href="/login"
               className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
             >
-              Sign in
+              {t.signIn}
             </Link>
             <a
               href="#waitlist"
               className="inline-flex items-center justify-center px-6 py-3 bg-white border border-gray-200 font-medium rounded-lg hover:border-green-600 hover:text-green-700 transition-colors"
             >
-              Join the waitlist
+              {t.joinWaitlist}
             </a>
           </div>
         </div>
@@ -56,38 +66,37 @@ function Hero() {
   );
 }
 
-function InputModes() {
+function InputModes({ t }: { t: Translations }) {
   return (
     <section className="px-6 sm:px-8 py-16 sm:py-20 bg-gray-50/60 border-y border-gray-100">
       <div className="max-w-6xl mx-auto space-y-12">
         <div className="max-w-2xl">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            From wherever you found it.
+            {t.fromWhereverFound}
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            One input, three ways in. Mintdish figures out which kind of source
-            you handed it and pulls the recipe out.
+            {t.oneInputThreeWays}
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           <InputModeCard
-            badge="Link"
-            title="Recipe sites"
-            description="Bon Appétit, Serious Eats, Food52, NYT Cooking. Paste the link, get the recipe — without the 2,000-word backstory."
+            badge={t.badgeLink}
+            title={t.recipeSites}
+            description={t.recipeSitesDesc}
             icon={<ExternalLinkIcon size={28} className="text-green-600" />}
             preview={<BrowserPreview />}
           />
           <InputModeCard
-            badge="YouTube"
-            title="Cooking videos"
-            description="Mintdish reads the transcript, watches what gets cooked, and turns it into step-by-step instructions with ingredients."
+            badge={t.badgeYoutube}
+            title={t.cookingVideos}
+            description={t.cookingVideosDesc}
             icon={<YouTubeGlyph />}
             preview={<VideoPreview />}
           />
           <InputModeCard
-            badge="Photo"
-            title="Cookbook pages & screenshots"
-            description="Snap a page from a cookbook, screenshot a friend's text, or upload a handwritten card — Mintdish reads it."
+            badge={t.badgePhoto}
+            title={t.cookbookPages}
+            description={t.cookbookPagesDesc}
             icon={<CameraIcon size={28} className="text-green-600" />}
             preview={<RecipeCardPreview />}
           />
@@ -206,33 +215,30 @@ function YouTubeGlyph() {
   );
 }
 
-function OutputShowcase() {
+function OutputShowcase({ t }: { t: Translations }) {
   return (
     <section className="px-6 sm:px-8 py-16 sm:py-24">
       <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="lg:order-2 space-y-6">
           <div className="inline-flex items-center gap-2 text-sm font-medium text-green-700">
             <SparklesIcon size={16} className="text-green-600" />
-            <span>Structured, not scraped</span>
+            <span>{t.structuredNotScraped}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Ingredients, steps, and timing — laid out for cooking.
+            {t.ingredientsStepsTiming}
           </h2>
           <ul className="space-y-4 text-gray-600">
-            <Bullet title="Per-step ingredients">
-              Every step shows exactly which ingredients to grab — no jumping
-              back to the top.
+            <Bullet title={t.perStepIngredients}>
+              {t.perStepIngredientsDesc}
             </Bullet>
-            <Bullet title="Metric conversions">
-              Cups, ounces, sticks of butter — all converted to grams and
-              millilitres.
+            <Bullet title={t.metricConversions}>
+              {t.metricConversionsDesc}
             </Bullet>
-            <Bullet title="Timing built in">
-              Cooking times surface as badges so you know what&apos;s a
-              two-minute task and what&apos;s a forty-minute simmer.
+            <Bullet title={t.timingBuiltIn}>
+              {t.timingBuiltInDesc}
             </Bullet>
-            <Bullet title="Scale your servings">
-              Bump the serving size and the amounts scale with you.
+            <Bullet title={t.scaleServings}>
+              {t.scaleServingsDesc}
             </Bullet>
           </ul>
         </div>
@@ -269,7 +275,7 @@ function Bullet({
   );
 }
 
-function Waitlist() {
+function Waitlist({ t }: { t: Translations }) {
   return (
     <section
       id="waitlist"
@@ -277,11 +283,10 @@ function Waitlist() {
     >
       <div className="max-w-2xl mx-auto text-center space-y-6">
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-          Get on the waitlist.
+          {t.getOnWaitlist}
         </h2>
         <p className="text-lg text-green-50/90">
-          Mintdish is invite-only while we tune the parser. Drop your email —
-          we&apos;ll keep you in the loop at launch and get you into beta early.
+          {t.waitlistSubtitle}
         </p>
         <WaitlistForm />
       </div>

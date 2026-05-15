@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProgressBar from "@/components/ProgressBar";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Tab = "collection" | "web" | "ideas";
 
@@ -188,6 +189,7 @@ function linkifyRecipeTitles(
 }
 
 export default function SuggestPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -328,7 +330,7 @@ export default function SuggestPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-gray-800">
-              {item.title || source?.title || "Recipe"}
+              {item.title || source?.title || t.recipeFallbackTitle}
             </p>
             {item.description && (
               <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
@@ -350,7 +352,7 @@ export default function SuggestPage() {
               disabled={busy}
               className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
-              {parsing === url ? "Parsing…" : "Save recipe"}
+              {parsing === url ? t.parsing : t.saveRecipe}
             </button>
           )}
           {action === "generate" && (
@@ -359,7 +361,7 @@ export default function SuggestPage() {
               disabled={busy}
               className="shrink-0 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
-              {generating === item.title ? "Generating…" : "Generate recipe"}
+              {generating === item.title ? t.generating : t.generateRecipeSuggest}
             </button>
           )}
         </div>
@@ -368,15 +370,15 @@ export default function SuggestPage() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "collection", label: "Your collection" },
-    { key: "web", label: "From the web" },
-    { key: "ideas", label: "Original ideas" },
+    { key: "collection", label: t.yourCollection },
+    { key: "web", label: t.fromTheWeb },
+    { key: "ideas", label: t.originalIdeas },
   ];
 
   return (
     <div className="flex flex-col max-w-3xl w-full mx-auto p-6 sm:p-8">
       <h1 className="text-lg font-semibold tracking-tight mb-6">
-        Recipe suggestions
+        {t.recipeSuggestions}
       </h1>
 
       <div className="mb-6">
@@ -385,7 +387,7 @@ export default function SuggestPage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="What are you in the mood for?"
+            placeholder={t.whatMoodFor}
             className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
             disabled={sending}
             onKeyDown={(e) => {
@@ -400,7 +402,7 @@ export default function SuggestPage() {
             disabled={sending || !input.trim()}
             className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            {sending ? "Searching…" : "Send"}
+            {sending ? t.searching : t.send}
           </button>
         </div>
       </div>
@@ -413,15 +415,14 @@ export default function SuggestPage() {
 
       {sending && !sections && (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-400 animate-pulse">Searching for recipes…</p>
+          <p className="text-gray-400 animate-pulse">{t.searchingForRecipes}</p>
         </div>
       )}
 
       {!sending && !sections && (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-center text-gray-400">
-            Ask me for recipe ideas — I&apos;ll search the web and suggest based
-            on your cooking history.
+            {t.askForRecipeIdeas}
           </p>
         </div>
       )}
@@ -506,7 +507,7 @@ export default function SuggestPage() {
                 ) : (
                   !sending && (
                     <p className="text-gray-400 text-sm">
-                      No suggestions from your collection.
+                      {t.noSuggestionsFromCollection}
                     </p>
                   )
                 )}
@@ -537,7 +538,7 @@ export default function SuggestPage() {
                     )
                   ) : !sending ? (
                     <p className="text-gray-400 text-sm">
-                      No web recipes found.
+                      {t.noWebRecipes}
                     </p>
                   ) : null;
                 })()}
@@ -559,7 +560,7 @@ export default function SuggestPage() {
                 ) : (
                   !sending && (
                     <p className="text-gray-400 text-sm">
-                      No original ideas suggested.
+                      {t.noOriginalIdeas}
                     </p>
                   )
                 )}

@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { cookies } from "next/headers";
 import { Providers } from "@/components/Providers";
 import { AuthLayout } from "@/components/AuthLayout";
+import { Footer } from "@/components/Footer";
+import { getTranslations, isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import "./globals.css";
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -41,14 +45,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(LOCALE_COOKIE)?.value ?? "en";
+  const locale: Locale = isValidLocale(raw) ? raw : "en";
+  const t = getTranslations(locale);
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${jakartaSans.variable} h-full antialiased`}
     >
       <head>
@@ -59,18 +68,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <Providers>
+        <Providers locale={locale}>
           <AuthLayout>{children}</AuthLayout>
         </Providers>
-        <footer className="mt-auto border-t border-gray-100 py-4 text-center text-xs text-gray-400">
-          <a href="/privacy" className="hover:text-gray-600">
-            Privacy
-          </a>
-          <span className="mx-2">·</span>
-          <a href="/terms" className="hover:text-gray-600">
-            Terms
-          </a>
-        </footer>
+        <Footer privacyLabel={t.privacy} termsLabel={t.terms} />
       </body>
     </html>
   );

@@ -4,12 +4,14 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import RecipeInput from "@/components/RecipeInput";
 import type { RecipeSummary } from "@/types/recipe";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function RecipeList({
   initialRecipes,
 }: {
   initialRecipes: RecipeSummary[];
 }) {
+  const { t, locale } = useLanguage();
   const [recipes, setRecipes] = useState(initialRecipes);
   const [search, setSearch] = useState("");
 
@@ -28,7 +30,7 @@ export default function RecipeList({
           href="/suggest"
           className="text-sm font-medium text-green-600 hover:text-green-700"
         >
-          Suggest recipes
+          {t.suggestRecipes}
         </Link>
       </nav>
 
@@ -39,7 +41,7 @@ export default function RecipeList({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter recipes…"
+          placeholder={t.filterRecipes}
           className="w-full mb-6 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
         />
       )}
@@ -69,11 +71,11 @@ export default function RecipeList({
                 </h2>
                 <div className="flex items-center gap-1.5 text-[0.7rem] text-gray-400">
                   <span>
-                    {recipe.sourceType === "youtube" ? "YouTube" : "Web"}
+                    {recipe.sourceType === "youtube" ? t.sourceYouTube : t.sourceWeb}
                   </span>
                   <span>·</span>
                   <span>
-                    {new Date(recipe.createdAt).toLocaleDateString("en-US", {
+                    {new Date(recipe.createdAt).toLocaleDateString(locale, {
                       month: "short",
                       day: "numeric",
                     })}
@@ -93,7 +95,7 @@ export default function RecipeList({
         </div>
       ) : (
         <p className="text-center text-gray-400 py-12">
-          No recipes yet. Paste a URL above to get started.
+          {t.noRecipesYet}
         </p>
       )}
     </>

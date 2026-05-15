@@ -1,6 +1,19 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  LOCALE_COOKIE,
+  isValidLocale,
+  getLocaleFromHeader,
+} from "@/lib/i18n";
+
+function resolveLocale(request: NextRequest): string {
+  const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (cookie && isValidLocale(cookie)) return cookie;
+  return getLocaleFromHeader(
+    request.headers.get("accept-language") ?? "",
+  );
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -27,7 +40,15 @@ export async function middleware(request: NextRequest) {
     if (token) {
       return NextResponse.redirect(new URL("/", request.url));
     }
-    return NextResponse.next();
+    const response = NextResponse.next();
+    if (!request.cookies.get(LOCALE_COOKIE)) {
+      response.cookies.set(LOCALE_COOKIE, resolveLocale(request), {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+    return response;
   }
 
   if (pathname.startsWith("/login")) {
@@ -39,7 +60,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url));
   }
 
-  return NextResponse.next();
+  // Set locale cookie on first authenticated visit if not present
+  const response = NextResponse.next();
+  if (!request.cookies.get(LOCALE_COOKIE)) {
+    response.cookies.set(LOCALE_COOKIE, resolveLocale(request), {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+  return response;
 }
 
 export const config = {

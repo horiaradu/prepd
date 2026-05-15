@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface InboxItem {
   id: string;
@@ -22,6 +23,7 @@ export default function InboxList({
 }: {
   initialItems: InboxItem[];
 }) {
+  const { t, locale } = useLanguage();
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -66,14 +68,14 @@ export default function InboxList({
   if (items.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400 text-sm">
-        No shared recipes yet
+        {t.noSharedRecipes}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">Inbox</h1>
+      <h1 className="text-xl font-semibold text-gray-900">{t.inboxTitle}</h1>
 
       {pending.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -100,11 +102,14 @@ export default function InboxList({
                 </h2>
                 <div className="flex items-center gap-1.5 text-[0.7rem] text-gray-400">
                   <span>
-                    From {item.senderName ?? item.senderEmail ?? "someone"}
+                    {t.from.replace(
+                      "{name}",
+                      item.senderName ?? item.senderEmail ?? "someone",
+                    )}
                   </span>
                   <span>·</span>
                   <span>
-                    {new Date(item.createdAt).toLocaleDateString("en-US", {
+                    {new Date(item.createdAt).toLocaleDateString(locale, {
                       month: "short",
                       day: "numeric",
                     })}
@@ -116,14 +121,14 @@ export default function InboxList({
                     disabled={processing === item.id}
                     className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
                   >
-                    {processing === item.id ? "…" : "Accept"}
+                    {processing === item.id ? "…" : t.accept}
                   </button>
                   <button
                     onClick={(e) => handleAction(e, item.id, "discard")}
                     disabled={processing === item.id}
                     className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
                   >
-                    Discard
+                    {t.discard}
                   </button>
                 </div>
               </div>
@@ -135,7 +140,7 @@ export default function InboxList({
       {processed.length > 0 && (
         <>
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wide">
-            History
+            {t.history}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {processed.map((item) => (
@@ -161,7 +166,10 @@ export default function InboxList({
                   </h2>
                   <div className="flex items-center gap-1.5 text-[0.7rem] text-gray-400">
                     <span>
-                      From {item.senderName ?? item.senderEmail ?? "someone"}
+                      {t.from.replace(
+                        "{name}",
+                        item.senderName ?? item.senderEmail ?? "someone",
+                      )}
                     </span>
                     <span>·</span>
                     <span
@@ -171,7 +179,9 @@ export default function InboxList({
                           : "text-gray-400"
                       }
                     >
-                      {item.status}
+                      {item.status === "accepted"
+                        ? t.statusAccepted
+                        : t.statusDiscarded}
                     </span>
                   </div>
                 </div>

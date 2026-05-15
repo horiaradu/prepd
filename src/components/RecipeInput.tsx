@@ -5,6 +5,7 @@ import ProgressBar from "@/components/ProgressBar";
 import { CameraIcon } from "@/components/icons";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import type { ParseResponse, RecipeSummary } from "@/types/recipe";
+import { useLanguage } from "@/context/LanguageContext";
 
 async function resizeImageForUpload(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
@@ -33,6 +34,7 @@ export default function RecipeInput({
 }: {
   onRecipeParsed: (recipe: RecipeSummary) => void;
 }) {
+  const { t } = useLanguage();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export default function RecipeInput({
       onRecipeParsed(toSummary(parsed));
       setUrl("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t.somethingWentWrong);
     } finally {
       setLoading(false);
       setProgress(null);
@@ -92,7 +94,7 @@ export default function RecipeInput({
 
     setLoading(true);
     setError(null);
-    setProgress({ step: "Preparing photos…", progress: 5 });
+    setProgress({ step: t.preparingPhotos, progress: 5 });
 
     try {
       const resizedBlobs = await Promise.all(
@@ -119,7 +121,7 @@ export default function RecipeInput({
       );
       onRecipeParsed(toSummary(parsed));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t.somethingWentWrong);
     } finally {
       setLoading(false);
       setProgress(null);
@@ -133,7 +135,7 @@ export default function RecipeInput({
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="Paste a recipe or YouTube link"
+          placeholder={t.pasteRecipeLink}
           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
           required
         />
@@ -150,7 +152,7 @@ export default function RecipeInput({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={loading}
-            title="Upload a photo of a recipe"
+            title={t.uploadPhotoTitle}
             className="px-3 py-2.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <CameraIcon />
@@ -160,7 +162,7 @@ export default function RecipeInput({
             disabled={loading}
             className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Parsing…" : "Parse"}
+            {loading ? t.parsing : t.parse}
           </button>
         </div>
       </form>
@@ -168,7 +170,7 @@ export default function RecipeInput({
       {loading && (
         <div className="py-8">
           <ProgressBar
-            step={progress?.step ?? "Starting…"}
+            step={progress?.step ?? t.starting}
             progress={progress?.progress ?? 5}
           />
         </div>
