@@ -69,12 +69,25 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
+const TO_TASTE_UNITS = new Set([
+  "to taste",
+  "la gust", // Romanian
+  "nach Geschmack", // German
+  "au goût", // French
+  "al gusto", // Spanish/Italian
+  "a gosto", // Portuguese
+]);
+
 function normalizeIngredient(ing: unknown): unknown {
   if (!ing || typeof ing !== "object") return ing;
   const obj = ing as Record<string, unknown>;
   const q = obj.quantity;
   const quantity = typeof q === "number" && Number.isFinite(q) ? q : null;
   if (quantity === null) {
+    return { ...obj, quantity: 0, unit: "to taste" };
+  }
+  const unit = typeof obj.unit === "string" ? obj.unit.trim() : "";
+  if (TO_TASTE_UNITS.has(unit)) {
     return { ...obj, quantity: 0, unit: "to taste" };
   }
   return { ...obj, quantity };
