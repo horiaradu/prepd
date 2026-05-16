@@ -36,15 +36,13 @@ export default function RecipeList({
 
       <RecipeInput onRecipeParsed={handleRecipeParsed} />
 
-      {recipes.length > 3 && (
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t.filterRecipes}
-          className="w-full mb-6 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
-        />
-      )}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder={t.filterRecipes}
+        className="w-full mb-6 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
+      />
 
       {recipes.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -71,7 +69,9 @@ export default function RecipeList({
                 </h2>
                 <div className="flex items-center gap-1.5 text-[0.7rem] text-gray-400">
                   <span>
-                    {recipe.sourceType === "youtube" ? t.sourceYouTube : t.sourceWeb}
+                    {recipe.sourceType === "youtube"
+                      ? t.sourceYouTube
+                      : t.sourceWeb}
                   </span>
                   <span>·</span>
                   <span>
@@ -94,9 +94,7 @@ export default function RecipeList({
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-400 py-12">
-          {t.noRecipesYet}
-        </p>
+        <p className="text-center text-gray-400 py-12">{t.noRecipesYet}</p>
       )}
     </>
   );
