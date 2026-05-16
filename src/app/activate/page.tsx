@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { trackSignup } from "@/lib/analytics-events";
 
 export default function ActivatePage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function ActivatePage() {
       });
 
       if (res.ok) {
+        trackSignup();
         await update();
         router.push("/");
       } else {

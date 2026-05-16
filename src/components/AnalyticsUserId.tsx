@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { sendGTMEvent } from "@next/third-parties/google";
 import * as Sentry from "@sentry/nextjs";
+import { trackLogin } from "@/lib/analytics-events";
+
+const LOGIN_FIRED_KEY = "mintdish:login_fired_for";
 
 export function AnalyticsUserId() {
   const { data: session, status } = useSession();
@@ -15,6 +18,10 @@ export function AnalyticsUserId() {
     if (status === "authenticated" && userId) {
       sendGTMEvent({ event: "user_identified", user_id: userId });
       Sentry.setUser({ id: userId, email });
+      if (sessionStorage.getItem(LOGIN_FIRED_KEY) !== userId) {
+        trackLogin();
+        sessionStorage.setItem(LOGIN_FIRED_KEY, userId);
+      }
     } else {
       Sentry.setUser(null);
     }

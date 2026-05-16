@@ -6,6 +6,7 @@ import { CameraIcon } from "@/components/icons";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import type { ParseResponse, RecipeSummary } from "@/types/recipe";
 import { useLanguage } from "@/context/LanguageContext";
+import { trackRecipeParsed, type RecipeSource } from "@/lib/analytics-events";
 
 async function resizeImageForUpload(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
@@ -78,6 +79,10 @@ export default function RecipeInput({
         setProgress,
       );
       onRecipeParsed(toSummary(parsed));
+      trackRecipeParsed({
+        recipeId: parsed.id,
+        source: parsed.sourceType as RecipeSource,
+      });
       setUrl("");
     } catch (err) {
       setError(err instanceof Error ? err.message : t.somethingWentWrong);
@@ -120,6 +125,7 @@ export default function RecipeInput({
         setProgress,
       );
       onRecipeParsed(toSummary(parsed));
+      trackRecipeParsed({ recipeId: parsed.id, source: "image" });
     } catch (err) {
       setError(err instanceof Error ? err.message : t.somethingWentWrong);
     } finally {

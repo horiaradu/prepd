@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { trackRecipeShared } from "@/lib/analytics-events";
 
 export function ShareDialog({
   open,
@@ -54,6 +55,7 @@ export function ShareDialog({
       }
 
       setSent(true);
+      trackRecipeShared({ recipeId });
     } catch {
       setError(t.failedToShare);
     } finally {

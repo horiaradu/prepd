@@ -19,6 +19,12 @@ import { applyOperations } from "@/lib/recipe-operations";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
 import type { ChatMessage } from "@/lib/recipes";
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  trackChatMessageSent,
+  trackChatChangesApplied,
+  trackRecipeReparsed,
+  trackImageGenerated,
+} from "@/lib/analytics-events";
 
 export default function RecipeDetails({
   initialRecipe,
@@ -121,6 +127,7 @@ export default function RecipeDetails({
         setPendingMessageId(data.messageId);
         setPreviewRecipe(data.preview);
         loadMessages();
+        trackChatMessageSent({ recipeId });
         requestAnimationFrame(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         });
@@ -149,6 +156,7 @@ export default function RecipeDetails({
       setChatInput("");
       clearPending();
       loadMessages();
+      trackChatChangesApplied({ recipeId });
     } finally {
       setApplying(false);
     }
@@ -221,6 +229,7 @@ export default function RecipeDetails({
         prepSteps: data.recipe.prepSteps,
         cookingSteps: data.recipe.cookingSteps,
       }));
+      trackRecipeReparsed({ recipeId });
     } finally {
       setReparsing(false);
       setReparseProgress(null);
@@ -239,6 +248,7 @@ export default function RecipeDetails({
         return;
       }
       setHeroImageOverride(data.imageUrl);
+      trackImageGenerated({ recipeId });
     } catch (err) {
       setError(err instanceof Error ? err.message : t.failedToGenerateImage);
     } finally {
