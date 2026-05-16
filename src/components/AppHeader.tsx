@@ -57,17 +57,15 @@ export function AppHeader() {
             </Link>
           )}
           <Link href="/" className="flex items-center gap-2">
-            <img
-              src="/icons/icon-nav.png"
-              alt=""
-              className="w-10 h-10"
-            />
+            <img src="/icons/icon-nav.png" alt="" className="w-10 h-10" />
             <span className="text-lg font-bold tracking-tight">Mintdish</span>
           </Link>
         </div>
 
         <div className="flex items-center gap-3">
-          <LanguageToggle locale={locale} setLocale={setLocale} />
+          {!session?.user && (
+            <LanguageToggle locale={locale} setLocale={setLocale} />
+          )}
 
           {!session?.user && (
             <Link
@@ -168,6 +166,28 @@ export function AppHeader() {
                         {t.reEnableNotifications}
                       </button>
                     )}
+                    <div className="px-3 py-2 flex items-center justify-between border-t border-gray-100">
+                      <div className="flex items-center gap-0.5 text-xs font-medium text-gray-400">
+                        {LOCALES.map((l, i) => (
+                          <span key={l} className="flex items-center gap-0.5">
+                            {i > 0 && <span className="text-gray-200">|</span>}
+                            <button
+                              onClick={() => {
+                                setLocale(l);
+                                setMenuOpen(false);
+                              }}
+                              className={`px-1 py-0.5 rounded transition-colors uppercase ${
+                                locale === l
+                                  ? "text-green-600 font-semibold"
+                                  : "hover:text-gray-600"
+                              }`}
+                            >
+                              {l}
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                     <button
                       onClick={() => signOut()}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
