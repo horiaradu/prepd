@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import type { ParsedRecipe, Ingredient, Step } from "@/types/recipe";
 import { useLanguage } from "@/context/LanguageContext";
 
-function formatScaledQuantity(ingredient: Ingredient, scale: number, toTasteLabel: string): string {
-  if (ingredient.unit === "to taste") {
+function formatScaledQuantity(
+  ingredient: Ingredient,
+  scale: number,
+  toTasteLabel: string,
+): string {
+  if (ingredient.unit === "to taste" || ingredient.quantity === 0) {
     const notes = ingredient.notes ? ` (${ingredient.notes})` : "";
     return `${toTasteLabel} ${ingredient.name}${notes}`.trim();
   }
@@ -103,7 +107,10 @@ function StepList({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 mt-1.5 text-xs text-red-500 hover:text-red-600"
                 >
-                  {watchAtTemplate.replace("{time}", formatTimestamp(step.videoTimestamp))}
+                  {watchAtTemplate.replace(
+                    "{time}",
+                    formatTimestamp(step.videoTimestamp),
+                  )}
                 </a>
               )}
             </div>
