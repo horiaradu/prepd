@@ -13,6 +13,7 @@
     "@google/genai": "^2.3.0",
     "@neondatabase/serverless": "^1.1.0",
     "@next/third-parties": "^16.2.6",
+    "@sentry/nextjs": "^10.53.1",
     "@vercel/blob": "^2.3.3",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
