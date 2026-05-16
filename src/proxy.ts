@@ -15,7 +15,7 @@ function resolveLocale(request: NextRequest): string {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Routes that never touch the session — fast path, no getToken call
