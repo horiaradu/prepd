@@ -46,9 +46,18 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "Mintdish",
     type: "website",
+    images: [
+      {
+        url: "/social-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Mintdish",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/social-preview.png"],
   },
 };
 
