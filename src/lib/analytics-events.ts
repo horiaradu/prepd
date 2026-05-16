@@ -2,11 +2,21 @@ import { sendGTMEvent } from "@next/third-parties/google";
 
 export type RecipeSource = "web" | "youtube" | "image" | "email";
 
+export function send(data: Record<string, unknown>) {
+  try {
+    sendGTMEvent(data);
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("analytics send failed", err);
+    }
+  }
+}
+
 export function trackRecipeParsed(params: {
   recipeId: string;
   source: RecipeSource;
 }) {
-  sendGTMEvent({
+  send({
     event: "recipe_parsed",
     recipe_id: params.recipeId,
     source: params.source,
@@ -14,44 +24,29 @@ export function trackRecipeParsed(params: {
 }
 
 export function trackRecipeShared(params: { recipeId: string }) {
-  sendGTMEvent({
-    event: "recipe_shared",
-    recipe_id: params.recipeId,
-  });
+  send({ event: "recipe_shared", recipe_id: params.recipeId });
 }
 
 export function trackChatMessageSent(params: { recipeId: string }) {
-  sendGTMEvent({
-    event: "recipe_chat_message_sent",
-    recipe_id: params.recipeId,
-  });
+  send({ event: "recipe_chat_message_sent", recipe_id: params.recipeId });
 }
 
 export function trackChatChangesApplied(params: { recipeId: string }) {
-  sendGTMEvent({
-    event: "recipe_chat_changes_applied",
-    recipe_id: params.recipeId,
-  });
+  send({ event: "recipe_chat_changes_applied", recipe_id: params.recipeId });
 }
 
 export function trackRecipeReparsed(params: { recipeId: string }) {
-  sendGTMEvent({
-    event: "recipe_reparsed",
-    recipe_id: params.recipeId,
-  });
+  send({ event: "recipe_reparsed", recipe_id: params.recipeId });
 }
 
 export function trackImageGenerated(params: { recipeId: string }) {
-  sendGTMEvent({
-    event: "image_generated",
-    recipe_id: params.recipeId,
-  });
+  send({ event: "image_generated", recipe_id: params.recipeId });
 }
 
 export function trackLogin() {
-  sendGTMEvent({ event: "login", method: "google" });
+  send({ event: "login", method: "google" });
 }
 
 export function trackSignup() {
-  sendGTMEvent({ event: "signup", method: "google" });
+  send({ event: "signup", method: "google" });
 }
