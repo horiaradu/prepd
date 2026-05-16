@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { GoogleTagManager } from "@next/third-parties/google";
+import { Suspense } from "react";
 import { Providers } from "@/components/Providers";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AnalyticsUserId } from "@/components/AnalyticsUserId";
+import { AnalyticsPageView } from "@/components/AnalyticsPageView";
 import { Footer } from "@/components/Footer";
 import { getTranslations, isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -75,6 +77,9 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <Providers locale={locale}>
           <AnalyticsUserId />
+          <Suspense fallback={null}>
+            <AnalyticsPageView />
+          </Suspense>
           <AuthLayout>{children}</AuthLayout>
         </Providers>
         <Footer privacyLabel={t.privacy} termsLabel={t.terms} />
