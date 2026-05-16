@@ -35,6 +35,10 @@ export function trackChatChangesApplied(params: { recipeId: string }) {
   send({ event: "recipe_chat_changes_applied", recipe_id: params.recipeId });
 }
 
+export function trackChatChangesDiscarded(params: { recipeId: string }) {
+  send({ event: "recipe_chat_changes_discarded", recipe_id: params.recipeId });
+}
+
 export function trackRecipeReparsed(params: { recipeId: string }) {
   send({ event: "recipe_reparsed", recipe_id: params.recipeId });
 }

@@ -22,6 +22,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import {
   trackChatMessageSent,
   trackChatChangesApplied,
+  trackChatChangesDiscarded,
   trackRecipeReparsed,
   trackImageGenerated,
 } from "@/lib/analytics-events";
@@ -177,6 +178,7 @@ export default function RecipeDetails({
     setChatInput("");
     clearPending();
     loadMessages();
+    trackChatChangesDiscarded({ recipeId });
   }
 
   async function handleUndo() {
