@@ -55,6 +55,7 @@ export async function PATCH(
         images: snap.images,
         sourceUrl: snap.sourceUrl,
         sourceType: snap.sourceType as SourceType,
+        language: snap.language ?? "en",
       })
       .returning({ id: recipes.id });
 

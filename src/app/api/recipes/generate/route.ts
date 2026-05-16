@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { generateRecipe } from "@/lib/gemini";
-import { isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
+import { isValidLocale, LOCALE_COOKIE, getTranslations } from "@/lib/i18n";
 
 function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
   const userId = session.user.id;
   const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
   const language = isValidLocale(rawLocale) ? rawLocale : "en";
+  const t = getTranslations(language);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -39,13 +40,13 @@ export async function POST(request: NextRequest) {
       try {
         send({
           type: "progress",
-          step: "Generating recipe…",
+          step: t.stepGeneratingRecipe,
           progress: 20,
         });
 
         const parsed = await generateRecipe(description, language);
 
-        send({ type: "progress", step: "Saving recipe…", progress: 80 });
+        send({ type: "progress", step: t.stepSavingRecipe, progress: 80 });
 
         const [saved] = await db
           .insert(recipes)

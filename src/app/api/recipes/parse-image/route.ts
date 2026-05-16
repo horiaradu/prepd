@@ -7,7 +7,7 @@ import { parseRecipeFromImage } from "@/lib/gemini";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
-import { isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
+import { isValidLocale, LOCALE_COOKIE, getTranslations } from "@/lib/i18n";
 
 function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
   const userId = session.user.id;
   const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
   const language = isValidLocale(rawLocale) ? rawLocale : "en";
+  const t = getTranslations(language);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       let blobUrls: string[] = [];
 
       try {
-        send({ type: "progress", step: "Processing images…", progress: 15 });
+        send({ type: "progress", step: t.stepProcessingImages, progress: 15 });
 
         // Server-side safety resize: keeps stored copies bounded while
         // remaining readable for OCR.
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
         );
         blobUrls = uploads.map((u) => u.url);
 
-        send({ type: "progress", step: "Reading recipe…", progress: 40 });
+        send({ type: "progress", step: t.stepReadingRecipe, progress: 40 });
         const parsed = await parseRecipeFromImage(
           resizedImages.map((resized) => ({
             bytes: resized,
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
           language,
         );
 
-        send({ type: "progress", step: "Saving recipe…", progress: 85 });
+        send({ type: "progress", step: t.stepSavingRecipe, progress: 85 });
         const [saved] = await db
           .insert(recipes)
           .values({

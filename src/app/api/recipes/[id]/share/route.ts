@@ -47,6 +47,7 @@ export async function POST(
         images: recipe.images ?? [],
         sourceUrl: recipe.sourceUrl,
         sourceType: recipe.sourceType,
+        language: recipe.language,
       },
     })
     .returning({ id: recipeShares.id });

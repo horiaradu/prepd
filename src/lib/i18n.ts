@@ -87,6 +87,16 @@ export type Translations = {
   preparingPhotos: string;
   somethingWentWrong: string;
 
+  // Parse progress steps (sent from API routes via SSE)
+  stepExtractingContent: string;
+  stepAnalyzingVideo: string;
+  stepAnalyzingRecipe: string;
+  stepAnalyzingRecipeFromUrl: string;
+  stepSavingRecipe: string;
+  stepProcessingImages: string;
+  stepReadingRecipe: string;
+  stepGeneratingRecipe: string;
+
   // RecipeList
   suggestRecipes: string;
   filterRecipes: string;
@@ -219,8 +229,7 @@ const en: Translations = {
   timingBuiltInDesc:
     "Cooking times surface as badges so you know what's a two-minute task and what's a forty-minute simmer.",
   scaleServings: "Scale your servings",
-  scaleServingsDesc:
-    "Bump the serving size and the amounts scale with you.",
+  scaleServingsDesc: "Bump the serving size and the amounts scale with you.",
 
   getOnWaitlist: "Get on the waitlist.",
   waitlistSubtitle:
@@ -322,6 +331,15 @@ const en: Translations = {
   recipeFallbackTitle: "Recipe",
   saveRecipe: "Save recipe",
   generateRecipeSuggest: "Generate recipe",
+
+  stepExtractingContent: "Extracting content…",
+  stepAnalyzingVideo: "Analyzing video…",
+  stepAnalyzingRecipe: "Analyzing recipe…",
+  stepAnalyzingRecipeFromUrl: "Analyzing recipe from URL…",
+  stepSavingRecipe: "Saving recipe…",
+  stepProcessingImages: "Processing images…",
+  stepReadingRecipe: "Reading recipe…",
+  stepGeneratingRecipe: "Generating recipe…",
 };
 
 const ro: Translations = {
@@ -400,8 +418,7 @@ const ro: Translations = {
 
   suggestRecipes: "Sugerează rețete",
   filterRecipes: "Filtrează rețete…",
-  noRecipesYet:
-    "Nicio rețetă încă. Lipește un URL mai sus pentru a începe.",
+  noRecipesYet: "Nicio rețetă încă. Lipește un URL mai sus pentru a începe.",
   sourceYouTube: "YouTube",
   sourceWeb: "Web",
 
@@ -479,6 +496,15 @@ const ro: Translations = {
   recipeFallbackTitle: "Rețetă",
   saveRecipe: "Salvează rețeta",
   generateRecipeSuggest: "Generează rețeta",
+
+  stepExtractingContent: "Se extrage conținutul…",
+  stepAnalyzingVideo: "Se analizează videoclipul…",
+  stepAnalyzingRecipe: "Se analizează rețeta…",
+  stepAnalyzingRecipeFromUrl: "Se analizează rețeta din URL…",
+  stepSavingRecipe: "Se salvează rețeta…",
+  stepProcessingImages: "Se procesează imaginile…",
+  stepReadingRecipe: "Se citește rețeta…",
+  stepGeneratingRecipe: "Se generează rețeta…",
 };
 
 const dictionaries: Record<Locale, Translations> = { en, ro };

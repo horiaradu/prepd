@@ -11,7 +11,7 @@ import {
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
+import { isValidLocale, LOCALE_COOKIE, getTranslations } from "@/lib/i18n";
 import type {
   ParseRequest,
   SourceType,
@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
   const sourceType: SourceType = isYoutubeUrl(body.url) ? "youtube" : "web";
   const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
   const language = isValidLocale(rawLocale) ? rawLocale : "en";
+  const t = getTranslations(language);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
         controller.enqueue(new TextEncoder().encode(sseEvent(data)));
 
       try {
-        send({ type: "progress", step: "Extracting content…", progress: 15 });
+        send({ type: "progress", step: t.stepExtractingContent, progress: 15 });
 
         let parsed: ParsedRecipe;
         let images: RecipeImage[];
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
         if (sourceType === "youtube") {
           send({
             type: "progress",
-            step: "Analyzing video…",
+            step: t.stepAnalyzingVideo,
             progress: 40,
           });
           parsed = await parseRecipeFromYoutube(body.url, language);
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
           if (extracted && extracted.content.trim().length > 0) {
             send({
               type: "progress",
-              step: "Analyzing recipe…",
+              step: t.stepAnalyzingRecipe,
               progress: 40,
             });
             parsed = await parseRecipeContent(
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
             // Scraping failed or returned empty — fall back to Gemini URL context
             send({
               type: "progress",
-              step: "Analyzing recipe from URL…",
+              step: t.stepAnalyzingRecipeFromUrl,
               progress: 40,
             });
             parsed = await parseRecipeFromUrl(body.url, language);
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        send({ type: "progress", step: "Saving recipe…", progress: 85 });
+        send({ type: "progress", step: t.stepSavingRecipe, progress: 85 });
         const savedId = await upsertRecipe({
           userId,
           replaceId,

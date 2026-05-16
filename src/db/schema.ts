@@ -133,7 +133,10 @@ export const recipeMessages = pgTable(
     content: text("content").notNull(),
     // Populated only on assistant messages that represent recipe edits
     status: text("status").notNull().default("applied"), // "pending" | "applied" | "discarded" | "reverted"
-    operations: jsonb("operations").$type<import("@/lib/recipe-operations").Operation[]>(),
+    operations:
+      jsonb("operations").$type<
+        import("@/lib/recipe-operations").Operation[]
+      >(),
     previousRecipe: jsonb("previous_recipe").$type<ParsedRecipe>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
@@ -161,6 +164,7 @@ export const recipeShares = pgTable(
         images: RecipeImage[];
         sourceUrl: string;
         sourceType: string;
+        language: string;
       }>()
       .notNull(),
     status: text("status").notNull().default("pending"), // "pending" | "accepted" | "discarded"
