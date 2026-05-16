@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { GoogleTagManager } from "@next/third-parties/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import { Providers } from "@/components/Providers";
 import { AuthLayout } from "@/components/AuthLayout";
@@ -83,6 +85,8 @@ export default async function RootLayout({
           <AuthLayout>{children}</AuthLayout>
         </Providers>
         <Footer privacyLabel={t.privacy} termsLabel={t.terms} />
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
