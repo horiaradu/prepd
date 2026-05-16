@@ -11,20 +11,11 @@ export const metadata: Metadata = {
     title: "Mintdish — Skip the food blog. Just the recipe.",
     description:
       "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
-    images: [
-      {
-        url: "/landing/home-list.png",
-        width: 1280,
-        height: 800,
-        alt: "Mintdish recipe list",
-      },
-    ],
   },
   twitter: {
     title: "Mintdish — Skip the food blog. Just the recipe.",
     description:
       "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
-    images: ["/landing/home-list.png"],
   },
 };
 
