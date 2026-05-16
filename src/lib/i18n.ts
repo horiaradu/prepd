@@ -96,6 +96,7 @@ export type Translations = {
   stepProcessingImages: string;
   stepReadingRecipe: string;
   stepGeneratingRecipe: string;
+  stepGeneratingImage: string;
 
   // RecipeList
   suggestRecipes: string;
@@ -340,6 +341,7 @@ const en: Translations = {
   stepProcessingImages: "Processing images…",
   stepReadingRecipe: "Reading recipe…",
   stepGeneratingRecipe: "Generating recipe…",
+  stepGeneratingImage: "Generating image…",
 };
 
 const ro: Translations = {
@@ -505,6 +507,7 @@ const ro: Translations = {
   stepProcessingImages: "Se procesează imaginile…",
   stepReadingRecipe: "Se citește rețeta…",
   stepGeneratingRecipe: "Se generează rețeta…",
+  stepGeneratingImage: "Se generează imaginea…",
 };
 
 const dictionaries: Record<Locale, Translations> = { en, ro };

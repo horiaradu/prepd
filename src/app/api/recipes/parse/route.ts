@@ -12,6 +12,10 @@ import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { isValidLocale, LOCALE_COOKIE, getTranslations } from "@/lib/i18n";
+import {
+  findFirstWorkingImage,
+  generateAndStoreHeroImage,
+} from "@/lib/recipe-image";
 import type {
   ParseRequest,
   SourceType,
@@ -185,6 +189,46 @@ export async function POST(request: NextRequest) {
           rawContent,
         });
 
+        // Ensure the recipe has a working hero image. On a fresh parse, if no
+        // extracted URL resolves to an actual image, generate one inline.
+        // Reparses (replaceId set) skip auto-generation so we don't burn
+        // credits or orphan a prior generated hero.
+        let finalImageUrl = images[0]?.url ?? null;
+        const working = await findFirstWorkingImage(images);
+        if (working) {
+          if (working.url !== images[0]?.url) {
+            const reordered: RecipeImage[] = [
+              working,
+              ...images.filter((img) => img.url !== working.url),
+            ];
+            await db
+              .update(recipes)
+              .set({ images: reordered })
+              .where(eq(recipes.id, savedId));
+            finalImageUrl = working.url;
+          }
+        } else if (!replaceId) {
+          try {
+            send({
+              type: "progress",
+              step: t.stepGeneratingImage,
+              progress: 92,
+            });
+            const { image, proxyUrl } = await generateAndStoreHeroImage({
+              userId,
+              recipeId: savedId,
+              recipe: parsed,
+            });
+            await db
+              .update(recipes)
+              .set({ images: [image] })
+              .where(eq(recipes.id, savedId));
+            finalImageUrl = proxyUrl;
+          } catch (err) {
+            console.error("Inline hero image generation failed:", err);
+          }
+        }
+
         send({
           type: "done",
           data: {
@@ -192,7 +236,7 @@ export async function POST(request: NextRequest) {
             recipe: parsed,
             sourceUrl: body.url,
             sourceType,
-            imageUrl: images[0]?.url ?? null,
+            imageUrl: finalImageUrl,
           },
         });
       } catch (error) {
