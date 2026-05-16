@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cookies } from "next/headers";
+import { GoogleTagManager } from "@next/third-parties/google";
 import { Providers } from "@/components/Providers";
 import { AuthLayout } from "@/components/AuthLayout";
+import { AnalyticsUserId } from "@/components/AnalyticsUserId";
 import { Footer } from "@/components/Footer";
 import { getTranslations, isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import "./globals.css";
+
+const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
 
 const jakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans-brand",
@@ -60,6 +64,7 @@ export default async function RootLayout({
       lang={locale}
       className={`${jakartaSans.variable} h-full antialiased`}
     >
+      {gtmId && <GoogleTagManager gtmId={gtmId} />}
       <head>
         <meta name="theme-color" content="#059669" />
         <meta
@@ -69,6 +74,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <Providers locale={locale}>
+          <AnalyticsUserId />
           <AuthLayout>{children}</AuthLayout>
         </Providers>
         <Footer privacyLabel={t.privacy} termsLabel={t.terms} />
