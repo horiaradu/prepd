@@ -7,9 +7,6 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "https://40355225f612202d371abcea4c4be7c4@o4511398510788608.ingest.de.sentry.io/4511398512099408",
 
-  // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
-
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 0.1,
   // Enable logs to be sent to Sentry
@@ -27,5 +24,20 @@ Sentry.init({
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
 });
+
+if (typeof window !== "undefined") {
+  const loadReplay = () => {
+    Sentry.lazyLoadIntegration("replayIntegration")
+      .then((replay) => {
+        if (replay) Sentry.addIntegration(replay());
+      })
+      .catch(() => {});
+  };
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(loadReplay, { timeout: 5000 });
+  } else {
+    setTimeout(loadReplay, 2000);
+  }
+}
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

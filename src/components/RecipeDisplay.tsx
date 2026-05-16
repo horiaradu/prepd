@@ -172,6 +172,8 @@ export function RecipeDisplay({
         <img
           src={heroImageUrl}
           alt={recipe.title}
+          fetchPriority="high"
+          loading="eager"
           className="w-full max-h-96 object-cover rounded-lg cursor-zoom-in"
           onClick={() => setLightboxUrl(heroImageUrl)}
         />
