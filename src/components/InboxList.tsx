@@ -89,6 +89,7 @@ export default function InboxList({
                 <img
                   src={item.imageUrl}
                   alt={item.title}
+                  referrerPolicy="no-referrer"
                   className="w-full h-40 object-cover"
                 />
               ) : (
@@ -153,6 +154,7 @@ export default function InboxList({
                   <img
                     src={item.imageUrl}
                     alt={item.title}
+                    referrerPolicy="no-referrer"
                     className="w-full h-40 object-cover"
                   />
                 ) : (

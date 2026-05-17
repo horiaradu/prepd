@@ -96,6 +96,7 @@ function StepList({
                 <img
                   src={step.imageUrl}
                   alt={step.instruction}
+                  referrerPolicy="no-referrer"
                   className="mt-2 rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => onImageClick(step.imageUrl!)}
                 />
@@ -162,6 +163,7 @@ export function RecipeDisplay({
           <img
             src={lightboxUrl}
             alt=""
+            referrerPolicy="no-referrer"
             className="max-w-full max-h-full rounded-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />
@@ -174,6 +176,7 @@ export function RecipeDisplay({
           alt={recipe.title}
           fetchPriority="high"
           loading="eager"
+          referrerPolicy="no-referrer"
           className="w-full max-h-96 object-cover rounded-lg cursor-zoom-in"
           onClick={() => setLightboxUrl(heroImageUrl)}
         />

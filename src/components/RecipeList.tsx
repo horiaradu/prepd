@@ -56,6 +56,7 @@ export default function RecipeList({
                 <img
                   src={recipe.imageUrl}
                   alt={recipe.title}
+                  referrerPolicy="no-referrer"
                   className="w-full h-40 object-cover"
                 />
               ) : (

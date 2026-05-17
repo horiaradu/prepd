@@ -58,13 +58,13 @@ export async function extractWebPage(url: string): Promise<WebPageExtraction> {
   if (jsonLd) {
     return {
       content: JSON.stringify(jsonLd, null, 2),
-      images: extractJsonLdImages(jsonLd, $, url),
+      images: extractJsonLdImages(jsonLd, $, resolvedUrl),
     };
   }
 
   return {
     content: extractArticleText($),
-    images: extractPageImages($, url),
+    images: extractPageImages($, resolvedUrl),
   };
 }
 

@@ -141,27 +141,62 @@ export async function parseRecipeContent(
 export async function parseRecipeFromUrl(
   url: string,
   language = "en",
-): Promise<ParsedRecipe> {
+): Promise<{ recipe: ParsedRecipe; images: RecipeImage[] }> {
   const ai = getClient();
 
+  // Gemini's API rejects responseMimeType: application/json when a tool
+  // (urlContext) is enabled, so we instruct JSON in the prompt and strip
+  // any code fence from the reply before parsing.
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: `Extract the recipe from this URL: ${url}`,
+    contents: `Extract the recipe from this URL: ${url}.
+
+Additionally, include a top-level "images" array with the absolute URLs of recipe-relevant photos that appear on the page (hero image, finished dish, key step photos). Each entry is { "url": "https://...", "alt": "optional alt text" }. Only include URLs that actually appear on the page — do not invent them. Omit the field entirely if you find none.`,
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
-      responseMimeType: "application/json",
       tools: [{ urlContext: {} }],
     },
   });
 
-  const responseText = response.text!;
-  const parsed = JSON.parse(responseText);
+  const responseText = (response.text ?? "").trim();
+  // Gemini often prefaces the JSON with a long "thinking" trace, then
+  // appends the recipe inside a ```json ... ``` block — match anywhere in
+  // the reply, not just when the fence spans the whole response.
+  const fenced = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const parsed = JSON.parse(fenced ? fenced[1].trim() : responseText);
 
   if (parsed.error) {
     throw new Error(parsed.error);
   }
 
-  return normalizeRecipe(parsed);
+  const images = normalizeUrlImages(parsed.images);
+  return { recipe: normalizeRecipe(parsed), images };
+}
+
+function normalizeUrlImages(raw: unknown): RecipeImage[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: RecipeImage[] = [];
+  for (const entry of raw) {
+    let url: string | undefined;
+    let alt: string | undefined;
+    if (typeof entry === "string") {
+      url = entry;
+    } else if (entry && typeof entry === "object") {
+      const obj = entry as Record<string, unknown>;
+      if (typeof obj.url === "string") url = obj.url;
+      if (typeof obj.alt === "string") alt = obj.alt;
+    }
+    if (!url || seen.has(url)) continue;
+    try {
+      new URL(url);
+    } catch {
+      continue;
+    }
+    seen.add(url);
+    out.push(alt ? { url, alt } : { url });
+  }
+  return out;
 }
 
 export async function parseRecipeFromYoutube(

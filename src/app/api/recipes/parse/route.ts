@@ -171,8 +171,9 @@ export async function POST(request: NextRequest) {
               step: t.stepAnalyzingRecipeFromUrl,
               progress: 40,
             });
-            parsed = await parseRecipeFromUrl(body.url, language);
-            images = [];
+            const result = await parseRecipeFromUrl(body.url, language);
+            parsed = result.recipe;
+            images = result.images;
             rawContent = null;
           }
         }
