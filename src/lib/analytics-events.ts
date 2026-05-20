@@ -54,3 +54,23 @@ export function trackLogin() {
 export function trackSignup() {
   send({ event: "signup", method: "google" });
 }
+
+export function trackRecipeListFiltered(params: {
+  filter_category: "meal_type" | "cuisine" | "cook_style" | "time" | "cooked";
+  filter_value: string;
+}) {
+  send({ event: "recipe_list_filtered", ...params });
+}
+
+export function trackRecipeTagChanged(params: {
+  recipeId: string;
+  tag_category: "meal_type" | "cuisine" | "cook_style" | "time";
+  tag_value: string;
+}) {
+  send({
+    event: "recipe_tag_changed",
+    recipe_id: params.recipeId,
+    tag_category: params.tag_category,
+    tag_value: params.tag_value,
+  });
+}

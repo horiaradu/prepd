@@ -12,6 +12,7 @@ import {
 } from "@/types/recipe";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Translations } from "@/lib/i18n";
+import { trackRecipeTagChanged } from "@/lib/analytics-events";
 
 function mealLabel(meal: MealType, t: Translations): string {
   switch (meal) {
@@ -114,6 +115,14 @@ export function TagEditor({
       }
       const updated = (await res.json()) as RecipeTaxonomy;
       onChange(updated);
+      if ("mealType" in patch)
+        trackRecipeTagChanged({ recipeId, tag_category: "meal_type", tag_value: patch.mealType ?? "" });
+      if ("cuisine" in patch)
+        trackRecipeTagChanged({ recipeId, tag_category: "cuisine", tag_value: patch.cuisine ?? "" });
+      if ("cookStyle" in patch)
+        trackRecipeTagChanged({ recipeId, tag_category: "cook_style", tag_value: patch.cookStyle ?? "" });
+      if ("totalTimeMinutes" in patch)
+        trackRecipeTagChanged({ recipeId, tag_category: "time", tag_value: String(patch.totalTimeMinutes ?? "") });
     } catch {
       onChange(taxonomy);
     } finally {

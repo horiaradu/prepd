@@ -17,6 +17,7 @@ import {
 } from "@/types/recipe";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Translations } from "@/lib/i18n";
+import { trackRecipeListFiltered } from "@/lib/analytics-events";
 
 function mealLabel(meal: MealType, t: Translations): string {
   switch (meal) {
@@ -230,7 +231,10 @@ export default function RecipeList({
             label={t.filterMealType}
             value={mealFilter}
             activeValue="all"
-            onChange={setMealFilter}
+            onChange={(v) => {
+              setMealFilter(v);
+              trackRecipeListFiltered({ filter_category: "meal_type", filter_value: v });
+            }}
             options={[
               { value: "all", label: t.filterAll },
               ...MEAL_TYPES.map((m) => ({
@@ -244,7 +248,10 @@ export default function RecipeList({
               label={t.filterCuisine}
               value={cuisineFilter}
               activeValue="all"
-              onChange={setCuisineFilter}
+              onChange={(v) => {
+                setCuisineFilter(v);
+                trackRecipeListFiltered({ filter_category: "cuisine", filter_value: v });
+              }}
               options={[
                 { value: "all", label: t.filterAll },
                 ...cuisineOptions.map((c) => ({
@@ -258,7 +265,10 @@ export default function RecipeList({
             label={t.filterCookStyle}
             value={cookStyleFilter}
             activeValue="all"
-            onChange={setCookStyleFilter}
+            onChange={(v) => {
+              setCookStyleFilter(v);
+              trackRecipeListFiltered({ filter_category: "cook_style", filter_value: v });
+            }}
             options={[
               { value: "all", label: t.filterAll },
               ...COOK_STYLES.map((s) => ({
@@ -271,7 +281,10 @@ export default function RecipeList({
             label={t.filterTime}
             value={timeFilter}
             activeValue="all"
-            onChange={setTimeFilter}
+            onChange={(v) => {
+              setTimeFilter(v);
+              trackRecipeListFiltered({ filter_category: "time", filter_value: v });
+            }}
             options={[
               { value: "all", label: t.filterAll },
               ...TIME_BUCKETS.map((b) => ({
@@ -284,7 +297,10 @@ export default function RecipeList({
             label={t.filterCooked}
             value={cookFilter}
             activeValue="all"
-            onChange={setCookFilter}
+            onChange={(v) => {
+              setCookFilter(v);
+              trackRecipeListFiltered({ filter_category: "cooked", filter_value: v });
+            }}
             options={[
               { value: "all", label: t.filterAll },
               { value: "tried", label: t.filterTried },
