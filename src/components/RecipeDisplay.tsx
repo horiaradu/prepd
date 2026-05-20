@@ -166,7 +166,7 @@ export function RecipeDisplay({
       : undefined;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {lightboxUrl && (
         <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-pointer"
@@ -196,7 +196,7 @@ export function RecipeDisplay({
 
       {children}
 
-      <div>
+      <div className="space-y-2">
         <h1 className="text-3xl font-bold">{recipe.title}</h1>
         {recipeId && onTaxonomyChange && (
           <div className="mt-2">
