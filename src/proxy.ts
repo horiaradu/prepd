@@ -28,7 +28,10 @@ export async function proxy(request: NextRequest) {
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
     pathname === "/privacy" ||
-    pathname === "/terms"
+    pathname === "/terms" ||
+    pathname === "/cookies" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt"
   ) {
     return NextResponse.next();
   }
