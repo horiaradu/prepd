@@ -74,8 +74,9 @@ export function Dropdown<T extends string>({
         </svg>
       </button>
 
+      {/* Desktop: inline popover */}
       {open && (
-        <div className="absolute z-20 mt-1 min-w-full max-h-72 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+        <div className="hidden sm:block absolute z-20 mt-1 min-w-full max-h-72 overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
           {options.map((opt) => {
             const isSelected = opt.value === value;
             return (
@@ -96,6 +97,43 @@ export function Dropdown<T extends string>({
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* Mobile: bottom sheet */}
+      {open && (
+        <div className="sm:hidden">
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setOpen(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl pb-safe">
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            </div>
+            <div className="max-h-[60vh] overflow-auto py-2">
+              {options.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                    className={`w-full text-left px-5 py-3 text-sm transition-colors ${
+                      isSelected
+                        ? "bg-green-50 text-green-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>

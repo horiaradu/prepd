@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
 import type {
+  Cuisine,
   Ingredient,
   Step,
   RecipeImage,
@@ -21,7 +22,7 @@ interface RecipeSnapshot {
   sourceUrl: string;
   sourceType: string;
   mealType?: MealType | null;
-  cuisine?: string | null;
+  cuisine?: Cuisine | null;
   cookStyle?: CookStyle | null;
   totalTimeMinutes?: number | null;
 }

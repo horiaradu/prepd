@@ -10,7 +10,7 @@ import {
   applyOperations,
   validateRecipe,
 } from "@/lib/recipe-operations";
-import type { ParsedRecipe, MealType, CookStyle } from "@/types/recipe";
+import type { ParsedRecipe, Cuisine, MealType, CookStyle } from "@/types/recipe";
 
 export async function POST(
   request: NextRequest,
@@ -64,7 +64,7 @@ export async function POST(
     prepSteps: recipe.prepSteps,
     cookingSteps: recipe.cookingSteps,
     mealType: recipe.mealType as MealType | null,
-    cuisine: recipe.cuisine,
+    cuisine: recipe.cuisine as Cuisine | null,
     cookStyle: recipe.cookStyle as CookStyle | null,
     totalTimeMinutes: recipe.totalTimeMinutes,
   };

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
   COOK_STYLES,
+  CUISINES,
   MEAL_TYPES,
+  type Cuisine,
   type CookStyle,
   type MealType,
   type RecipeTaxonomy,
@@ -55,11 +57,30 @@ function cookStyleLabel(style: CookStyle, t: Translations): string {
   }
 }
 
-function cuisineLabel(slug: string): string {
-  return slug
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+function cuisineLabel(cuisine: Cuisine, t: Translations): string {
+  switch (cuisine) {
+    case "american": return t.cuisineAmerican;
+    case "british": return t.cuisineBritish;
+    case "chinese": return t.cuisineChinese;
+    case "european": return t.cuisineEuropean;
+    case "french": return t.cuisineFrench;
+    case "fusion": return t.cuisineFusion;
+    case "greek": return t.cuisineGreek;
+    case "indian": return t.cuisineIndian;
+    case "italian": return t.cuisineItalian;
+    case "japanese": return t.cuisineJapanese;
+    case "korean": return t.cuisineKorean;
+    case "mediterranean": return t.cuisineMediterranean;
+    case "mexican": return t.cuisineMexican;
+    case "middle-eastern": return t.cuisineMiddleEastern;
+    case "moroccan": return t.cuisineMoroccan;
+    case "romanian": return t.cuisineRomanian;
+    case "spanish": return t.cuisineSpanish;
+    case "thai": return t.cuisineThai;
+    case "turkish": return t.cuisineTurkish;
+    case "vietnamese": return t.cuisineVietnamese;
+    case "other": return t.cuisineOther;
+  }
 }
 
 export function TagEditor({
@@ -148,21 +169,21 @@ export function TagEditor({
           <>
             <span className="text-gray-400">{t.filterCuisine}:</span>
             <span className="ml-1 font-medium">
-              {taxonomy.cuisine ? cuisineLabel(taxonomy.cuisine) : t.tagUnset}
+              {taxonomy.cuisine ? cuisineLabel(taxonomy.cuisine, t) : t.tagUnset}
             </span>
           </>
         }
         filled={taxonomy.cuisine != null}
       >
-        <CuisineInput
+        <OptionList
           current={taxonomy.cuisine}
-          placeholder={t.tagCuisinePlaceholder}
-          onSubmit={(v) => {
+          options={CUISINES.map((c) => ({ value: c, label: cuisineLabel(c, t) }))}
+          onPick={(v) => {
             persist({ cuisine: v });
             setOpen(null);
           }}
           onClear={
-            taxonomy.cuisine
+            taxonomy.cuisine != null
               ? () => {
                   persist({ cuisine: null });
                   setOpen(null);
@@ -294,9 +315,27 @@ function ChipWithPopover({
       >
         {chip}
       </button>
+
+      {/* Desktop: inline popover */}
       {open && (
-        <div className="absolute z-20 left-0 mt-1 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg p-1">
+        <div className="hidden sm:block absolute z-20 left-0 mt-1 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg p-1">
           {children}
+        </div>
+      )}
+
+      {/* Mobile: bottom sheet */}
+      {open && (
+        <div className="sm:hidden">
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => onOpenChange(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl pb-safe">
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            </div>
+            <div className="p-3">{children}</div>
+          </div>
         </div>
       )}
     </div>
@@ -348,55 +387,6 @@ function OptionList<T extends string>({
   );
 }
 
-function CuisineInput({
-  current,
-  placeholder,
-  onSubmit,
-  onClear,
-  clearLabel,
-}: {
-  current: string | null;
-  placeholder: string;
-  onSubmit: (value: string) => void;
-  onClear?: () => void;
-  clearLabel: string;
-}) {
-  const [value, setValue] = useState(current ?? "");
-
-  function submit() {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    onSubmit(trimmed);
-  }
-
-  return (
-    <div className="p-1 w-56">
-      <input
-        autoFocus
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            submit();
-          }
-        }}
-        placeholder={placeholder}
-        className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:border-green-600"
-      />
-      {onClear && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="w-full text-left mt-1 px-2 py-1 rounded text-sm text-gray-500 hover:bg-gray-50"
-        >
-          {clearLabel}
-        </button>
-      )}
-    </div>
-  );
-}
 
 function TimeInput({
   current,

@@ -6,6 +6,7 @@ import type {
   RecipeSummary,
   SourceType,
   ParsedRecipe,
+  Cuisine,
   MealType,
   CookStyle,
 } from "@/types/recipe";
@@ -34,7 +35,7 @@ export async function getRecipe(
     images: row.images,
     originalRecipe: row.originalRecipe,
     mealType: row.mealType as MealType | null,
-    cuisine: row.cuisine,
+    cuisine: row.cuisine as Cuisine | null,
     cookStyle: row.cookStyle as CookStyle | null,
     totalTimeMinutes: row.totalTimeMinutes,
     createdAt:
@@ -119,7 +120,7 @@ export async function getRecipeSummaries(
         : String(row.createdAt),
     imageUrl: row.images?.[0]?.url ?? null,
     mealType: row.mealType as MealType | null,
-    cuisine: row.cuisine,
+    cuisine: row.cuisine as Cuisine | null,
     cookStyle: row.cookStyle as CookStyle | null,
     totalTimeMinutes: row.totalTimeMinutes,
     cookCount: Number(row.cookCount),

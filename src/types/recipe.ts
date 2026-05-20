@@ -39,6 +39,31 @@ export const COOK_STYLES = [
 ] as const;
 export type CookStyle = (typeof COOK_STYLES)[number];
 
+export const CUISINES = [
+  "american",
+  "british",
+  "chinese",
+  "european",
+  "french",
+  "fusion",
+  "greek",
+  "indian",
+  "italian",
+  "japanese",
+  "korean",
+  "mediterranean",
+  "mexican",
+  "middle-eastern",
+  "moroccan",
+  "romanian",
+  "spanish",
+  "thai",
+  "turkish",
+  "vietnamese",
+  "other",
+] as const;
+export type Cuisine = (typeof CUISINES)[number];
+
 // Buckets for total cooking time. Edges are inclusive on the low end.
 export const TIME_BUCKETS = [
   "under-30",
@@ -80,7 +105,7 @@ export interface RecipeImage {
 
 export interface RecipeTaxonomy {
   mealType: MealType | null;
-  cuisine: string | null;
+  cuisine: Cuisine | null;
   cookStyle: CookStyle | null;
   totalTimeMinutes: number | null;
 }

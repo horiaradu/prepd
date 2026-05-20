@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { recipes, recipeShares } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { sendPushToUser } from "@/lib/push";
-import type { MealType, CookStyle } from "@/types/recipe";
+import type { Cuisine, MealType, CookStyle } from "@/types/recipe";
 
 export async function POST(
   request: NextRequest,
@@ -50,7 +50,7 @@ export async function POST(
         sourceType: recipe.sourceType,
         language: recipe.language,
         mealType: recipe.mealType as MealType | null,
-        cuisine: recipe.cuisine,
+        cuisine: recipe.cuisine as Cuisine | null,
         cookStyle: recipe.cookStyle as CookStyle | null,
         totalTimeMinutes: recipe.totalTimeMinutes,
       },

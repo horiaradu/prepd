@@ -2,8 +2,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { Schema } from "@google/genai";
 import {
   COOK_STYLES,
+  CUISINES,
   MEAL_TYPES,
   type CookStyle,
+  type Cuisine,
   type MealType,
   type ParsedRecipe,
   type RecipeImage,
@@ -79,7 +81,7 @@ Rules:
 10. VIDEO TIMESTAMP: If the content is a timestamped video transcript (lines starting with [MM:SS]), assign a "videoTimestamp" (in seconds) to each step indicating where in the video that step is demonstrated. Use the timestamp of the transcript segment that best matches the start of each step. Only include videoTimestamp for steps that clearly correspond to a part of the video.
 11. CLASSIFY the recipe with these top-level fields:
    - "mealType": exactly one of breakfast | main | side | soup | salad | dessert | snack | drink | sauce | bread | other. Use "main" for dinner/lunch entrées. Use "bread" for breads, pastries, doughs. Use "other" only if nothing else fits.
-   - "cuisine": a short lower-case slug describing the culinary tradition, e.g. "italian", "french", "mexican", "japanese", "chinese", "korean", "thai", "vietnamese", "indian", "middle-eastern", "mediterranean", "american", "romanian", "european". Use "fusion" for clearly cross-cultural dishes. Prefer the most specific accurate value. Null if genuinely unclassifiable.
+   - "cuisine": exactly one of american | british | chinese | european | french | fusion | greek | indian | italian | japanese | korean | mediterranean | mexican | middle-eastern | moroccan | romanian | spanish | thai | turkish | vietnamese | other. Use "fusion" for clearly cross-cultural dishes. Use "other" only if nothing else fits. Prefer the most specific accurate value. Null if genuinely unclassifiable.
    - "cookStyle": exactly one of no-cook | stovetop | oven | grill | slow-cooker | mixed. "no-cook" means no heat at all. "mixed" when both stovetop and oven are essential. Use "slow-cooker" for slow cooker, pressure cooker, or sous vide recipes.
    - "totalTimeMinutes": integer estimate of total active + passive time in minutes, from start to ready-to-eat. Include resting, marinating, and rising time. Null only if completely indeterminable.
 
@@ -162,14 +164,12 @@ function normalizeCookStyle(value: unknown): CookStyle | null {
     : null;
 }
 
-function normalizeCuisine(value: unknown): string | null {
+function normalizeCuisine(value: unknown): Cuisine | null {
   if (typeof value !== "string") return null;
-  const slug = value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-  return slug.length > 0 ? slug : null;
+  const slug = value.trim().toLowerCase().replace(/\s+/g, "-");
+  return (CUISINES as readonly string[]).includes(slug)
+    ? (slug as Cuisine)
+    : null;
 }
 
 function normalizeTotalTime(value: unknown): number | null {

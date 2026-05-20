@@ -13,6 +13,7 @@ import type {
   Step,
   RecipeImage,
   ParsedRecipe,
+  Cuisine,
   MealType,
   CookStyle,
 } from "@/types/recipe";
@@ -84,7 +85,7 @@ export const recipes = pgTable(
     language: text("language").notNull().default("en"), // "en" | "ro"
     servings: integer("servings"),
     mealType: text("meal_type"), // breakfast | main | side | soup | salad | dessert | snack | drink | sauce | bread | other
-    cuisine: text("cuisine"), // open vocabulary, lower-case slug
+    cuisine: text("cuisine"),
     cookStyle: text("cook_style"), // no-cook | stovetop | oven | grill | slow-cooker | mixed
     totalTimeMinutes: integer("total_time_minutes"),
     ingredients: jsonb("ingredients").$type<Ingredient[]>().notNull(),
@@ -175,7 +176,7 @@ export const recipeShares = pgTable(
         sourceType: string;
         language: string;
         mealType?: MealType | null;
-        cuisine?: string | null;
+        cuisine?: Cuisine | null;
         cookStyle?: CookStyle | null;
         totalTimeMinutes?: number | null;
       }>()

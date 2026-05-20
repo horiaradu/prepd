@@ -185,6 +185,27 @@ export type Translations = {
   mealBread: string;
   mealOther: string;
   mealUncategorized: string;
+  cuisineAmerican: string;
+  cuisineBritish: string;
+  cuisineChinese: string;
+  cuisineEuropean: string;
+  cuisineFrench: string;
+  cuisineFusion: string;
+  cuisineGreek: string;
+  cuisineIndian: string;
+  cuisineItalian: string;
+  cuisineJapanese: string;
+  cuisineKorean: string;
+  cuisineMediterranean: string;
+  cuisineMexican: string;
+  cuisineMiddleEastern: string;
+  cuisineMoroccan: string;
+  cuisineRomanian: string;
+  cuisineSpanish: string;
+  cuisineThai: string;
+  cuisineTurkish: string;
+  cuisineVietnamese: string;
+  cuisineOther: string;
   cookNoCook: string;
   cookStovetop: string;
   cookOven: string;
@@ -198,7 +219,6 @@ export type Translations = {
   timeMinutes: string;
   tagUnset: string;
   tagClear: string;
-  tagCuisinePlaceholder: string;
   tagMinutesUnit: string;
 
   // Suggest page
@@ -372,6 +392,27 @@ const en: Translations = {
   mealBread: "Breads & baking",
   mealOther: "Other",
   mealUncategorized: "Uncategorized",
+  cuisineAmerican: "American",
+  cuisineBritish: "British",
+  cuisineChinese: "Chinese",
+  cuisineEuropean: "European",
+  cuisineFrench: "French",
+  cuisineFusion: "Fusion",
+  cuisineGreek: "Greek",
+  cuisineIndian: "Indian",
+  cuisineItalian: "Italian",
+  cuisineJapanese: "Japanese",
+  cuisineKorean: "Korean",
+  cuisineMediterranean: "Mediterranean",
+  cuisineMexican: "Mexican",
+  cuisineMiddleEastern: "Middle Eastern",
+  cuisineMoroccan: "Moroccan",
+  cuisineRomanian: "Romanian",
+  cuisineSpanish: "Spanish",
+  cuisineThai: "Thai",
+  cuisineTurkish: "Turkish",
+  cuisineVietnamese: "Vietnamese",
+  cuisineOther: "Other",
   cookNoCook: "No-cook",
   cookStovetop: "Stovetop",
   cookOven: "Oven",
@@ -385,7 +426,6 @@ const en: Translations = {
   timeMinutes: "{min} min",
   tagUnset: "Add",
   tagClear: "Clear",
-  tagCuisinePlaceholder: "e.g. italian",
   tagMinutesUnit: "minutes",
 
   recipeSuggestions: "Recipe suggestions",
@@ -573,6 +613,27 @@ const ro: Translations = {
   mealBread: "Pâine și patiserie",
   mealOther: "Altele",
   mealUncategorized: "Neclasificate",
+  cuisineAmerican: "Americană",
+  cuisineBritish: "Britanică",
+  cuisineChinese: "Chineză",
+  cuisineEuropean: "Europeană",
+  cuisineFrench: "Franceză",
+  cuisineFusion: "Fusion",
+  cuisineGreek: "Grecească",
+  cuisineIndian: "Indiană",
+  cuisineItalian: "Italiană",
+  cuisineJapanese: "Japoneză",
+  cuisineKorean: "Coreeană",
+  cuisineMediterranean: "Mediteraneană",
+  cuisineMexican: "Mexicană",
+  cuisineMiddleEastern: "Orientul Mijlociu",
+  cuisineMoroccan: "Marocană",
+  cuisineRomanian: "Românească",
+  cuisineSpanish: "Spaniolă",
+  cuisineThai: "Thailandeză",
+  cuisineTurkish: "Turcească",
+  cuisineVietnamese: "Vietnameză",
+  cuisineOther: "Alta",
   cookNoCook: "Fără gătit",
   cookStovetop: "Aragaz",
   cookOven: "Cuptor",
@@ -586,7 +647,6 @@ const ro: Translations = {
   timeMinutes: "{min} min",
   tagUnset: "Adaugă",
   tagClear: "Șterge",
-  tagCuisinePlaceholder: "ex. italian",
   tagMinutesUnit: "minute",
 
   recipeSuggestions: "Sugestii de rețete",

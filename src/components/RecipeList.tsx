@@ -9,6 +9,7 @@ import {
   MEAL_TYPES,
   TIME_BUCKETS,
   timeBucketFor,
+  type Cuisine,
   type CookStyle,
   type MealType,
   type RecipeSummary,
@@ -74,11 +75,30 @@ function timeBucketLabel(bucket: TimeBucket, t: Translations): string {
   }
 }
 
-function cuisineLabel(slug: string): string {
-  return slug
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+function cuisineLabel(cuisine: Cuisine, t: Translations): string {
+  switch (cuisine) {
+    case "american": return t.cuisineAmerican;
+    case "british": return t.cuisineBritish;
+    case "chinese": return t.cuisineChinese;
+    case "european": return t.cuisineEuropean;
+    case "french": return t.cuisineFrench;
+    case "fusion": return t.cuisineFusion;
+    case "greek": return t.cuisineGreek;
+    case "indian": return t.cuisineIndian;
+    case "italian": return t.cuisineItalian;
+    case "japanese": return t.cuisineJapanese;
+    case "korean": return t.cuisineKorean;
+    case "mediterranean": return t.cuisineMediterranean;
+    case "mexican": return t.cuisineMexican;
+    case "middle-eastern": return t.cuisineMiddleEastern;
+    case "moroccan": return t.cuisineMoroccan;
+    case "romanian": return t.cuisineRomanian;
+    case "spanish": return t.cuisineSpanish;
+    case "thai": return t.cuisineThai;
+    case "turkish": return t.cuisineTurkish;
+    case "vietnamese": return t.cuisineVietnamese;
+    case "other": return t.cuisineOther;
+  }
 }
 
 // Order recipes inside a group: cooked-recently first, then by createdAt desc.
@@ -101,7 +121,7 @@ export default function RecipeList({
   const [recipes, setRecipes] = useState(initialRecipes);
   const [search, setSearch] = useState("");
   const [mealFilter, setMealFilter] = useState<MealType | "all">("all");
-  const [cuisineFilter, setCuisineFilter] = useState<string>("all");
+  const [cuisineFilter, setCuisineFilter] = useState<Cuisine | "all">("all");
   const [cookStyleFilter, setCookStyleFilter] = useState<CookStyle | "all">(
     "all",
   );
@@ -113,14 +133,14 @@ export default function RecipeList({
   }, []);
 
   const cuisineOptions = useMemo(() => {
-    const counts = new Map<string, number>();
+    const counts = new Map<Cuisine, number>();
     for (const r of recipes) {
       if (!r.cuisine) continue;
       counts.set(r.cuisine, (counts.get(r.cuisine) ?? 0) + 1);
     }
     return [...counts.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([slug]) => slug);
+      .map(([cuisine]) => cuisine);
   }, [recipes]);
 
   const filtered = useMemo(() => {
@@ -219,7 +239,7 @@ export default function RecipeList({
             ]}
           />
           {cuisineOptions.length > 0 && (
-            <Dropdown<string>
+            <Dropdown<Cuisine | "all">
               label={t.filterCuisine}
               value={cuisineFilter}
               activeValue="all"
@@ -228,7 +248,7 @@ export default function RecipeList({
                 { value: "all", label: t.filterAll },
                 ...cuisineOptions.map((c) => ({
                   value: c,
-                  label: cuisineLabel(c),
+                  label: cuisineLabel(c, t),
                 })),
               ]}
             />
@@ -324,7 +344,7 @@ export default function RecipeList({
                         {recipe.cuisine && (
                           <>
                             <span className="text-gray-500">
-                              {cuisineLabel(recipe.cuisine)}
+                              {cuisineLabel(recipe.cuisine, t)}
                             </span>
                             <span>·</span>
                           </>
