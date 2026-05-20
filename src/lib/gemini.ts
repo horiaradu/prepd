@@ -1,6 +1,44 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import type { Schema } from "@google/genai";
 import type { ParsedRecipe, RecipeImage } from "@/types/recipe";
 import type { Operation } from "@/lib/recipe-operations";
+
+const INGREDIENT_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    name: { type: Type.STRING },
+    quantity: { type: Type.NUMBER },
+    unit: {
+      type: Type.STRING,
+      enum: ["g", "kg", "ml", "l", "tsp", "tbsp", "piece", "pinch", "to taste"],
+    },
+    notes: { type: Type.STRING },
+  },
+  required: ["name", "quantity", "unit"],
+};
+
+const STEP_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    instruction: { type: Type.STRING },
+    ingredients: { type: Type.ARRAY, items: INGREDIENT_SCHEMA },
+    imageUrl: { type: Type.STRING },
+    videoTimestamp: { type: Type.NUMBER },
+  },
+  required: ["instruction", "ingredients"],
+};
+
+const PARSED_RECIPE_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING },
+    servings: { type: Type.NUMBER, nullable: true },
+    ingredients: { type: Type.ARRAY, items: INGREDIENT_SCHEMA },
+    prepSteps: { type: Type.ARRAY, items: STEP_SCHEMA },
+    cookingSteps: { type: Type.ARRAY, items: STEP_SCHEMA },
+  },
+  required: ["title", "ingredients", "prepSteps", "cookingSteps"],
+};
 
 const RECIPE_PARSING_PROMPT_BASE = `You are a recipe extraction assistant. Your job is to take raw recipe content (from a webpage or video transcript) and return a clean, structured recipe.
 
@@ -81,7 +119,7 @@ function normalizeIngredient(ing: unknown): unknown {
 }
 
 function normalizeRecipe(recipe: unknown): ParsedRecipe {
-  const r = recipe as Record<string, unknown>;
+  const r = (Array.isArray(recipe) ? recipe[0] : recipe) as Record<string, unknown>;
   const normalizeStep = (s: unknown) => {
     if (!s || typeof s !== "object") return s;
     const step = s as Record<string, unknown>;
@@ -120,11 +158,12 @@ export async function parseRecipeContent(
   }
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents: prompt,
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
+      responseSchema: PARSED_RECIPE_SCHEMA,
     },
   });
 
@@ -148,7 +187,7 @@ export async function parseRecipeFromUrl(
   // (urlContext) is enabled, so we instruct JSON in the prompt and strip
   // any code fence from the reply before parsing.
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents: `Extract the recipe from this URL: ${url}.
 
 Additionally, include a top-level "images" array with the absolute URLs of recipe-relevant photos that appear on the page (hero image, finished dish, key step photos). Each entry is { "url": "https://...", "alt": "optional alt text" }. Only include URLs that actually appear on the page — do not invent them. Omit the field entirely if you find none.`,
@@ -206,7 +245,7 @@ export async function parseRecipeFromYoutube(
   const ai = getClient();
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents: [
       {
         role: "user",
@@ -221,6 +260,7 @@ export async function parseRecipeFromYoutube(
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
+      responseSchema: PARSED_RECIPE_SCHEMA,
     },
   });
 
@@ -269,7 +309,7 @@ export async function parseRecipeFromImage(
   }));
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents: [
       {
         role: "user",
@@ -287,6 +327,7 @@ export async function parseRecipeFromImage(
     config: {
       systemInstruction: getRecipeParsingPrompt(lang),
       responseMimeType: "application/json",
+      responseSchema: PARSED_RECIPE_SCHEMA,
     },
   });
 
@@ -433,7 +474,7 @@ export async function planRecipeEdit(
   ];
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents,
     config: {
       systemInstruction: getRecipeEditPlannerPrompt(language),
@@ -465,7 +506,7 @@ export async function suggestRecipes(
   ];
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents,
     config: {
       systemInstruction: getSuggestSystemInstruction(recipeContext, language),
@@ -506,7 +547,7 @@ export async function suggestRecipesStream(
   ];
 
   const response = await ai.models.generateContentStream({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents,
     config: {
       systemInstruction: getSuggestSystemInstruction(recipeContext, language),
@@ -583,11 +624,12 @@ export async function generateRecipe(
 Be specific with quantities, timings, and techniques. This should be a complete, cookable recipe.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents: prompt,
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
+      responseSchema: PARSED_RECIPE_SCHEMA,
     },
   });
 
