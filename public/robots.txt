@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /welcome
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Disallow: /
+
+Sitemap: https://www.mintdish.io/sitemap.xml
