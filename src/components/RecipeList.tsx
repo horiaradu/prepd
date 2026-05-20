@@ -126,7 +126,7 @@ export default function RecipeList({
     "all",
   );
   const [timeFilter, setTimeFilter] = useState<TimeBucket | "all">("all");
-  const [untriedOnly, setUntriedOnly] = useState(false);
+  const [cookFilter, setCookFilter] = useState<"all" | "tried" | "untried">("all");
 
   const handleRecipeParsed = useCallback((recipe: RecipeSummary) => {
     setRecipes((prev) => [recipe, ...prev]);
@@ -156,7 +156,8 @@ export default function RecipeList({
         timeBucketFor(r.totalTimeMinutes) !== timeFilter
       )
         return false;
-      if (untriedOnly && r.cookCount > 0) return false;
+      if (cookFilter === "untried" && r.cookCount > 0) return false;
+      if (cookFilter === "tried" && r.cookCount === 0) return false;
       return true;
     });
   }, [
@@ -166,7 +167,7 @@ export default function RecipeList({
     cuisineFilter,
     cookStyleFilter,
     timeFilter,
-    untriedOnly,
+    cookFilter,
   ]);
 
   const grouped = useMemo(() => {
@@ -192,14 +193,14 @@ export default function RecipeList({
     cuisineFilter !== "all" ||
     cookStyleFilter !== "all" ||
     timeFilter !== "all" ||
-    untriedOnly;
+    cookFilter !== "all";
 
   function clearFilters() {
     setMealFilter("all");
     setCuisineFilter("all");
     setCookStyleFilter("all");
     setTimeFilter("all");
-    setUntriedOnly(false);
+    setCookFilter("all");
   }
 
   return (
@@ -279,15 +280,17 @@ export default function RecipeList({
               })),
             ]}
           />
-          <label className="inline-flex items-center gap-1.5 text-sm text-gray-600 px-2 py-1 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={untriedOnly}
-              onChange={(e) => setUntriedOnly(e.target.checked)}
-              className="accent-green-600"
-            />
-            {t.filterUntried}
-          </label>
+          <Dropdown<"all" | "tried" | "untried">
+            label={t.filterCooked}
+            value={cookFilter}
+            activeValue="all"
+            onChange={setCookFilter}
+            options={[
+              { value: "all", label: t.filterAll },
+              { value: "tried", label: t.filterTried },
+              { value: "untried", label: t.filterUntried },
+            ]}
+          />
           {anyFilterActive && (
             <button
               onClick={clearFilters}

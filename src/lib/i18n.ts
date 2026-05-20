@@ -170,6 +170,8 @@ export type Translations = {
   filterCuisine: string;
   filterCookStyle: string;
   filterTime: string;
+  filterCooked: string;
+  filterTried: string;
   filterUntried: string;
   filterAll: string;
   filterClear: string;
@@ -377,6 +379,8 @@ const en: Translations = {
   filterCuisine: "Cuisine",
   filterCookStyle: "Cook style",
   filterTime: "Time",
+  filterCooked: "Cooked",
+  filterTried: "Tried only",
   filterUntried: "Untried only",
   filterAll: "All",
   filterClear: "Clear filters",
@@ -598,6 +602,8 @@ const ro: Translations = {
   filterCuisine: "Bucătărie",
   filterCookStyle: "Mod de gătit",
   filterTime: "Timp",
+  filterCooked: "Gătite",
+  filterTried: "Doar încercate",
   filterUntried: "Doar neîncercate",
   filterAll: "Toate",
   filterClear: "Resetează filtrele",
