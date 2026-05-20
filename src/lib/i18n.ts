@@ -2,6 +2,7 @@ export const LOCALES = ["en", "ro"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const LOCALE_COOKIE = "NEXT_LOCALE";
+export const COOKIE_CONSENT_COOKIE = "cc_cookie";
 
 export function isValidLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
@@ -20,6 +21,21 @@ export type Translations = {
   // Layout / footer
   privacy: string;
   terms: string;
+  cookies: string;
+
+  // Cookie consent banner
+  cookieConsentTitle: string;
+  cookieConsentDescription: string;
+  cookieAcceptAll: string;
+  cookieRejectAll: string;
+  cookieManagePreferences: string;
+  cookieNecessaryTitle: string;
+  cookieNecessaryDescription: string;
+  cookieAnalyticsTitle: string;
+  cookieAnalyticsDescription: string;
+  cookiePreferencesTitle: string;
+  cookieSavePreferences: string;
+  cookieCloseLabel: string;
 
   // Header
   signIn: string;
@@ -243,6 +259,23 @@ export type Translations = {
 const en: Translations = {
   privacy: "Privacy",
   terms: "Terms",
+  cookies: "Cookie preferences",
+
+  cookieConsentTitle: "We use cookies",
+  cookieConsentDescription:
+    'Mintdish uses necessary cookies to function and optional analytics cookies to understand how the app is used. See our <a href="/cookies">Cookie Policy</a> for details.',
+  cookieAcceptAll: "Accept all",
+  cookieRejectAll: "Essential only",
+  cookieManagePreferences: "Manage preferences",
+  cookieNecessaryTitle: "Necessary",
+  cookieNecessaryDescription:
+    "Required for authentication and language preference. These cannot be disabled.",
+  cookieAnalyticsTitle: "Analytics",
+  cookieAnalyticsDescription:
+    "Help us understand how Mintdish is used (Google Analytics, Vercel Analytics). No personal data is sold or shared.",
+  cookiePreferencesTitle: "Cookie preferences",
+  cookieSavePreferences: "Save preferences",
+  cookieCloseLabel: "Close",
 
   signIn: "Sign in",
   backAriaLabel: "Back",
@@ -462,6 +495,23 @@ const en: Translations = {
 const ro: Translations = {
   privacy: "Confidențialitate",
   terms: "Termeni",
+  cookies: "Preferințe cookie",
+
+  cookieConsentTitle: "Folosim cookie-uri",
+  cookieConsentDescription:
+    'Mintdish folosește cookie-uri necesare pentru funcționare și cookie-uri opționale de analiză pentru a înțelege cum este utilizată aplicația. Vezi <a href="/cookies">Politica de cookie-uri</a> pentru detalii.',
+  cookieAcceptAll: "Acceptă tot",
+  cookieRejectAll: "Doar esențiale",
+  cookieManagePreferences: "Gestionează preferințele",
+  cookieNecessaryTitle: "Necesare",
+  cookieNecessaryDescription:
+    "Necesare pentru autentificare și preferința de limbă. Nu pot fi dezactivate.",
+  cookieAnalyticsTitle: "Analiză",
+  cookieAnalyticsDescription:
+    "Ne ajută să înțelegem cum este utilizat Mintdish (Google Analytics, Vercel Analytics). Nicio dată personală nu este vândută sau partajată.",
+  cookiePreferencesTitle: "Preferințe cookie",
+  cookieSavePreferences: "Salvează preferințele",
+  cookieCloseLabel: "Închide",
 
   signIn: "Autentificare",
   backAriaLabel: "Înapoi",

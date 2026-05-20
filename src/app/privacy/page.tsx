@@ -2,7 +2,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="p-6 sm:p-8 max-w-3xl w-full mx-auto space-y-4 text-sm text-gray-700 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-gray-900 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_ul]:list-disc [&_ul]:pl-5 [&_a]:text-green-700 [&_a]:underline">
       <h1>Privacy Policy</h1>
-      <p className="text-gray-500">Last updated: May 4, 2026</p>
+      <p className="text-gray-500">Last updated: May 20, 2026</p>
 
       <h2>What we collect</h2>
       <p>
@@ -33,14 +33,35 @@ export default function PrivacyPolicy() {
           your Google data beyond basic profile info.
         </li>
         <li>
+          <strong>Google Gemini</strong> — recipe parsing and generation. Recipe
+          content (URLs, text, images) may be sent to Google&apos;s Gemini API
+          for processing.
+        </li>
+        <li>
+          <strong>Google Tag Manager / Google Analytics</strong> — event
+          tracking and usage analytics, only when you have accepted analytics
+          cookies.
+        </li>
+        <li>
+          <strong>Vercel Analytics &amp; Speed Insights</strong> — anonymous
+          web analytics and performance monitoring, only when you have accepted
+          analytics cookies.
+        </li>
+        <li>
+          <strong>Sentry</strong> — error tracking and performance monitoring.
+          Your user ID and email address may be included in error reports to
+          help diagnose issues.
+        </li>
+        <li>
+          <strong>MailerLite</strong> — if you join our waitlist, your email
+          address is stored in MailerLite and used to contact you about
+          Mintdish.
+        </li>
+        <li>
           <strong>Vercel</strong> — hosting and image storage.
         </li>
         <li>
           <strong>Neon</strong> — database hosting.
-        </li>
-        <li>
-          <strong>OpenAI</strong> — recipe parsing and chat features. Recipe
-          content may be sent to OpenAI&apos;s API for processing.
         </li>
       </ul>
 
@@ -53,13 +74,29 @@ export default function PrivacyPolicy() {
 
       <h2>Cookies</h2>
       <p>
-        We use a session cookie for authentication. We do not use tracking or
-        advertising cookies.
+        We use two categories of cookies. See our{" "}
+        <a href="/cookies">Cookie Policy</a> for the full list.
+      </p>
+      <ul>
+        <li>
+          <strong>Necessary</strong> — a session cookie for authentication and
+          a cookie to remember your language preference. These are always set.
+        </li>
+        <li>
+          <strong>Analytics</strong> — cookies set by Google Analytics and
+          Vercel Analytics to measure usage. These are only set if you accept
+          analytics cookies.
+        </li>
+      </ul>
+      <p>
+        You can change your cookie preferences at any time on the{" "}
+        <a href="/cookies">Cookie Policy</a> page.
       </p>
 
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
+        Questions? Email{" "}
+        <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
       </p>
     </div>
   );

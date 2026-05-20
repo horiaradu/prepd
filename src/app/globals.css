@@ -50,6 +50,50 @@ body {
     sans-serif;
 }
 
+#cc-main {
+  --cc-font-family: var(--font-sans-brand), -apple-system, BlinkMacSystemFont,
+    "Inter", sans-serif;
+  --cc-modal-border-radius: 0.75rem;
+  --cc-btn-border-radius: 0.5rem;
+
+  /* colours */
+  --cc-bg: #ffffff;
+  --cc-primary-color: #111827;
+  --cc-secondary-color: #4b5563;
+
+  /* primary (accept all) button → green-700 */
+  --cc-btn-primary-bg: #047857;
+  --cc-btn-primary-color: #ffffff;
+  --cc-btn-primary-border-color: #047857;
+  --cc-btn-primary-hover-bg: #065f46;
+  --cc-btn-primary-hover-color: #ffffff;
+  --cc-btn-primary-hover-border-color: #065f46;
+
+  /* secondary (essential only) button → outlined */
+  --cc-btn-secondary-bg: #ffffff;
+  --cc-btn-secondary-color: #374151;
+  --cc-btn-secondary-border-color: #d1d5db;
+  --cc-btn-secondary-hover-bg: #f9fafb;
+  --cc-btn-secondary-hover-color: #111827;
+  --cc-btn-secondary-hover-border-color: #9ca3af;
+
+  /* toggle → green-700 when on */
+  --cc-toggle-on-bg: #047857;
+  --cc-toggle-off-bg: #d1d5db;
+  --cc-toggle-readonly-bg: #d1d5db;
+
+  /* overlay */
+  --cc-overlay-bg: rgba(0, 0, 0, 0.4);
+
+  /* separator */
+  --cc-separator-border-color: #f3f4f6;
+
+  /* cookie table */
+  --cc-cookie-category-block-bg: #f9fafb;
+  --cc-cookie-category-block-border: #f3f4f6;
+  --cc-cookie-category-block-hover-bg: #f3f4f6;
+}
+
 @media print {
   body {
     padding: 0;

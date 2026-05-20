@@ -21,7 +21,8 @@ export default function TermsOfService() {
       <p>
         You own the recipes and data you store in Mintdish. We don&apos;t claim any
         rights to your content. We may process your content through third-party
-        AI services (OpenAI) to provide features like recipe parsing and chat.
+        AI services (Google Gemini) to provide features like recipe parsing and
+        chat.
       </p>
 
       <h2>Acceptable use</h2>

@@ -9,7 +9,12 @@ import { AnalyticsUserId } from "@/components/AnalyticsUserId";
 import { AnalyticsPageView } from "@/components/AnalyticsPageView";
 import { VercelInsights } from "@/components/VercelInsights";
 import { Footer } from "@/components/Footer";
-import { getTranslations, isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
+import {
+  getTranslations,
+  isValidLocale,
+  LOCALE_COOKIE,
+  COOKIE_CONSENT_COOKIE,
+} from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import "./globals.css";
 
@@ -62,12 +67,23 @@ export default async function RootLayout({
   const locale: Locale = isValidLocale(raw) ? raw : "en";
   const t = getTranslations(locale);
 
+  const consentRaw = cookieStore.get(COOKIE_CONSENT_COOKIE)?.value;
+  let analyticsConsented = false;
+  try {
+    if (consentRaw) {
+      const consent = JSON.parse(consentRaw) as { categories?: string[] };
+      analyticsConsented = consent.categories?.includes("analytics") ?? false;
+    }
+  } catch {
+    // malformed cookie — treat as no consent
+  }
+
   return (
     <html
       lang={locale}
       className={`${jakartaSans.variable} h-full antialiased`}
     >
-      {gtmId && <GoogleTagManager gtmId={gtmId} />}
+      {gtmId && analyticsConsented && <GoogleTagManager gtmId={gtmId} />}
       <head>
         <meta name="theme-color" content="#059669" />
         <meta
@@ -83,10 +99,16 @@ export default async function RootLayout({
           </Suspense>
           <AuthLayout>{children}</AuthLayout>
         </Providers>
-        <Footer privacyLabel={t.privacy} termsLabel={t.terms} />
-        <Suspense fallback={null}>
-          <VercelInsights />
-        </Suspense>
+        <Footer
+          privacyLabel={t.privacy}
+          termsLabel={t.terms}
+          cookiesLabel={t.cookies}
+        />
+        {analyticsConsented && (
+          <Suspense fallback={null}>
+            <VercelInsights />
+          </Suspense>
+        )}
       </body>
     </html>
   );
