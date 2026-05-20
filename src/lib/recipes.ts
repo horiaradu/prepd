@@ -1,7 +1,14 @@
 import { db } from "@/db";
 import { recipes, cookLog, recipeMessages } from "@/db/schema";
 import { and, eq, desc, asc, count, max, sql } from "drizzle-orm";
-import type { Recipe, RecipeSummary, SourceType, ParsedRecipe } from "@/types/recipe";
+import type {
+  Recipe,
+  RecipeSummary,
+  SourceType,
+  ParsedRecipe,
+  MealType,
+  CookStyle,
+} from "@/types/recipe";
 import type { Operation } from "@/lib/recipe-operations";
 
 export async function getRecipe(
@@ -26,6 +33,10 @@ export async function getRecipe(
     cookingSteps: row.cookingSteps,
     images: row.images,
     originalRecipe: row.originalRecipe,
+    mealType: row.mealType as MealType | null,
+    cuisine: row.cuisine,
+    cookStyle: row.cookStyle as CookStyle | null,
+    totalTimeMinutes: row.totalTimeMinutes,
     createdAt:
       row.createdAt instanceof Date
         ? row.createdAt.toISOString()
@@ -81,6 +92,10 @@ export async function getRecipeSummaries(
       sourceType: recipes.sourceType,
       createdAt: recipes.createdAt,
       images: recipes.images,
+      mealType: recipes.mealType,
+      cuisine: recipes.cuisine,
+      cookStyle: recipes.cookStyle,
+      totalTimeMinutes: recipes.totalTimeMinutes,
       cookCount: count(cookLog.id),
       lastCookedAt: max(cookLog.cookedAt),
     })
@@ -103,6 +118,10 @@ export async function getRecipeSummaries(
         ? row.createdAt.toISOString()
         : String(row.createdAt),
     imageUrl: row.images?.[0]?.url ?? null,
+    mealType: row.mealType as MealType | null,
+    cuisine: row.cuisine,
+    cookStyle: row.cookStyle as CookStyle | null,
+    totalTimeMinutes: row.totalTimeMinutes,
     cookCount: Number(row.cookCount),
     lastCookedAt: row.lastCookedAt
       ? row.lastCookedAt instanceof Date

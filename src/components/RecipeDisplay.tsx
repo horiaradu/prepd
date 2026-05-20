@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { ParsedRecipe, Ingredient, Step } from "@/types/recipe";
+import type {
+  ParsedRecipe,
+  Ingredient,
+  Step,
+  RecipeTaxonomy,
+} from "@/types/recipe";
 import { useLanguage } from "@/context/LanguageContext";
+import { TagEditor } from "@/components/TagEditor";
 
 function formatScaledQuantity(
   ingredient: Ingredient,
@@ -126,11 +132,17 @@ export function RecipeDisplay({
   recipe,
   sourceUrl,
   heroImageUrl,
+  recipeId,
+  onTaxonomyChange,
   children,
 }: {
   recipe: ParsedRecipe;
   sourceUrl?: string;
   heroImageUrl?: string;
+  // When both are provided, the recipe's taxonomy tags are shown as an
+  // editable chip row under the title.
+  recipeId?: string;
+  onTaxonomyChange?: (next: RecipeTaxonomy) => void;
   children?: React.ReactNode;
 }) {
   const { t } = useLanguage();
@@ -186,8 +198,22 @@ export function RecipeDisplay({
 
       <div>
         <h1 className="text-3xl font-bold">{recipe.title}</h1>
+        {recipeId && onTaxonomyChange && (
+          <div className="mt-2">
+            <TagEditor
+              recipeId={recipeId}
+              taxonomy={{
+                mealType: recipe.mealType,
+                cuisine: recipe.cuisine,
+                cookStyle: recipe.cookStyle,
+                totalTimeMinutes: recipe.totalTimeMinutes,
+              }}
+              onChange={onTaxonomyChange}
+            />
+          </div>
+        )}
         {recipe.servings && (
-          <div className="flex items-center gap-2 mt-1 text-gray-500">
+          <div className="flex items-center gap-2 mt-2 text-gray-500">
             <span>{t.serves}</span>
             <div className="flex items-center">
               <button

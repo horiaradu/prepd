@@ -165,6 +165,42 @@ export type Translations = {
   send: string;
   failedToShare: string;
 
+  // Recipe list — taxonomy filters & group headers
+  filterMealType: string;
+  filterCuisine: string;
+  filterCookStyle: string;
+  filterTime: string;
+  filterUntried: string;
+  filterAll: string;
+  filterClear: string;
+  mealBreakfast: string;
+  mealMain: string;
+  mealSide: string;
+  mealSoup: string;
+  mealSalad: string;
+  mealDessert: string;
+  mealSnack: string;
+  mealDrink: string;
+  mealSauce: string;
+  mealBread: string;
+  mealOther: string;
+  mealUncategorized: string;
+  cookNoCook: string;
+  cookStovetop: string;
+  cookOven: string;
+  cookGrill: string;
+  cookSlowCooker: string;
+  cookMixed: string;
+  timeUnder30: string;
+  time30to60: string;
+  time60to120: string;
+  timeOver120: string;
+  timeMinutes: string;
+  tagUnset: string;
+  tagClear: string;
+  tagCuisinePlaceholder: string;
+  tagMinutesUnit: string;
+
   // Suggest page
   recipeSuggestions: string;
   whatMoodFor: string;
@@ -316,6 +352,41 @@ const en: Translations = {
   sending: "Sending…",
   send: "Send",
   failedToShare: "Failed to share",
+
+  filterMealType: "Meal",
+  filterCuisine: "Cuisine",
+  filterCookStyle: "Cook style",
+  filterTime: "Time",
+  filterUntried: "Untried only",
+  filterAll: "All",
+  filterClear: "Clear filters",
+  mealBreakfast: "Breakfast",
+  mealMain: "Mains",
+  mealSide: "Sides",
+  mealSoup: "Soups",
+  mealSalad: "Salads",
+  mealDessert: "Desserts",
+  mealSnack: "Snacks",
+  mealDrink: "Drinks",
+  mealSauce: "Sauces",
+  mealBread: "Breads & baking",
+  mealOther: "Other",
+  mealUncategorized: "Uncategorized",
+  cookNoCook: "No-cook",
+  cookStovetop: "Stovetop",
+  cookOven: "Oven",
+  cookGrill: "Grill",
+  cookSlowCooker: "Slow / pressure cooker",
+  cookMixed: "Mixed",
+  timeUnder30: "< 30 min",
+  time30to60: "30–60 min",
+  time60to120: "1–2 h",
+  timeOver120: "2 h+",
+  timeMinutes: "{min} min",
+  tagUnset: "Add",
+  tagClear: "Clear",
+  tagCuisinePlaceholder: "e.g. italian",
+  tagMinutesUnit: "minutes",
 
   recipeSuggestions: "Recipe suggestions",
   whatMoodFor: "What are you in the mood for?",
@@ -482,6 +553,41 @@ const ro: Translations = {
   sending: "Se trimite…",
   send: "Trimite",
   failedToShare: "Nu s-a putut distribui",
+
+  filterMealType: "Tip",
+  filterCuisine: "Bucătărie",
+  filterCookStyle: "Mod de gătit",
+  filterTime: "Timp",
+  filterUntried: "Doar neîncercate",
+  filterAll: "Toate",
+  filterClear: "Resetează filtrele",
+  mealBreakfast: "Mic dejun",
+  mealMain: "Feluri principale",
+  mealSide: "Garnituri",
+  mealSoup: "Supe",
+  mealSalad: "Salate",
+  mealDessert: "Deserturi",
+  mealSnack: "Gustări",
+  mealDrink: "Băuturi",
+  mealSauce: "Sosuri",
+  mealBread: "Pâine și patiserie",
+  mealOther: "Altele",
+  mealUncategorized: "Neclasificate",
+  cookNoCook: "Fără gătit",
+  cookStovetop: "Aragaz",
+  cookOven: "Cuptor",
+  cookGrill: "Grătar",
+  cookSlowCooker: "Slow / oală sub presiune",
+  cookMixed: "Combinat",
+  timeUnder30: "< 30 min",
+  time30to60: "30–60 min",
+  time60to120: "1–2 h",
+  timeOver120: "Peste 2 h",
+  timeMinutes: "{min} min",
+  tagUnset: "Adaugă",
+  tagClear: "Șterge",
+  tagCuisinePlaceholder: "ex. italian",
+  tagMinutesUnit: "minute",
 
   recipeSuggestions: "Sugestii de rețete",
   whatMoodFor: "Ce ai chef să gătești?",

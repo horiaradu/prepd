@@ -56,6 +56,10 @@ export async function PATCH(
         sourceUrl: snap.sourceUrl,
         sourceType: snap.sourceType as SourceType,
         language: snap.language ?? "en",
+        mealType: snap.mealType ?? null,
+        cuisine: snap.cuisine ?? null,
+        cookStyle: snap.cookStyle ?? null,
+        totalTimeMinutes: snap.totalTimeMinutes ?? null,
       })
       .returning({ id: recipes.id });
 

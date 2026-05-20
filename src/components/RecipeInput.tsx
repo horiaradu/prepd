@@ -50,6 +50,10 @@ export default function RecipeInput({
       sourceType: parsed.sourceType,
       createdAt: new Date().toISOString(),
       imageUrl: parsed.imageUrl,
+      mealType: parsed.recipe.mealType,
+      cuisine: parsed.recipe.cuisine,
+      cookStyle: parsed.recipe.cookStyle,
+      totalTimeMinutes: parsed.recipe.totalTimeMinutes,
       cookCount: 0,
       lastCookedAt: null,
     };

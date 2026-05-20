@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { recipes, recipeMessages } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { applyOperations, validateRecipe } from "@/lib/recipe-operations";
-import type { ParsedRecipe } from "@/types/recipe";
+import type { ParsedRecipe, MealType, CookStyle } from "@/types/recipe";
 
 export async function POST(
   _request: NextRequest,
@@ -51,6 +51,10 @@ export async function POST(
     ingredients: recipe.ingredients,
     prepSteps: recipe.prepSteps,
     cookingSteps: recipe.cookingSteps,
+    mealType: recipe.mealType as MealType | null,
+    cuisine: recipe.cuisine,
+    cookStyle: recipe.cookStyle as CookStyle | null,
+    totalTimeMinutes: recipe.totalTimeMinutes,
   };
 
   const updated = applyOperations(currentRecipe, message.operations);

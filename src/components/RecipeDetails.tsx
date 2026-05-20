@@ -230,6 +230,10 @@ export default function RecipeDetails({
         ingredients: data.recipe.ingredients,
         prepSteps: data.recipe.prepSteps,
         cookingSteps: data.recipe.cookingSteps,
+        mealType: data.recipe.mealType,
+        cuisine: data.recipe.cuisine,
+        cookStyle: data.recipe.cookStyle,
+        totalTimeMinutes: data.recipe.totalTimeMinutes,
       }));
       trackRecipeReparsed({ recipeId });
     } finally {
@@ -272,6 +276,10 @@ export default function RecipeDetails({
             ingredients: recipe.ingredients,
             prepSteps: recipe.prepSteps,
             cookingSteps: recipe.cookingSteps,
+            mealType: recipe.mealType,
+            cuisine: recipe.cuisine,
+            cookStyle: recipe.cookStyle,
+            totalTimeMinutes: recipe.totalTimeMinutes,
           };
 
   // Most recent applied assistant message with stored state = undoable
@@ -335,6 +343,16 @@ export default function RecipeDetails({
         recipe={displayRecipe}
         sourceUrl={recipe.sourceUrl}
         heroImageUrl={heroImageOverride ?? recipe.images?.[0]?.url}
+        recipeId={!hasPending && !showOriginal ? recipeId : undefined}
+        onTaxonomyChange={(next) =>
+          setRecipe((prev) => ({
+            ...prev,
+            mealType: next.mealType,
+            cuisine: next.cuisine,
+            cookStyle: next.cookStyle,
+            totalTimeMinutes: next.totalTimeMinutes,
+          }))
+        }
       >
         <div className="flex flex-wrap items-center gap-3 pt-2">
           {hasOriginal && messages.length > 0 && !hasPending && (

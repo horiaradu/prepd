@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { generateAndStoreHeroImage } from "@/lib/recipe-image";
+import type { MealType, CookStyle } from "@/types/recipe";
 
 export async function POST(
   _request: NextRequest,
@@ -39,6 +40,10 @@ export async function POST(
         ingredients: row.ingredients,
         prepSteps: row.prepSteps,
         cookingSteps: row.cookingSteps,
+        mealType: row.mealType as MealType | null,
+        cuisine: row.cuisine,
+        cookStyle: row.cookStyle as CookStyle | null,
+        totalTimeMinutes: row.totalTimeMinutes,
       },
     });
     newBlobUrl = image.blobUrl ?? null;

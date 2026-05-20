@@ -13,6 +13,8 @@ import type {
   Step,
   RecipeImage,
   ParsedRecipe,
+  MealType,
+  CookStyle,
 } from "@/types/recipe";
 
 // NextAuth tables — must match @auth/drizzle-adapter expected schema
@@ -81,6 +83,10 @@ export const recipes = pgTable(
     sourceType: text("source_type").notNull(), // "youtube" | "web" | "image"
     language: text("language").notNull().default("en"), // "en" | "ro"
     servings: integer("servings"),
+    mealType: text("meal_type"), // breakfast | main | side | soup | salad | dessert | snack | drink | sauce | bread | other
+    cuisine: text("cuisine"), // open vocabulary, lower-case slug
+    cookStyle: text("cook_style"), // no-cook | stovetop | oven | grill | slow-cooker | mixed
+    totalTimeMinutes: integer("total_time_minutes"),
     ingredients: jsonb("ingredients").$type<Ingredient[]>().notNull(),
     prepSteps: jsonb("prep_steps").$type<Step[]>().notNull(),
     cookingSteps: jsonb("cooking_steps").$type<Step[]>().notNull(),
@@ -93,6 +99,9 @@ export const recipes = pgTable(
   (table) => [
     index("idx_recipes_user_id").on(table.userId),
     index("idx_recipes_title").on(table.title),
+    index("idx_recipes_meal_type").on(table.mealType),
+    index("idx_recipes_cuisine").on(table.cuisine),
+    index("idx_recipes_cook_style").on(table.cookStyle),
   ],
 );
 
@@ -165,6 +174,10 @@ export const recipeShares = pgTable(
         sourceUrl: string;
         sourceType: string;
         language: string;
+        mealType?: MealType | null;
+        cuisine?: string | null;
+        cookStyle?: CookStyle | null;
+        totalTimeMinutes?: number | null;
       }>()
       .notNull(),
     status: text("status").notNull().default("pending"), // "pending" | "accepted" | "discarded"

@@ -1,6 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Schema } from "@google/genai";
-import type { ParsedRecipe, RecipeImage } from "@/types/recipe";
+import {
+  COOK_STYLES,
+  MEAL_TYPES,
+  type CookStyle,
+  type MealType,
+  type ParsedRecipe,
+  type RecipeImage,
+} from "@/types/recipe";
 import type { Operation } from "@/lib/recipe-operations";
 
 const INGREDIENT_SCHEMA: Schema = {
@@ -36,6 +43,18 @@ const PARSED_RECIPE_SCHEMA: Schema = {
     ingredients: { type: Type.ARRAY, items: INGREDIENT_SCHEMA },
     prepSteps: { type: Type.ARRAY, items: STEP_SCHEMA },
     cookingSteps: { type: Type.ARRAY, items: STEP_SCHEMA },
+    mealType: {
+      type: Type.STRING,
+      enum: [...MEAL_TYPES],
+      nullable: true,
+    },
+    cuisine: { type: Type.STRING, nullable: true },
+    cookStyle: {
+      type: Type.STRING,
+      enum: [...COOK_STYLES],
+      nullable: true,
+    },
+    totalTimeMinutes: { type: Type.NUMBER, nullable: true },
   },
   required: ["title", "ingredients", "prepSteps", "cookingSteps"],
 };
@@ -58,6 +77,11 @@ Rules:
 8. If the content does not contain a recipe, return { "error": "No recipe found in the provided content" }.
 9. IMAGE ASSIGNMENT: If a list of available images is provided, assign each image to the most relevant step by setting "imageUrl" on that step. Each image should be used at most once. Only assign an image if it is clearly relevant to a specific step (based on alt text or context). Do not assign images to steps where they don't fit. It's fine to leave most steps without an image.
 10. VIDEO TIMESTAMP: If the content is a timestamped video transcript (lines starting with [MM:SS]), assign a "videoTimestamp" (in seconds) to each step indicating where in the video that step is demonstrated. Use the timestamp of the transcript segment that best matches the start of each step. Only include videoTimestamp for steps that clearly correspond to a part of the video.
+11. CLASSIFY the recipe with these top-level fields:
+   - "mealType": exactly one of breakfast | main | side | soup | salad | dessert | snack | drink | sauce | bread | other. Use "main" for dinner/lunch entrées. Use "bread" for breads, pastries, doughs. Use "other" only if nothing else fits.
+   - "cuisine": a short lower-case slug describing the culinary tradition, e.g. "italian", "french", "mexican", "japanese", "chinese", "korean", "thai", "vietnamese", "indian", "middle-eastern", "mediterranean", "american", "romanian", "european". Use "fusion" for clearly cross-cultural dishes. Prefer the most specific accurate value. Null if genuinely unclassifiable.
+   - "cookStyle": exactly one of no-cook | stovetop | oven | grill | slow-cooker | mixed. "no-cook" means no heat at all. "mixed" when both stovetop and oven are essential. Use "slow-cooker" for slow cooker, pressure cooker, or sous vide recipes.
+   - "totalTimeMinutes": integer estimate of total active + passive time in minutes, from start to ready-to-eat. Include resting, marinating, and rising time. Null only if completely indeterminable.
 
 Return ONLY valid JSON matching this exact structure (no markdown, no explanation):
 
@@ -85,7 +109,11 @@ Return ONLY valid JSON matching this exact structure (no markdown, no explanatio
       ],
       "videoTimestamp": 120
     }
-  ]
+  ],
+  "mealType": "main",
+  "cuisine": "italian",
+  "cookStyle": "stovetop",
+  "totalTimeMinutes": 45
 }`;
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -96,7 +124,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 function getRecipeParsingPrompt(language = "en"): string {
   const langName = LANGUAGE_NAMES[language] ?? "English";
   return `${RECIPE_PARSING_PROMPT_BASE}
-11. LANGUAGE: Output all recipe text (title, ingredient names, step instructions, notes) in ${langName}.`;
+12. LANGUAGE: Output all recipe text (title, ingredient names, step instructions, notes) in ${langName}. Keep "mealType", "cuisine", and "cookStyle" values in the canonical English slugs listed above — do not translate them.`;
 }
 
 function getClient() {
@@ -118,8 +146,44 @@ function normalizeIngredient(ing: unknown): unknown {
   return { ...obj, quantity };
 }
 
+function normalizeMealType(value: unknown): MealType | null {
+  if (typeof value !== "string") return null;
+  const slug = value.trim().toLowerCase();
+  return (MEAL_TYPES as readonly string[]).includes(slug)
+    ? (slug as MealType)
+    : null;
+}
+
+function normalizeCookStyle(value: unknown): CookStyle | null {
+  if (typeof value !== "string") return null;
+  const slug = value.trim().toLowerCase().replace(/\s+/g, "-");
+  return (COOK_STYLES as readonly string[]).includes(slug)
+    ? (slug as CookStyle)
+    : null;
+}
+
+function normalizeCuisine(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+  return slug.length > 0 ? slug : null;
+}
+
+function normalizeTotalTime(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  return Math.round(value);
+}
+
 function normalizeRecipe(recipe: unknown): ParsedRecipe {
-  const r = (Array.isArray(recipe) ? recipe[0] : recipe) as Record<string, unknown>;
+  const r = (Array.isArray(recipe) ? recipe[0] : recipe) as Record<
+    string,
+    unknown
+  >;
   const normalizeStep = (s: unknown) => {
     if (!s || typeof s !== "object") return s;
     const step = s as Record<string, unknown>;
@@ -135,6 +199,10 @@ function normalizeRecipe(recipe: unknown): ParsedRecipe {
     cookingSteps: Array.isArray(r.cookingSteps)
       ? r.cookingSteps.map(normalizeStep)
       : [],
+    mealType: normalizeMealType(r.mealType),
+    cuisine: normalizeCuisine(r.cuisine),
+    cookStyle: normalizeCookStyle(r.cookStyle),
+    totalTimeMinutes: normalizeTotalTime(r.totalTimeMinutes),
   } as ParsedRecipe;
 }
 

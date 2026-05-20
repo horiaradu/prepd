@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
-import type { Ingredient, Step, RecipeImage } from "@/types/recipe";
+import type {
+  Ingredient,
+  Step,
+  RecipeImage,
+  MealType,
+  CookStyle,
+} from "@/types/recipe";
 
 interface RecipeSnapshot {
   title: string;
@@ -14,6 +20,10 @@ interface RecipeSnapshot {
   images: RecipeImage[];
   sourceUrl: string;
   sourceType: string;
+  mealType?: MealType | null;
+  cuisine?: string | null;
+  cookStyle?: CookStyle | null;
+  totalTimeMinutes?: number | null;
 }
 
 export default function SharedRecipeView({
@@ -80,7 +90,17 @@ export default function SharedRecipeView({
       </div>
 
       <RecipeDisplay
-        recipe={recipe}
+        recipe={{
+          title: recipe.title,
+          servings: recipe.servings,
+          ingredients: recipe.ingredients,
+          prepSteps: recipe.prepSteps,
+          cookingSteps: recipe.cookingSteps,
+          mealType: recipe.mealType ?? null,
+          cuisine: recipe.cuisine ?? null,
+          cookStyle: recipe.cookStyle ?? null,
+          totalTimeMinutes: recipe.totalTimeMinutes ?? null,
+        }}
         sourceUrl={recipe.sourceUrl}
         heroImageUrl={heroUrl}
       >
