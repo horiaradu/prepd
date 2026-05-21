@@ -70,6 +70,7 @@ export default function MarketingEnLayout({
           <main className="flex-1 flex flex-col">{children}</main>
         </Providers>
         <Footer
+          locale="en"
           privacyLabel={t.privacy}
           termsLabel={t.terms}
           cookiesLabel={t.cookies}

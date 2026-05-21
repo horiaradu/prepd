@@ -100,6 +100,7 @@ export default async function AppLayout({
           <AuthLayout>{children}</AuthLayout>
         </Providers>
         <Footer
+          locale={locale}
           privacyLabel={t.privacy}
           termsLabel={t.terms}
           cookiesLabel={t.cookies}

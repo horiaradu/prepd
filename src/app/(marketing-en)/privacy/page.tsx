@@ -1,6 +1,17 @@
+import type { Metadata } from "next";
+import { LegalDocument } from "@/components/LegalDocument";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  alternates: {
+    canonical: "/privacy",
+    languages: { en: "/privacy", ro: "/privacy/ro" },
+  },
+};
+
 export default function PrivacyPolicy() {
   return (
-    <div className="p-6 sm:p-8 max-w-3xl w-full mx-auto space-y-4 text-sm text-gray-700 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-gray-900 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_ul]:list-disc [&_ul]:pl-5 [&_a]:text-green-700 [&_a]:underline">
+    <LegalDocument>
       <h1>Privacy Policy</h1>
       <p className="text-gray-500">Last updated: May 20, 2026</p>
 
@@ -43,8 +54,8 @@ export default function PrivacyPolicy() {
           cookies.
         </li>
         <li>
-          <strong>Vercel Analytics &amp; Speed Insights</strong> — anonymous
-          web analytics and performance monitoring, only when you have accepted
+          <strong>Vercel Analytics &amp; Speed Insights</strong> — anonymous web
+          analytics and performance monitoring, only when you have accepted
           analytics cookies.
         </li>
         <li>
@@ -79,8 +90,8 @@ export default function PrivacyPolicy() {
       </p>
       <ul>
         <li>
-          <strong>Necessary</strong> — a session cookie for authentication and
-          a cookie to remember your language preference. These are always set.
+          <strong>Necessary</strong> — a session cookie for authentication and a
+          cookie to remember your language preference. These are always set.
         </li>
         <li>
           <strong>Analytics</strong> — cookies set by Google Analytics and
@@ -98,6 +109,6 @@ export default function PrivacyPolicy() {
         Questions? Email{" "}
         <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
       </p>
-    </div>
+    </LegalDocument>
   );
 }

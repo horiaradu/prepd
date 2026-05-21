@@ -72,6 +72,7 @@ export default function MarketingRoLayout({
           <main className="flex-1 flex flex-col">{children}</main>
         </Providers>
         <Footer
+          locale="ro"
           privacyLabel={t.privacy}
           termsLabel={t.terms}
           cookiesLabel={t.cookies}

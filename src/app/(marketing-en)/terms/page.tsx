@@ -1,6 +1,17 @@
+import type { Metadata } from "next";
+import { LegalDocument } from "@/components/LegalDocument";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  alternates: {
+    canonical: "/terms",
+    languages: { en: "/terms", ro: "/terms/ro" },
+  },
+};
+
 export default function TermsOfService() {
   return (
-    <div className="p-6 sm:p-8 max-w-3xl w-full mx-auto space-y-4 text-sm text-gray-700 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-gray-900 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_ul]:list-disc [&_ul]:pl-5 [&_a]:text-green-700 [&_a]:underline">
+    <LegalDocument>
       <h1>Terms of Service</h1>
       <p className="text-gray-500">Last updated: May 4, 2026</p>
 
@@ -19,10 +30,10 @@ export default function TermsOfService() {
 
       <h2>Your content</h2>
       <p>
-        You own the recipes and data you store in Mintdish. We don&apos;t claim any
-        rights to your content. We may process your content through third-party
-        AI services (Google Gemini) to provide features like recipe parsing and
-        chat.
+        You own the recipes and data you store in Mintdish. We don&apos;t claim
+        any rights to your content. We may process your content through
+        third-party AI services (Google Gemini) to provide features like recipe
+        parsing and chat.
       </p>
 
       <h2>Acceptable use</h2>
@@ -55,8 +66,9 @@ export default function TermsOfService() {
 
       <h2>Contact</h2>
       <p>
-        Questions? Email <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
+        Questions? Email{" "}
+        <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
       </p>
-    </div>
+    </LegalDocument>
   );
 }

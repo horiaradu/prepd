@@ -1,10 +1,18 @@
-"use client";
+import type { Metadata } from "next";
+import { LegalDocument } from "@/components/LegalDocument";
+import { ManageCookiePreferencesButton } from "@/components/ManageCookiePreferencesButton";
 
-import * as CookieConsent from "vanilla-cookieconsent";
+export const metadata: Metadata = {
+  title: "Cookie Policy",
+  alternates: {
+    canonical: "/cookies",
+    languages: { en: "/cookies", ro: "/cookies/ro" },
+  },
+};
 
 export default function CookiePolicy() {
   return (
-    <div className="p-6 sm:p-8 max-w-3xl w-full mx-auto space-y-4 text-sm text-gray-700 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-gray-900 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_a]:text-green-700 [&_a]:underline">
+    <LegalDocument>
       <h1>Cookie Policy</h1>
       <p className="text-gray-500">Last updated: May 20, 2026</p>
 
@@ -13,12 +21,7 @@ export default function CookiePolicy() {
         understand how it is used.
       </p>
 
-      <button
-        onClick={() => CookieConsent.showPreferences()}
-        className="inline-flex items-center rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
-      >
-        Manage cookie preferences
-      </button>
+      <ManageCookiePreferencesButton label="Manage cookie preferences" />
 
       <h2>Necessary</h2>
       <p>
@@ -39,6 +42,6 @@ export default function CookiePolicy() {
         Questions? Email{" "}
         <a href="mailto:horia@mintdish.io">horia@mintdish.io</a>.
       </p>
-    </div>
+    </LegalDocument>
   );
 }

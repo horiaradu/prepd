@@ -217,10 +217,18 @@ export function AppHeader() {
   );
 }
 
-const WELCOME_HREF: Record<Locale, string> = {
-  en: "/welcome",
-  ro: "/welcome/ro",
-};
+const STATIC_BASE_PATHS = ["/welcome", "/privacy", "/terms", "/cookies"];
+
+function getStaticBasePath(pathname: string): string | null {
+  for (const base of STATIC_BASE_PATHS) {
+    if (pathname === base || pathname === `${base}/ro`) return base;
+  }
+  return null;
+}
+
+function localePath(basePath: string, target: Locale): string {
+  return target === "ro" ? `${basePath}/ro` : basePath;
+}
 
 function LanguageToggle({
   locale,
@@ -231,8 +239,7 @@ function LanguageToggle({
   setLocale: (l: Locale) => void;
   pathname: string;
 }) {
-  const isWelcome =
-    pathname === "/welcome" || pathname === "/welcome/ro";
+  const basePath = getStaticBasePath(pathname);
 
   return (
     <div className="flex items-center gap-0.5 text-xs font-medium text-gray-600">
@@ -244,8 +251,8 @@ function LanguageToggle({
         return (
           <span key={l} className="flex items-center gap-0.5">
             {i > 0 && <span className="text-gray-300">|</span>}
-            {isWelcome ? (
-              <Link href={WELCOME_HREF[l]} className={className}>
+            {basePath ? (
+              <Link href={localePath(basePath, l)} className={className}>
                 {l}
               </Link>
             ) : (

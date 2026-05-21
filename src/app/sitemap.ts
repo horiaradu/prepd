@@ -3,27 +3,28 @@ import type { MetadataRoute } from "next";
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const welcomeAlternates = {
+function alternates(enPath: string, roPath: string) {
+  return {
     languages: {
-      en: `${BASE_URL}/welcome`,
-      ro: `${BASE_URL}/welcome/ro`,
+      en: `${BASE_URL}${enPath}`,
+      ro: `${BASE_URL}${roPath}`,
     },
   };
+}
 
-  return [
-    {
-      url: `${BASE_URL}/welcome`,
-      priority: 1.0,
-      alternates: welcomeAlternates,
-    },
-    {
-      url: `${BASE_URL}/welcome/ro`,
-      priority: 1.0,
-      alternates: welcomeAlternates,
-    },
-    { url: `${BASE_URL}/privacy`, priority: 0.3 },
-    { url: `${BASE_URL}/terms`, priority: 0.3 },
-    { url: `${BASE_URL}/cookies`, priority: 0.3 },
+export default function sitemap(): MetadataRoute.Sitemap {
+  const pages: Array<{ en: string; ro: string; priority: number }> = [
+    { en: "/welcome", ro: "/welcome/ro", priority: 1.0 },
+    { en: "/privacy", ro: "/privacy/ro", priority: 0.3 },
+    { en: "/terms", ro: "/terms/ro", priority: 0.3 },
+    { en: "/cookies", ro: "/cookies/ro", priority: 0.3 },
   ];
+
+  return pages.flatMap(({ en, ro, priority }) => {
+    const alts = alternates(en, ro);
+    return [
+      { url: `${BASE_URL}${en}`, priority, alternates: alts },
+      { url: `${BASE_URL}${ro}`, priority, alternates: alts },
+    ];
+  });
 }
