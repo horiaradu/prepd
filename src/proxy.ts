@@ -18,6 +18,13 @@ function resolveLocale(request: NextRequest): string {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (request.headers.get("host") === "prepd-ten.vercel.app") {
+    return NextResponse.redirect(
+      new URL(pathname, "https://www.mintdish.io"),
+      301,
+    );
+  }
+
   // Routes that never touch the session — fast path, no getToken call
   if (
     pathname.startsWith("/api/auth") ||
