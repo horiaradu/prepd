@@ -1,8 +1,9 @@
 User-agent: *
-Allow: /welcome
-Allow: /privacy
-Allow: /terms
-Allow: /cookies
-Disallow: /
+Disallow: /inbox
+Disallow: /recipe
+Disallow: /api
+Disallow: /activate
+Disallow: /invitations
+Disallow: /suggest
 
 Sitemap: https://www.mintdish.io/sitemap.xml
