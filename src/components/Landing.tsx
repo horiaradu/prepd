@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Image from "next/image";
 import Link from "next/link";
 import { CameraIcon, ExternalLinkIcon, SparklesIcon } from "@/components/icons";
 import { WaitlistForm } from "@/components/WaitlistForm";
@@ -58,6 +59,8 @@ function Hero({ t }: { t: Translations }) {
           <ScreenshotFrame
             src="/landing/home-list.png"
             alt="Mintdish recipe list with food photography"
+            width={1280}
+            height={1050}
             priority
           />
         </div>
@@ -74,9 +77,7 @@ function InputModes({ t }: { t: Translations }) {
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
             {t.fromWhereverFound}
           </h2>
-          <p className="mt-4 text-lg text-gray-600">
-            {t.oneInputThreeWays}
-          </p>
+          <p className="mt-4 text-lg text-gray-600">{t.oneInputThreeWays}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           <InputModeCard
@@ -122,7 +123,7 @@ function InputModeCard({
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 flex flex-col gap-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold tracking-wide">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-xs font-semibold tracking-wide">
           {badge}
         </span>
         <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
@@ -220,7 +221,7 @@ function OutputShowcase({ t }: { t: Translations }) {
     <section className="px-6 sm:px-8 py-16 sm:py-24">
       <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="lg:order-2 space-y-6">
-          <div className="inline-flex items-center gap-2 text-sm font-medium text-green-700">
+          <div className="inline-flex items-center gap-2 text-sm font-medium text-green-600">
             <SparklesIcon size={16} className="text-green-600" />
             <span>{t.structuredNotScraped}</span>
           </div>
@@ -234,12 +235,8 @@ function OutputShowcase({ t }: { t: Translations }) {
             <Bullet title={t.metricConversions}>
               {t.metricConversionsDesc}
             </Bullet>
-            <Bullet title={t.timingBuiltIn}>
-              {t.timingBuiltInDesc}
-            </Bullet>
-            <Bullet title={t.scaleServings}>
-              {t.scaleServingsDesc}
-            </Bullet>
+            <Bullet title={t.timingBuiltIn}>{t.timingBuiltInDesc}</Bullet>
+            <Bullet title={t.scaleServings}>{t.scaleServingsDesc}</Bullet>
           </ul>
         </div>
         <div className="lg:order-1 relative">
@@ -247,6 +244,8 @@ function OutputShowcase({ t }: { t: Translations }) {
           <ScreenshotFrame
             src="/landing/recipe-cooking.png"
             alt="A parsed Mintdish recipe with timing badges and per-step ingredient hints"
+            width={1280}
+            height={800}
           />
         </div>
       </div>
@@ -285,9 +284,7 @@ function Waitlist({ t }: { t: Translations }) {
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
           {t.getOnWaitlist}
         </h2>
-        <p className="text-lg text-green-50/90">
-          {t.waitlistSubtitle}
-        </p>
+        <p className="text-lg text-green-50">{t.waitlistSubtitle}</p>
         <WaitlistForm />
       </div>
     </section>
@@ -297,20 +294,27 @@ function Waitlist({ t }: { t: Translations }) {
 function ScreenshotFrame({
   src,
   alt,
+  width,
+  height,
   priority = false,
 }: {
   src: string;
   alt: string;
+  width: number;
+  height: number;
   priority?: boolean;
 }) {
   return (
     <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-2xl bg-white">
-      <img
+      <Image
         src={src}
         alt={alt}
+        width={width}
+        height={height}
         className="w-full h-auto block"
-        loading={priority ? "eager" : "lazy"}
+        priority={priority}
         fetchPriority={priority ? "high" : undefined}
+        sizes="(min-width: 1024px) 576px, (min-width: 640px) 90vw, 100vw"
       />
     </div>
   );

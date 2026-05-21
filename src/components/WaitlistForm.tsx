@@ -67,7 +67,7 @@ export function WaitlistForm() {
       <div className="pt-2">
         <Link
           href="/login"
-          className="text-sm text-green-50/80 hover:text-white underline underline-offset-4"
+          className="text-sm text-green-50 hover:text-white underline underline-offset-4"
         >
           {t.alreadyHaveAccount}
         </Link>

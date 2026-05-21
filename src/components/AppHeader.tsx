@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeftIcon, ChevronDownIcon, MailIcon } from "@/components/icons";
@@ -57,7 +58,14 @@ export function AppHeader() {
             </Link>
           )}
           <Link href="/" className="flex items-center gap-2">
-            <img src="/icons/icon-nav.png" alt="" className="w-10 h-10" />
+            <Image
+              src="/icons/icon-nav.png"
+              alt=""
+              width={40}
+              height={40}
+              priority
+              className="w-10 h-10"
+            />
             <span className="text-lg font-bold tracking-tight">Mintdish</span>
           </Link>
         </div>
@@ -213,16 +221,16 @@ function LanguageToggle({
   setLocale: (l: Locale) => void;
 }) {
   return (
-    <div className="flex items-center gap-0.5 text-xs font-medium text-gray-400">
+    <div className="flex items-center gap-0.5 text-xs font-medium text-gray-600">
       {LOCALES.map((l, i) => (
         <span key={l} className="flex items-center gap-0.5">
-          {i > 0 && <span className="text-gray-200">|</span>}
+          {i > 0 && <span className="text-gray-300">|</span>}
           <button
             onClick={() => setLocale(l)}
             className={`px-1 py-0.5 rounded transition-colors uppercase ${
               locale === l
                 ? "text-green-600 font-semibold"
-                : "hover:text-gray-600"
+                : "hover:text-gray-900"
             }`}
           >
             {l}
