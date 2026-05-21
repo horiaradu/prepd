@@ -1,19 +1,10 @@
-import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { CameraIcon, ExternalLinkIcon, SparklesIcon } from "@/components/icons";
 import { WaitlistForm } from "@/components/WaitlistForm";
-import {
-  getTranslations,
-  isValidLocale,
-  LOCALE_COOKIE,
-  type Translations,
-} from "@/lib/i18n";
+import { getTranslations, type Locale, type Translations } from "@/lib/i18n";
 
-export async function Landing() {
-  const cookieStore = await cookies();
-  const raw = cookieStore.get(LOCALE_COOKIE)?.value ?? "en";
-  const locale = isValidLocale(raw) ? raw : "en";
+export function Landing({ locale }: { locale: Locale }) {
   const t = getTranslations(locale);
 
   return (

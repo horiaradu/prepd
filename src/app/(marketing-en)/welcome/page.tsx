@@ -7,6 +7,13 @@ export const metadata: Metadata = {
   },
   description:
     "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
+  alternates: {
+    canonical: "/welcome",
+    languages: {
+      en: "/welcome",
+      ro: "/welcome/ro",
+    },
+  },
   openGraph: {
     title: "Mintdish — Skip the food blog. Just the recipe.",
     description:
@@ -20,5 +27,5 @@ export const metadata: Metadata = {
 };
 
 export default function Welcome() {
-  return <Landing />;
+  return <Landing locale="en" />;
 }

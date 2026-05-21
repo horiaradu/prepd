@@ -72,7 +72,11 @@ export function AppHeader() {
 
         <div className="flex items-center gap-3">
           {!session?.user && (
-            <LanguageToggle locale={locale} setLocale={setLocale} />
+            <LanguageToggle
+              locale={locale}
+              setLocale={setLocale}
+              pathname={pathname}
+            />
           )}
 
           {!session?.user && (
@@ -213,30 +217,45 @@ export function AppHeader() {
   );
 }
 
+const WELCOME_HREF: Record<Locale, string> = {
+  en: "/welcome",
+  ro: "/welcome/ro",
+};
+
 function LanguageToggle({
   locale,
   setLocale,
+  pathname,
 }: {
   locale: Locale;
   setLocale: (l: Locale) => void;
+  pathname: string;
 }) {
+  const isWelcome =
+    pathname === "/welcome" || pathname === "/welcome/ro";
+
   return (
     <div className="flex items-center gap-0.5 text-xs font-medium text-gray-600">
-      {LOCALES.map((l, i) => (
-        <span key={l} className="flex items-center gap-0.5">
-          {i > 0 && <span className="text-gray-300">|</span>}
-          <button
-            onClick={() => setLocale(l)}
-            className={`px-1 py-0.5 rounded transition-colors uppercase ${
-              locale === l
-                ? "text-green-600 font-semibold"
-                : "hover:text-gray-900"
-            }`}
-          >
-            {l}
-          </button>
-        </span>
-      ))}
+      {LOCALES.map((l, i) => {
+        const active = locale === l;
+        const className = `px-1 py-0.5 rounded transition-colors uppercase ${
+          active ? "text-green-600 font-semibold" : "hover:text-gray-900"
+        }`;
+        return (
+          <span key={l} className="flex items-center gap-0.5">
+            {i > 0 && <span className="text-gray-300">|</span>}
+            {isWelcome ? (
+              <Link href={WELCOME_HREF[l]} className={className}>
+                {l}
+              </Link>
+            ) : (
+              <button onClick={() => setLocale(l)} className={className}>
+                {l}
+              </button>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
