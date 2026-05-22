@@ -15,7 +15,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   ),
   title: {
     default: "Mintdish",
@@ -71,6 +71,7 @@ export default function MarketingEnLayout({
         </Providers>
         <Footer
           locale="en"
+          faqLabel={t.faq}
           privacyLabel={t.privacy}
           termsLabel={t.terms}
           cookiesLabel={t.cookies}

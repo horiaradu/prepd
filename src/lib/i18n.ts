@@ -22,6 +22,7 @@ export type Translations = {
   privacy: string;
   terms: string;
   cookies: string;
+  faq: string;
 
   // Cookie consent banner
   cookieConsentTitle: string;
@@ -260,6 +261,7 @@ const en: Translations = {
   privacy: "Privacy",
   terms: "Terms",
   cookies: "Cookie preferences",
+  faq: "FAQ",
 
   cookieConsentTitle: "We use cookies",
   cookieConsentDescription:
@@ -496,6 +498,7 @@ const ro: Translations = {
   privacy: "Confidențialitate",
   terms: "Termeni",
   cookies: "Preferințe cookie",
+  faq: "Întrebări frecvente",
 
   cookieConsentTitle: "Folosim cookie-uri",
   cookieConsentDescription:

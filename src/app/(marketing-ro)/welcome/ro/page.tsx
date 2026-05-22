@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Landing } from "@/components/Landing";
+import { JsonLd } from "@/components/JsonLd";
+import { landingStructuredData } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
   title: {
@@ -12,6 +14,7 @@ export const metadata: Metadata = {
     languages: {
       en: "/welcome",
       ro: "/welcome/ro",
+      "x-default": "/welcome",
     },
   },
   openGraph: {
@@ -27,5 +30,10 @@ export const metadata: Metadata = {
 };
 
 export default function WelcomeRo() {
-  return <Landing locale="ro" />;
+  return (
+    <>
+      <JsonLd data={landingStructuredData("ro")} />
+      <Landing locale="ro" />
+    </>
+  );
 }
