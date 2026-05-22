@@ -1,18 +1,12 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  LOCALE_COOKIE,
-  isValidLocale,
-  getLocaleFromHeader,
-} from "@/lib/i18n";
+import { LOCALE_COOKIE, isValidLocale, getLocaleFromHeader } from "@/lib/i18n";
 
 function resolveLocale(request: NextRequest): string {
   const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
   if (cookie && isValidLocale(cookie)) return cookie;
-  return getLocaleFromHeader(
-    request.headers.get("accept-language") ?? "",
-  );
+  return getLocaleFromHeader(request.headers.get("accept-language") ?? "");
 }
 
 export async function proxy(request: NextRequest) {
@@ -40,6 +34,8 @@ export async function proxy(request: NextRequest) {
     pathname === "/terms/ro" ||
     pathname === "/cookies" ||
     pathname === "/cookies/ro" ||
+    pathname === "/faq" ||
+    pathname === "/faq/ro" ||
     pathname === "/sitemap.xml" ||
     pathname === "/robots.txt"
   ) {
