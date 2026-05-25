@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
         source: "/((?!api/|_next/|welcome|privacy|terms|cookies|.*\\.).*)",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+        ],
+      },
     ];
   },
 };
