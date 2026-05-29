@@ -262,6 +262,7 @@ Additionally, include a top-level "images" array with the absolute URLs of recip
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
       tools: [{ urlContext: {} }],
+      abortSignal: AbortSignal.timeout(45_000),
     },
   });
 

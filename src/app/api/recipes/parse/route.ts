@@ -94,6 +94,8 @@ function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -155,7 +157,11 @@ export async function POST(request: NextRequest) {
           let extracted: { content: string; images: RecipeImage[] } | null;
           try {
             extracted = await extractWebPage(body.url);
-          } catch {
+          } catch (err) {
+            console.error(
+              `Scraper failed for ${body.url}, falling back to Gemini URL context:`,
+              err,
+            );
             extracted = null;
           }
 
