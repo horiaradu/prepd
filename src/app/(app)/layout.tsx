@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { GoogleTagManager } from "@next/third-parties/google";
@@ -57,6 +57,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#059669",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default async function AppLayout({
   children,
 }: Readonly<{
@@ -84,13 +91,6 @@ export default async function AppLayout({
       className={`${jakartaSans.variable} h-full antialiased`}
     >
       {gtmId && analyticsConsented && <GoogleTagManager gtmId={gtmId} />}
-      <head>
-        <meta name="theme-color" content="#059669" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover"
-        />
-      </head>
       <body className="min-h-full flex flex-col">
         <Providers locale={locale}>
           <AnalyticsUserId />

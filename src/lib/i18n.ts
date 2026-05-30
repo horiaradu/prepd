@@ -23,6 +23,10 @@ export type Translations = {
   terms: string;
   cookies: string;
   faq: string;
+  howItWorks: string;
+  guides: string;
+  about: string;
+  security: string;
 
   // Cookie consent banner
   cookieConsentTitle: string;
@@ -89,6 +93,12 @@ export type Translations = {
   thankYou: string;
   waitlistError: string;
   alreadyHaveAccount: string;
+
+  // Landing — learn more
+  learnMoreTitle: string;
+  learnMoreHowItWorks: string;
+  learnMoreFaq: string;
+  learnMoreGuides: string;
 
   // Login
   signInToAccess: string;
@@ -262,6 +272,10 @@ const en: Translations = {
   terms: "Terms",
   cookies: "Cookie preferences",
   faq: "FAQ",
+  howItWorks: "How it works",
+  guides: "Guides",
+  about: "About",
+  security: "Security",
 
   cookieConsentTitle: "We use cookies",
   cookieConsentDescription:
@@ -334,6 +348,13 @@ const en: Translations = {
   thankYou: "Thanks — we'll be in touch.",
   waitlistError: "Something went wrong. Please try again.",
   alreadyHaveAccount: "Already have an account? Sign in",
+
+  learnMoreTitle: "Learn more",
+  learnMoreHowItWorks:
+    "How does Mintdish parse recipes from links, YouTube videos, and photos?",
+  learnMoreFaq: "Frequently asked questions about parsing, privacy, and access",
+  learnMoreGuides:
+    "Cooking guides: cups to grams, saving YouTube recipes, the prep-first method",
 
   signInToAccess: "Sign in to access your recipes",
   accessDenied: "Access denied. Only authorized accounts can sign in.",
@@ -499,6 +520,10 @@ const ro: Translations = {
   terms: "Termeni",
   cookies: "Preferințe cookie",
   faq: "Întrebări frecvente",
+  howItWorks: "Cum funcționează",
+  guides: "Ghiduri",
+  about: "Despre",
+  security: "Securitate",
 
   cookieConsentTitle: "Folosim cookie-uri",
   cookieConsentDescription:
@@ -573,6 +598,14 @@ const ro: Translations = {
   thankYou: "Mulțumim — te vom contacta.",
   waitlistError: "Ceva nu a mers bine. Te rugăm să încerci din nou.",
   alreadyHaveAccount: "Ai deja un cont? Autentifică-te",
+
+  learnMoreTitle: "Află mai multe",
+  learnMoreHowItWorks:
+    "Cum procesează Mintdish rețete din linkuri, videoclipuri YouTube și poze?",
+  learnMoreFaq:
+    "Întrebări frecvente despre procesare, confidențialitate și acces",
+  learnMoreGuides:
+    "Ghiduri de gătit: căni în grame, salvarea rețetelor YouTube, metoda prep-first",
 
   signInToAccess: "Autentifică-te pentru a accesa rețetele tale",
   accessDenied: "Acces refuzat. Doar conturile autorizate se pot autentifica.",

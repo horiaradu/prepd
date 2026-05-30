@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Suspense } from "react";
 import { Providers } from "@/components/Providers";
@@ -46,6 +46,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#059669",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function MarketingRoLayout({
   children,
 }: Readonly<{
@@ -55,13 +62,6 @@ export default function MarketingRoLayout({
 
   return (
     <html lang="ro" className={`${jakartaSans.variable} h-full antialiased`}>
-      <head>
-        <meta name="theme-color" content="#059669" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover"
-        />
-      </head>
       <body className="min-h-full flex flex-col">
         <Providers locale="ro">
           <LocaleCookieSync locale="ro" />
@@ -77,6 +77,10 @@ export default function MarketingRoLayout({
           privacyLabel={t.privacy}
           termsLabel={t.terms}
           cookiesLabel={t.cookies}
+          howItWorksLabel={t.howItWorks}
+          guidesLabel={t.guides}
+          aboutLabel={t.about}
+          securityLabel={t.security}
         />
       </body>
     </html>

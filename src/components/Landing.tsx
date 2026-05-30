@@ -6,14 +6,71 @@ import { getTranslations, type Locale, type Translations } from "@/lib/i18n";
 
 export function Landing({ locale }: { locale: Locale }) {
   const t = getTranslations(locale);
+  const paths =
+    locale === "ro"
+      ? {
+          howItWorks: "/how-it-works/ro",
+          faq: "/faq/ro",
+          guides: "/guides/ro",
+        }
+      : {
+          howItWorks: "/how-it-works",
+          faq: "/faq",
+          guides: "/guides",
+        };
 
   return (
     <div className="flex-1 flex flex-col">
       <Hero t={t} />
       <InputModes t={t} />
       <OutputShowcase t={t} />
+      <LearnMore t={t} paths={paths} />
       <Waitlist t={t} />
     </div>
+  );
+}
+
+function LearnMore({
+  t,
+  paths,
+}: {
+  t: Translations;
+  paths: { howItWorks: string; faq: string; guides: string };
+}) {
+  return (
+    <section className="px-6 sm:px-8 py-14 sm:py-20">
+      <div className="max-w-3xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          {t.learnMoreTitle}
+        </h2>
+        <ul className="mt-6 space-y-3">
+          <li>
+            <Link
+              href={paths.howItWorks}
+              className="text-green-700 hover:text-green-800 underline-offset-4 hover:underline"
+            >
+              {t.learnMoreHowItWorks}
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={paths.faq}
+              className="text-green-700 hover:text-green-800 underline-offset-4 hover:underline"
+            >
+              {t.learnMoreFaq}
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={paths.guides}
+              className="text-green-700 hover:text-green-800 underline-offset-4 hover:underline"
+            >
+              {t.learnMoreGuides}
+            </Link>
+          </li>
+        </ul>
+      </div>
+    </section>
   );
 }
 
