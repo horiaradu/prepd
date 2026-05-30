@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { PAGES, type PagePath } from "@/lib/site-pages";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -12,58 +13,55 @@ function alternates(enPath: string, roPath: string) {
   };
 }
 
-const LAST_MODIFIED = "2026-05-30";
+type SitemapEntry = {
+  path: PagePath;
+  priority: number;
+  changeFrequency?: MetadataRoute.Sitemap[number]["changeFrequency"];
+};
+
+const ENTRIES: SitemapEntry[] = [
+  { path: "/welcome", priority: 1.0, changeFrequency: "weekly" },
+  { path: "/how-it-works", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/about", priority: 0.6, changeFrequency: "yearly" },
+  { path: "/faq", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/guides", priority: 0.7, changeFrequency: "monthly" },
+  {
+    path: "/guides/convert-cups-to-grams",
+    priority: 0.8,
+    changeFrequency: "yearly",
+  },
+  {
+    path: "/guides/save-youtube-recipes",
+    priority: 0.8,
+    changeFrequency: "yearly",
+  },
+  {
+    path: "/guides/prep-first-cooking",
+    priority: 0.8,
+    changeFrequency: "yearly",
+  },
+  { path: "/security", priority: 0.5, changeFrequency: "yearly" },
+  { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/cookies", priority: 0.3, changeFrequency: "yearly" },
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages: Array<{
-    en: string;
-    ro: string;
-    priority: number;
-    changeFrequency?: MetadataRoute.Sitemap[number]["changeFrequency"];
-  }> = [
-    { en: "/welcome", ro: "/welcome/ro", priority: 1.0, changeFrequency: "weekly" },
-    { en: "/how-it-works", ro: "/how-it-works/ro", priority: 0.9, changeFrequency: "monthly" },
-    { en: "/about", ro: "/about/ro", priority: 0.6, changeFrequency: "yearly" },
-    { en: "/faq", ro: "/faq/ro", priority: 0.7, changeFrequency: "monthly" },
-    { en: "/guides", ro: "/guides/ro", priority: 0.7, changeFrequency: "monthly" },
-    {
-      en: "/guides/convert-cups-to-grams",
-      ro: "/guides/convert-cups-to-grams/ro",
-      priority: 0.8,
-      changeFrequency: "yearly",
-    },
-    {
-      en: "/guides/save-youtube-recipes",
-      ro: "/guides/save-youtube-recipes/ro",
-      priority: 0.8,
-      changeFrequency: "yearly",
-    },
-    {
-      en: "/guides/prep-first-cooking",
-      ro: "/guides/prep-first-cooking/ro",
-      priority: 0.8,
-      changeFrequency: "yearly",
-    },
-    { en: "/security", ro: "/security/ro", priority: 0.5, changeFrequency: "yearly" },
-    { en: "/privacy", ro: "/privacy/ro", priority: 0.3, changeFrequency: "yearly" },
-    { en: "/terms", ro: "/terms/ro", priority: 0.3, changeFrequency: "yearly" },
-    { en: "/cookies", ro: "/cookies/ro", priority: 0.3, changeFrequency: "yearly" },
-  ];
-
-  const lastModified = new Date(LAST_MODIFIED);
-
-  return pages.flatMap(({ en, ro, priority, changeFrequency }) => {
-    const alts = alternates(en, ro);
+  return ENTRIES.flatMap(({ path, priority, changeFrequency }) => {
+    const enPath = path;
+    const roPath = `${path}/ro`;
+    const alts = alternates(enPath, roPath);
+    const lastModified = new Date(PAGES[path].modified);
     return [
       {
-        url: `${BASE_URL}${en}`,
+        url: `${BASE_URL}${enPath}`,
         priority,
         changeFrequency,
         lastModified,
         alternates: alts,
       },
       {
-        url: `${BASE_URL}${ro}`,
+        url: `${BASE_URL}${roPath}`,
         priority,
         changeFrequency,
         lastModified,

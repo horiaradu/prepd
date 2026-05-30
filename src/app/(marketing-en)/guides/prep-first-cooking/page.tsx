@@ -5,13 +5,13 @@ import {
   articleStructuredData,
   breadcrumbStructuredData,
 } from "@/lib/structured-data";
+import { PAGES } from "@/lib/site-pages";
 
 const TITLE = "The prep-first method: cook calmly, finish faster";
 const DESCRIPTION =
   "Why every cooking school teaches mise en place, and how to reorder any recipe so all the chopping, measuring, and resting happens before the heat is on.";
 const URL_PATH = "/guides/prep-first-cooking";
-const PUBLISHED = "2026-05-30";
-const MODIFIED = "2026-05-30";
+const { published: PUBLISHED, modified: MODIFIED } = PAGES[URL_PATH];
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -77,9 +77,9 @@ export default function GuidePrepFirst() {
         <h2>Why it makes you faster, not slower</h2>
         <ul>
           <li>
-            <strong>No context switching.</strong> Chopping while a pan heats
-            up sounds efficient until the garlic burns. Doing one task at a
-            time finishes everything sooner.
+            <strong>No context switching.</strong> Chopping while a pan heats up
+            sounds efficient until the garlic burns. Doing one task at a time
+            finishes everything sooner.
           </li>
           <li>
             <strong>Fewer mistakes.</strong> Pre-measured ingredients in clearly
@@ -96,8 +96,14 @@ export default function GuidePrepFirst() {
         <h2>How to reorder any recipe yourself</h2>
         <ol>
           <li>Read the recipe end to end before you start.</li>
-          <li>List every ingredient by its prep state — &quot;onion, diced&quot;, not &quot;1 onion&quot;.</li>
-          <li>Group all chopping, peeling, mincing, marinating, and resting steps at the top.</li>
+          <li>
+            List every ingredient by its prep state — &quot;onion, diced&quot;,
+            not &quot;1 onion&quot;.
+          </li>
+          <li>
+            Group all chopping, peeling, mincing, marinating, and resting steps
+            at the top.
+          </li>
           <li>Pre-measure every spice and liquid into small bowls.</li>
           <li>Now read the cooking part — it should fit on one screen.</li>
         </ol>
@@ -106,8 +112,8 @@ export default function GuidePrepFirst() {
         <p>
           <a href="/welcome">Mintdish</a> reorders any parsed recipe prep-first
           automatically. Prep tasks are grouped at the top, cooking steps come
-          after, and each cooking step lists exactly which ingredients to grab
-          — no scrolling back to the top while something simmers.
+          after, and each cooking step lists exactly which ingredients to grab —
+          no scrolling back to the top while something simmers.
         </p>
 
         <p>

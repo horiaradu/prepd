@@ -6,13 +6,13 @@ import {
   breadcrumbStructuredData,
   howToStructuredData,
 } from "@/lib/structured-data";
+import { PAGES } from "@/lib/site-pages";
 
 const TITLE = "How to save a recipe from a YouTube cooking video";
 const DESCRIPTION =
   "Why YouTube recipes are hard to follow at the stove, and how to turn any cooking video into a structured ingredient list and step-by-step instructions with Mintdish.";
 const URL_PATH = "/guides/save-youtube-recipes";
-const PUBLISHED = "2026-05-30";
-const MODIFIED = "2026-05-30";
+const { published: PUBLISHED, modified: MODIFIED } = PAGES[URL_PATH];
 
 const HOWTO_STEPS = [
   {
@@ -100,7 +100,9 @@ export default function GuideYoutube() {
           <li>Quantities are spoken, not listed — easy to miss.</li>
           <li>Ingredients pop up mid-step instead of upfront.</li>
           <li>Prep and cook actions are interleaved.</li>
-          <li>Pinned comments with full recipes are inconsistent and disappear.</li>
+          <li>
+            Pinned comments with full recipes are inconsistent and disappear.
+          </li>
         </ul>
 
         <h2>The four-step shortcut</h2>

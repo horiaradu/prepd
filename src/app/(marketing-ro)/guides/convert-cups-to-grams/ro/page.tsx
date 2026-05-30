@@ -5,13 +5,14 @@ import {
   articleStructuredData,
   breadcrumbStructuredData,
 } from "@/lib/structured-data";
+import { PAGES } from "@/lib/site-pages";
 
 const TITLE = "Cum convertești căni, uncii și „stick-uri” de unt în grame";
 const DESCRIPTION =
   "Un ghid ingredient-aware pentru conversia unităților din rețete americane în sistem metric — făină, zahăr, unt și lichide — și cum face Mintdish conversia automat.";
 const URL_PATH = "/guides/convert-cups-to-grams/ro";
-const PUBLISHED = "2026-05-30";
-const MODIFIED = "2026-05-30";
+const { published: PUBLISHED, modified: MODIFIED } =
+  PAGES["/guides/convert-cups-to-grams"];
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -58,11 +59,11 @@ export default function GuideCupsToGramsRo() {
       >
         <h1>{TITLE}</h1>
         <p className="text-lg">
-          Măsurătorile în căni sunt comode la magazin și un coșmar în
-          bucătărie — o cană de făină și o cană de apă nu cântăresc la fel, iar
-          un „stick” de unt nu este nici măcar o unitate SI. Acest ghid îți dă
-          conversiile care contează, plus o variantă mai rapidă dacă vrei să
-          sari peste tabel.
+          Măsurătorile în căni sunt comode la magazin și un coșmar în bucătărie
+          — o cană de făină și o cană de apă nu cântăresc la fel, iar un „stick”
+          de unt nu este nici măcar o unitate SI. Acest ghid îți dă conversiile
+          care contează, plus o variantă mai rapidă dacă vrei să sari peste
+          tabel.
         </p>
 
         <h2>Varianta fără calcule</h2>
@@ -76,7 +77,8 @@ export default function GuideCupsToGramsRo() {
 
         <h2>De ce contează „ingredient-aware”</h2>
         <p>
-          Conversia volum-greutate depinde de densitate. Aceeași cană cântărește:
+          Conversia volum-greutate depinde de densitate. Aceeași cană
+          cântărește:
         </p>
         <ul>
           <li>Făină albă — aproximativ 120 g</li>

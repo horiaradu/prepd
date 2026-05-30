@@ -1,4 +1,3 @@
-import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { GoogleTagManager } from "@next/third-parties/google";
@@ -16,6 +15,7 @@ import {
   COOKIE_CONSENT_COOKIE,
 } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
+import { siteMetadata, siteViewport } from "@/lib/site-metadata";
 import "../globals.css";
 
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
@@ -25,44 +25,8 @@ const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  ),
-  title: {
-    default: "Mintdish",
-    template: "%s — Mintdish",
-  },
-  description:
-    "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Mintdish",
-  },
-  icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/apple-touch-icon.png",
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
-  },
-  openGraph: {
-    siteName: "Mintdish",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#059669",
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-};
+export const metadata = siteMetadata;
+export const viewport = siteViewport;
 
 export default async function AppLayout({
   children,

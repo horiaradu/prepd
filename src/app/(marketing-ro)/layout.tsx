@@ -1,4 +1,3 @@
-import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Suspense } from "react";
 import { Providers } from "@/components/Providers";
@@ -7,6 +6,7 @@ import { AnalyticsPageView } from "@/components/AnalyticsPageView";
 import { Footer } from "@/components/Footer";
 import { LocaleCookieSync } from "@/components/LocaleCookieSync";
 import { getTranslations } from "@/lib/i18n";
+import { siteMetadata, siteViewport } from "@/lib/site-metadata";
 import "../globals.css";
 
 const jakartaSans = Plus_Jakarta_Sans({
@@ -14,44 +14,8 @@ const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  ),
-  title: {
-    default: "Mintdish",
-    template: "%s — Mintdish",
-  },
-  description:
-    "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Mintdish",
-  },
-  icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/apple-touch-icon.png",
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
-  },
-  openGraph: {
-    siteName: "Mintdish",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#059669",
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-};
+export const metadata = siteMetadata;
+export const viewport = siteViewport;
 
 export default function MarketingRoLayout({
   children,

@@ -6,13 +6,14 @@ import {
   breadcrumbStructuredData,
   howToStructuredData,
 } from "@/lib/structured-data";
+import { PAGES } from "@/lib/site-pages";
 
 const TITLE = "Cum salvezi o rețetă dintr-un videoclip YouTube de gătit";
 const DESCRIPTION =
   "De ce sunt greu de urmărit rețetele de pe YouTube și cum transformi orice videoclip de gătit într-o listă de ingrediente și pași structurați cu Mintdish.";
 const URL_PATH = "/guides/save-youtube-recipes/ro";
-const PUBLISHED = "2026-05-30";
-const MODIFIED = "2026-05-30";
+const { published: PUBLISHED, modified: MODIFIED } =
+  PAGES["/guides/save-youtube-recipes"];
 
 const HOWTO_STEPS = [
   {
@@ -91,8 +92,8 @@ export default function GuideYoutubeRo() {
           de gătit groaznică. Nu poți scana un videoclip ca să vezi
           ingredientele, nu poți derula înapoi cu degetele pline de făină, iar
           bucătarul rareori spune cantitățile reale înainte să fie deja în bol.
-          Acest ghid arată cea mai rapidă metodă de a transforma un videoclip
-          de gătit într-o rețetă structurată după care chiar poți găti.
+          Acest ghid arată cea mai rapidă metodă de a transforma un videoclip de
+          gătit într-o rețetă structurată după care chiar poți găti.
         </p>
 
         <h2>De ce sunt greu de urmărit rețetele de pe YouTube</h2>
@@ -100,7 +101,9 @@ export default function GuideYoutubeRo() {
           <li>Cantitățile sunt spuse, nu listate — ușor de ratat.</li>
           <li>Ingredientele apar la mijlocul pasului, nu la început.</li>
           <li>Prepararea și gătitul sunt amestecate.</li>
-          <li>Comentariile fixate cu rețeta completă sunt inconsistente și dispar.</li>
+          <li>
+            Comentariile fixate cu rețeta completă sunt inconsistente și dispar.
+          </li>
         </ul>
 
         <h2>Scurtătura în patru pași</h2>
@@ -121,10 +124,10 @@ export default function GuideYoutubeRo() {
         </p>
 
         <p>
-          Vrei să încerci acum? Mergi la <a href="/welcome/ro">pagina
-          principală</a> și lipește un URL de videoclip, sau citește mai mult
-          despre <a href="/how-it-works/ro">cum funcționează Mintdish</a> cap
-          la cap.
+          Vrei să încerci acum? Mergi la{" "}
+          <a href="/welcome/ro">pagina principală</a> și lipește un URL de
+          videoclip, sau citește mai mult despre{" "}
+          <a href="/how-it-works/ro">cum funcționează Mintdish</a> cap la cap.
         </p>
       </MarketingArticle>
     </>

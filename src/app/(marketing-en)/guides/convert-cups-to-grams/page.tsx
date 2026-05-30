@@ -5,14 +5,13 @@ import {
   articleStructuredData,
   breadcrumbStructuredData,
 } from "@/lib/structured-data";
+import { PAGES } from "@/lib/site-pages";
 
-const TITLE =
-  "How to convert cups, ounces, and sticks of butter to grams";
+const TITLE = "How to convert cups, ounces, and sticks of butter to grams";
 const DESCRIPTION =
   "An ingredient-aware cheat sheet for converting US recipe units to metric — flour, sugar, butter, and liquids — plus how Mintdish does the conversion automatically.";
 const URL_PATH = "/guides/convert-cups-to-grams";
-const PUBLISHED = "2026-05-30";
-const MODIFIED = "2026-05-30";
+const { published: PUBLISHED, modified: MODIFIED } = PAGES[URL_PATH];
 
 export const metadata: Metadata = {
   title: TITLE,

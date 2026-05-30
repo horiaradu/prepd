@@ -5,13 +5,14 @@ import {
   articleStructuredData,
   breadcrumbStructuredData,
 } from "@/lib/structured-data";
+import { PAGES } from "@/lib/site-pages";
 
 const TITLE = "Metoda prep-first: gătești calm, termini mai repede";
 const DESCRIPTION =
   "De ce orice școală de bucătărie predă mise en place și cum să rearanjezi orice rețetă astfel încât tocatul, măsuratul și odihna să se întâmple înainte de a porni focul.";
 const URL_PATH = "/guides/prep-first-cooking/ro";
-const PUBLISHED = "2026-05-30";
-const MODIFIED = "2026-05-30";
+const { published: PUBLISHED, modified: MODIFIED } =
+  PAGES["/guides/prep-first-cooking"];
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -95,10 +96,19 @@ export default function GuidePrepFirstRo() {
         <h2>Cum rearanjezi orice rețetă</h2>
         <ol>
           <li>Citește rețeta cap-coadă înainte să începi.</li>
-          <li>Listează fiecare ingredient prin starea sa de preparare — „ceapă, tăiată cubulețe”, nu „1 ceapă”.</li>
-          <li>Grupează tocatul, curățatul, mărunțitul, marinarea și odihna în partea de sus.</li>
+          <li>
+            Listează fiecare ingredient prin starea sa de preparare — „ceapă,
+            tăiată cubulețe”, nu „1 ceapă”.
+          </li>
+          <li>
+            Grupează tocatul, curățatul, mărunțitul, marinarea și odihna în
+            partea de sus.
+          </li>
           <li>Pre-măsoară fiecare condiment și lichid în boluri mici.</li>
-          <li>Acum citește partea de gătit — ar trebui să încapă pe un singur ecran.</li>
+          <li>
+            Acum citește partea de gătit — ar trebui să încapă pe un singur
+            ecran.
+          </li>
         </ol>
 
         <h2>Scurtătura</h2>
