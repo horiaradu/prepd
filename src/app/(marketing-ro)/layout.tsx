@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Providers } from "@/components/Providers";
 import { AppHeader } from "@/components/AppHeader";
 import { AnalyticsPageView } from "@/components/AnalyticsPageView";
-import { Footer } from "@/components/Footer";
+import { MarketingFooter } from "@/components/MarketingFooter";
 import { LocaleCookieSync } from "@/components/LocaleCookieSync";
 import { getTranslations } from "@/lib/i18n";
 import { siteMetadata, siteViewport } from "@/lib/site-metadata";
@@ -35,16 +35,19 @@ export default function MarketingRoLayout({
           <AppHeader />
           <main className="flex-1 flex flex-col">{children}</main>
         </Providers>
-        <Footer
+        <MarketingFooter
           locale="ro"
+          tagline={t.footerTagline}
+          productHeading={t.footerProductHeading}
+          legalHeading={t.footerLegalHeading}
+          howItWorksLabel={t.howItWorks}
+          guidesLabel={t.guides}
           faqLabel={t.faq}
+          aboutLabel={t.about}
+          securityLabel={t.security}
           privacyLabel={t.privacy}
           termsLabel={t.terms}
           cookiesLabel={t.cookies}
-          howItWorksLabel={t.howItWorks}
-          guidesLabel={t.guides}
-          aboutLabel={t.about}
-          securityLabel={t.security}
         />
       </body>
     </html>

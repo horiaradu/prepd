@@ -27,6 +27,9 @@ export type Translations = {
   guides: string;
   about: string;
   security: string;
+  footerProductHeading: string;
+  footerLegalHeading: string;
+  footerTagline: string;
 
   // Cookie consent banner
   cookieConsentTitle: string;
@@ -276,6 +279,10 @@ const en: Translations = {
   guides: "Guides",
   about: "About",
   security: "Security",
+  footerProductHeading: "Product",
+  footerLegalHeading: "Legal",
+  footerTagline:
+    "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
 
   cookieConsentTitle: "We use cookies",
   cookieConsentDescription:
@@ -524,6 +531,10 @@ const ro: Translations = {
   guides: "Ghiduri",
   about: "Despre",
   security: "Securitate",
+  footerProductHeading: "Produs",
+  footerLegalHeading: "Juridic",
+  footerTagline:
+    "Lipește un link de rețetă, un clip YouTube sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
 
   cookieConsentTitle: "Folosim cookie-uri",
   cookieConsentDescription:

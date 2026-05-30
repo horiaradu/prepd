@@ -32,3 +32,12 @@ export type PagePath = keyof typeof PAGES;
 export function getPageMeta(path: PagePath): PageMeta {
   return PAGES[path];
 }
+
+// Marketing pages that anyone can read — proxy skips the session check.
+// /welcome is excluded because the proxy redirects signed-in visitors away
+// from it.
+export const PUBLIC_MARKETING_PATHS: ReadonlySet<string> = new Set(
+  (Object.keys(PAGES) as PagePath[])
+    .filter((p) => p !== "/welcome")
+    .flatMap((p) => [p, `${p}/ro`]),
+);
