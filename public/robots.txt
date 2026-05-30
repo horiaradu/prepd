@@ -1,3 +1,5 @@
+# Default rules for all crawlers, including AI/LLM training crawlers we have
+# not explicitly addressed below.
 User-agent: *
 Disallow: /inbox
 Disallow: /recipe
@@ -5,5 +7,40 @@ Disallow: /api
 Disallow: /activate
 Disallow: /invitations
 Disallow: /suggest
+
+# Googlebot — allow all marketing/legal/guide content; keep authenticated
+# product surfaces and APIs out of the index.
+User-agent: Googlebot
+Disallow: /inbox
+Disallow: /recipe
+Disallow: /api
+Disallow: /activate
+Disallow: /invitations
+Disallow: /suggest
+Allow: /
+
+# Google-Extended — controls use of public content for Gemini app and Vertex
+# AI grounding (does NOT affect AI Overviews in Search). We allow grounding
+# on our public marketing/guide pages so Mintdish can be cited as a source,
+# while keeping the same private routes blocked.
+User-agent: Google-Extended
+Disallow: /inbox
+Disallow: /recipe
+Disallow: /api
+Disallow: /activate
+Disallow: /invitations
+Disallow: /suggest
+Allow: /
+
+# GoogleOther — generic Google crawler used for product research and
+# experimental features. Same allow/deny as Googlebot.
+User-agent: GoogleOther
+Disallow: /inbox
+Disallow: /recipe
+Disallow: /api
+Disallow: /activate
+Disallow: /invitations
+Disallow: /suggest
+Allow: /
 
 Sitemap: https://mintdish.io/sitemap.xml

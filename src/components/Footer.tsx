@@ -2,7 +2,12 @@ import type { Locale } from "@/lib/i18n";
 
 const PATHS: Record<
   Locale,
-  { faq: string; privacy: string; terms: string; cookies: string }
+  {
+    faq: string;
+    privacy: string;
+    terms: string;
+    cookies: string;
+  }
 > = {
   en: {
     faq: "/faq",
@@ -33,23 +38,28 @@ export function Footer({
 }) {
   const paths = PATHS[locale];
 
+  const links = [
+    { href: paths.faq, label: faqLabel },
+    { href: paths.privacy, label: privacyLabel },
+    { href: paths.terms, label: termsLabel },
+    { href: paths.cookies, label: cookiesLabel },
+  ];
+
   return (
-    <footer className="mt-auto border-t border-gray-100 py-4 text-center text-xs text-gray-600">
-      <a href={paths.faq} className="hover:text-gray-900">
-        {faqLabel}
-      </a>
-      <span className="mx-2">·</span>
-      <a href={paths.privacy} className="hover:text-gray-900">
-        {privacyLabel}
-      </a>
-      <span className="mx-2">·</span>
-      <a href={paths.terms} className="hover:text-gray-900">
-        {termsLabel}
-      </a>
-      <span className="mx-2">·</span>
-      <a href={paths.cookies} className="hover:text-gray-900">
-        {cookiesLabel}
-      </a>
+    <footer className="mt-auto border-t border-gray-100 py-6 text-center text-xs text-gray-600">
+      <nav
+        aria-label="Legal"
+        className="flex flex-wrap justify-center gap-x-2 gap-y-1"
+      >
+        {links.map((link, index) => (
+          <span key={link.href} className="flex items-center gap-2">
+            <a href={link.href} className="hover:text-gray-900">
+              {link.label}
+            </a>
+            {index < links.length - 1 && <span aria-hidden>·</span>}
+          </span>
+        ))}
+      </nav>
     </footer>
   );
 }

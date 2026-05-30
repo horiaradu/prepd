@@ -2,6 +2,7 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { LOCALE_COOKIE, isValidLocale, getLocaleFromHeader } from "@/lib/i18n";
+import { PUBLIC_MARKETING_PATHS } from "@/lib/site-pages";
 
 function resolveLocale(request: NextRequest): string {
   const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
@@ -28,16 +29,9 @@ export async function proxy(request: NextRequest) {
     pathname === "/favicon.ico" ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
-    pathname === "/privacy" ||
-    pathname === "/privacy/ro" ||
-    pathname === "/terms" ||
-    pathname === "/terms/ro" ||
-    pathname === "/cookies" ||
-    pathname === "/cookies/ro" ||
-    pathname === "/faq" ||
-    pathname === "/faq/ro" ||
     pathname === "/sitemap.xml" ||
-    pathname === "/robots.txt"
+    pathname === "/robots.txt" ||
+    PUBLIC_MARKETING_PATHS.has(pathname)
   ) {
     return NextResponse.next();
   }
