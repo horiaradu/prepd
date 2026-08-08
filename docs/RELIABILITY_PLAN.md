@@ -54,7 +54,7 @@ runs after the fetch. Phase 3 makes parsing asynchronous and raises
 
 ---
 
-## Phase 1 — Observability (D)
+## Phase 1 — Observability (D) ✅ (implemented)
 
 **Goal:** every parse failure appears in Sentry, tagged by pipeline stage and
 source domain, so failure modes can be quantified.
@@ -93,7 +93,7 @@ source domain, so failure modes can be quantified.
 
 ---
 
-## Phase 2 — Bounded, hardened fetching (C3)
+## Phase 2 — Bounded, hardened fetching (C3) ✅ (implemented)
 
 **Goal:** no single network call can hang the pipeline; the known scraper and
 Gemini-response bugs are fixed.
