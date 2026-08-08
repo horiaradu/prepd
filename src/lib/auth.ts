@@ -7,6 +7,10 @@ import * as schema from "@/db/schema";
 
 const ADMIN_EMAIL = "horia.radu23@gmail.com";
 
+export function isAdmin(email: string | null | undefined): boolean {
+  return !!email && email === ADMIN_EMAIL;
+}
+
 export const authOptions: AuthOptions = {
   adapter: DrizzleAdapter(db, {
     usersTable: schema.users,

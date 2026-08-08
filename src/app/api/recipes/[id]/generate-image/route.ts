@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import * as Sentry from "@sentry/nextjs";
 import { del } from "@vercel/blob";
 import { and, eq } from "drizzle-orm";
-import { authOptions } from "@/lib/auth";
+import { authOptions, isAdmin } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { generateAndStoreHeroImage } from "@/lib/recipe-image";
 import type { Cuisine, MealType, CookStyle } from "@/types/recipe";
+
+export const maxDuration = 60;
 
 export async function POST(
   _request: NextRequest,
@@ -64,8 +67,13 @@ export async function POST(
   } catch (error) {
     if (newBlobUrl) await del(newBlobUrl).catch(() => {});
     console.error("Generate image error:", error);
+    Sentry.captureException(error, {
+      tags: { stage: "image-generate", recipeId: id },
+    });
     const message =
-      error instanceof Error ? error.message : "Failed to generate image";
+      isAdmin(session.user.email) && error instanceof Error
+        ? error.message
+        : "Failed to generate image";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
