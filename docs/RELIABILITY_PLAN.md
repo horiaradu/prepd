@@ -49,9 +49,8 @@ identical to the previous chain.
 
 Known tension: ScraperAPI recommends a 70s client timeout for best success
 rates; we cap at 35s because the route's `maxDuration` is 60s and Gemini still
-runs after the fetch. Once Phase 3 moves image work off the critical path —
-and/or if the Vercel plan allows raising `maxDuration` — bump the ScraperAPI
-timeout toward 70s.
+runs after the fetch. Phase 3 makes parsing asynchronous and raises
+`maxDuration` — bump the ScraperAPI timeout to 70s as part of it.
 
 ---
 
@@ -134,18 +133,64 @@ Gemini-response bugs are fixed.
 
 ---
 
-## Phase 3 — Persist images to Blob, off the critical path (A1 + C1)
+## Phase 3 — Async parsing + images to Blob (A1 + C1)
 
-**Goal:** the user gets their recipe as soon as Gemini answers; images are
-downloaded once, stored in Vercel Blob, and never rot.
+**Goal:** submitting a URL returns instantly; the entire parse (fetch → Gemini
+→ images) runs in the background. Images are downloaded once, stored in
+Vercel Blob, and never rot. The user can submit and walk away — the recipe
+card fills in when ready.
 
-### Design
+**Mechanism decision:** the whole parse runs inside `after()` from
+`next/server` — it executes after the response closes, within the same
+function invocation. Chosen over a job service (Inngest / Trigger.dev /
+QStash) to avoid a new vendor; the durability gap (a crash or deploy kills the
+in-flight parse with no retry) is covered by a stale-detection sweep and a
+manual retry button. If Sentry later shows parses dying mid-flight often, swap
+the execution layer for a job service — the status machinery below carries
+over unchanged.
 
-- The SSE stream ends right after the DB save: send `done` (recipe id + parsed
-  data) immediately, then run the entire image phase inside `after()` from
-  `next/server` — it executes after the response closes, within the same
-  function invocation (still bounded by `maxDuration`; no new infrastructure).
-- The image phase replaces today's liveness-check-then-hotlink:
+### Design — request flow
+
+- **Schema:** add `status` (`parsing` | `failed` | `ready`) and `parseError`
+  (short reason key, not a raw message) to the `recipes` table.
+- **`POST /api/recipes/parse`** validates the URL, inserts the row with
+  `status: "parsing"` and a placeholder title (source hostname), schedules the
+  parse in `after()`, and immediately returns `{ id }` as plain JSON. The SSE
+  stream and [progress-stream.ts](../src/lib/progress-stream.ts) go away.
+- **Background parse** (in `after()`): fetch chain → Gemini → update row with
+  parsed content and `status: "ready"` → then the image phase below fills in
+  images. On any error: `status: "failed"` + `parseError`, plus the Phase 1
+  Sentry capture (the instrumentation carries over to this flow).
+- **Reparse (`replaceId`)** keeps the existing content untouched until the new
+  parse succeeds — only the status flips to `parsing` meanwhile, and a failure
+  restores `ready` with the old content.
+- **Timeouts:** raise the route's `maxDuration` to the plan's ceiling (check
+  what the Vercel plan / Fluid Compute allows) since `after()` counts toward
+  it, and bump the ScraperAPI timeout to the recommended 70s.
+
+### Design — client UX
+
+- The recipe list shows the new card immediately in a "parsing" state and
+  polls the row every few seconds while `status: "parsing"` (give up after
+  ~3 minutes and treat as failed).
+- A failed card shows a translated reason and a **retry** button (re-submits
+  with `replaceId`).
+- A `ready` card with no images yet shows a placeholder until the image phase
+  fills them in.
+- Later, optionally: use the existing web-push setup to notify when a parse
+  finishes — pairs well with the submit-and-leave flow on mobile.
+
+### Design — durability
+
+- **Stale sweep, lazy:** when a client polls a recipe whose `status` is
+  `parsing` but whose `updatedAt` is older than the function ceiling plus
+  margin, the server marks it `failed` (reason: interrupted) before
+  responding. No cron needed.
+
+### Design — image phase
+
+Replaces today's liveness-check-then-hotlink; runs after the recipe is
+`ready`, inside the same `after()` work:
   1. Collect every distinct image URL the recipe references: `images[]` plus
      each `Step.imageUrl` in `prepSteps`/`cookingSteps` (Gemini assigns step
      photos by URL — these must be remapped, not just the hero).
@@ -165,10 +210,6 @@ downloaded once, stored in Vercel Blob, and never rot.
   function/DB cost per view), or keep them private and extend the proxy route
   ([api/recipes/[id]/image](../src/app/api/recipes/%5Bid%5D/image/route.ts)) to
   address images by index (`?i=2`) — it currently serves only `images[0]`.
-- **Client UX:** `done` no longer carries a final `imageUrl`. The recipe list
-  and detail views show a placeholder until images exist; the client refetches
-  the recipe a few times over ~30s after a parse completes (simple interval,
-  stop when images arrive or attempts run out).
 - YouTube thumbnails go through the same download-and-store path (the
   `img.youtube.com` hotlink is just another origin URL).
 
@@ -185,8 +226,12 @@ downloaded once, stored in Vercel Blob, and never rot.
 
 ### Acceptance
 
-- Parse completes (UI shows the recipe) as soon as Gemini answers — image work
-  no longer gates the `done` event.
+- `POST /api/recipes/parse` returns within ~1s; the card appears in the list
+  immediately and fills in without a page reload when the parse completes.
+- A failed parse shows a card with a translated reason and a working retry.
+- A parse interrupted mid-flight (e.g. by a deploy) ends up `failed` with
+  retry offered — never stuck in `parsing` forever.
+- A reparse that fails leaves the previous recipe content intact.
 - After a parse, the recipe's `images[].url` and all `Step.imageUrl` values
   point at stored copies, not origin URLs.
 - Deleting/blocking the origin image after a parse does not break the recipe.
