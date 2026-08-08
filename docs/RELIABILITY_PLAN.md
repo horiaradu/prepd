@@ -145,6 +145,12 @@ Implementation notes / deviations from the design below:
   accordingly.
 - The DB migration is `drizzle/0005_recipe_parse_status.sql` (two ADD
   COLUMNs; existing rows default to `ready`) — apply before deploying.
+- **Two Blob stores.** The original store (`prepd-blob`) was created with
+  private access, which cannot be changed and rejects public uploads. Recipe
+  display images therefore go to a second, public store
+  (`prepd-public-images`, fra1) targeted via `PUBLIC_BLOB_READ_WRITE_TOKEN`;
+  the private store keeps user-uploaded photos, inbox images, and old
+  proxied heroes.
 
 **Goal:** submitting a URL returns instantly; the entire parse (fetch → Gemini
 → images) runs in the background. Images are downloaded once, stored in
