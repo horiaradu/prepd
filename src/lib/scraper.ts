@@ -21,6 +21,11 @@ const BROWSER_HEADERS = {
   "Accept-Language": "en-US,en;q=0.9",
 };
 
+const DIRECT_FETCH_TIMEOUT_MS = 8_000;
+// ScraperAPI recommends a 70s client timeout, but the parse route's
+// maxDuration is 60s and Gemini still needs to run after the fetch.
+const SCRAPER_API_TIMEOUT_MS = 35_000;
+
 async function resolveRedirects(url: string): Promise<string> {
   let current = url;
   for (let i = 0; i < 5; i++) {
@@ -28,6 +33,7 @@ async function resolveRedirects(url: string): Promise<string> {
       method: "HEAD",
       headers: BROWSER_HEADERS,
       redirect: "manual",
+      signal: AbortSignal.timeout(DIRECT_FETCH_TIMEOUT_MS),
     });
     const location = res.headers.get("location");
     if (location && res.status >= 300 && res.status < 400) {
@@ -39,19 +45,65 @@ async function resolveRedirects(url: string): Promise<string> {
   return current;
 }
 
-export async function extractWebPage(url: string): Promise<WebPageExtraction> {
-  const resolvedUrl = await resolveRedirects(url);
-
-  const response = await fetch(resolvedUrl, {
+async function fetchHtmlDirect(url: string): Promise<string> {
+  const response = await fetch(url, {
     headers: BROWSER_HEADERS,
     redirect: "follow",
+    signal: AbortSignal.timeout(DIRECT_FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch URL: ${response.status}`);
   }
 
-  const html = await response.text();
+  return response.text();
+}
+
+// Fetches the page through ScraperAPI, which handles proxy rotation and
+// anti-bot protections (Cloudflare, DataDome, ...) automatically. Only
+// successful responses consume credits.
+async function fetchHtmlViaScraperApi(url: string): Promise<string> {
+  const apiKey = process.env.SCRAPERAPI_API_KEY;
+  if (!apiKey) {
+    throw new Error("SCRAPERAPI_API_KEY is not configured");
+  }
+
+  const apiUrl = new URL("https://api.scraperapi.com/");
+  apiUrl.searchParams.set("api_key", apiKey);
+  apiUrl.searchParams.set("url", url);
+
+  const response = await fetch(apiUrl, {
+    signal: AbortSignal.timeout(SCRAPER_API_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    throw new Error(`ScraperAPI request failed: ${response.status}`);
+  }
+
+  return response.text();
+}
+
+export async function extractWebPage(url: string): Promise<WebPageExtraction> {
+  let resolvedUrl: string;
+  try {
+    resolvedUrl = await resolveRedirects(url);
+  } catch {
+    // Redirect probing is best-effort; a blocked or slow HEAD request must
+    // not fail the extraction.
+    resolvedUrl = url;
+  }
+
+  let html: string;
+  try {
+    html = await fetchHtmlDirect(resolvedUrl);
+  } catch (err) {
+    console.error(
+      `Direct fetch failed for ${resolvedUrl}, retrying via ScraperAPI:`,
+      err,
+    );
+    html = await fetchHtmlViaScraperApi(resolvedUrl);
+  }
+
   const $ = cheerio.load(html);
 
   const jsonLd = findJsonLdRecipe($);
