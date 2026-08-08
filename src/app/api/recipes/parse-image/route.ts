@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import * as Sentry from "@sentry/nextjs";
 import { put, del } from "@vercel/blob";
 import sharp from "sharp";
-import { authOptions } from "@/lib/auth";
+import { authOptions, isAdmin } from "@/lib/auth";
 import { NoRecipeFoundError, parseRecipeFromImage } from "@/lib/gemini";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -142,7 +142,9 @@ export async function POST(request: NextRequest) {
         const message =
           error instanceof NoRecipeFoundError
             ? t.errorNoRecipeFound
-            : t.errorParseFailed;
+            : isAdmin(session.user.email)
+              ? (error instanceof Error ? error.message : String(error))
+              : t.errorParseFailed;
         send({ type: "error", error: message });
       } finally {
         controller.close();

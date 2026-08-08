@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import * as Sentry from "@sentry/nextjs";
 import { del } from "@vercel/blob";
 import { and, eq } from "drizzle-orm";
-import { authOptions } from "@/lib/auth";
+import { authOptions, isAdmin } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { generateAndStoreHeroImage } from "@/lib/recipe-image";
@@ -70,9 +70,10 @@ export async function POST(
     Sentry.captureException(error, {
       tags: { stage: "image-generate", recipeId: id },
     });
-    return NextResponse.json(
-      { error: "Failed to generate image" },
-      { status: 500 },
-    );
+    const message =
+      isAdmin(session.user.email) && error instanceof Error
+        ? error.message
+        : "Failed to generate image";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

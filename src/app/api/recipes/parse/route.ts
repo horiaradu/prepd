@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import * as Sentry from "@sentry/nextjs";
-import { authOptions } from "@/lib/auth";
+import { authOptions, isAdmin } from "@/lib/auth";
 import { isYoutubeUrl, getYoutubeThumbnailUrl } from "@/lib/youtube";
 import { extractWebPage, ScrapeError } from "@/lib/scraper";
 import {
@@ -286,10 +286,14 @@ export async function POST(request: NextRequest) {
         Sentry.captureException(error, {
           tags: { stage, sourceType, sourceHost },
         });
+        // The admin sees the underlying error for debugging; everyone else
+        // gets a translated message (the detail lives in Sentry).
         const message =
           error instanceof NoRecipeFoundError
             ? t.errorNoRecipeFound
-            : t.errorParseFailed;
+            : isAdmin(session.user.email)
+              ? `[${stage}] ${error instanceof Error ? error.message : String(error)}`
+              : t.errorParseFailed;
         send({ type: "error", error: message });
       } finally {
         controller.close();
