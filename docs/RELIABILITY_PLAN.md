@@ -205,24 +205,15 @@ Replaces today's liveness-check-then-hotlink; runs after the recipe is
      origin URL → stored URL. Drop images that failed to download.
   5. If **no** image survived and it's a fresh parse (not `replaceId`),
      generate the AI hero exactly as today — now also off the critical path.
-- **Serving (decision needed, see below):** either switch these Blobs to
-  `access: "public"` and store the Blob URL directly (CDN-cached, zero
-  function/DB cost per view), or keep them private and extend the proxy route
-  ([api/recipes/[id]/image](../src/app/api/recipes/%5Bid%5D/image/route.ts)) to
-  address images by index (`?i=2`) — it currently serves only `images[0]`.
+- **Serving (decided: public):** recipe image Blobs use `access: "public"`
+  and the recipe stores the Blob URL directly — CDN-cached, zero function/DB
+  cost per view; the URLs are long random strings, effectively unguessable.
+  Generated hero images move to the same model, retiring the authenticated
+  proxy route
+  ([api/recipes/[id]/image](../src/app/api/recipes/%5Bid%5D/image/route.ts))
+  for recipe images.
 - YouTube thumbnails go through the same download-and-store path (the
   `img.youtube.com` hotlink is just another origin URL).
-
-### Decision for Horia before implementation
-
-**Public vs private Blob access for recipe images.**
-
-- *Public (recommended):* Blob URLs are long random strings — effectively
-  unguessable, but anyone holding a URL can view the image. Buys CDN caching
-  and removes a function invocation + Postgres query per thumbnail view.
-- *Private (status quo):* images stay behind auth, but every view costs a
-  function call + DB query, with only a 1-hour private browser cache; the
-  proxy route needs the index extension either way it stays.
 
 ### Acceptance
 
