@@ -138,6 +138,10 @@ export type Translations = {
   retryParse: string;
   dismissFailedParse: string;
 
+  // Parse completion push notifications
+  notifyRecipeReadyBody: string;
+  notifyParseFailedTitle: string;
+
   // RecipeList
   suggestRecipes: string;
   filterRecipes: string;
@@ -538,6 +542,9 @@ const en: Translations = {
   statusParsing: "Parsing recipe…",
   retryParse: "Retry",
   dismissFailedParse: "Dismiss",
+
+  notifyRecipeReadyBody: "Your recipe is ready to cook.",
+  notifyParseFailedTitle: "Recipe couldn't be parsed",
 };
 
 const ro: Translations = {
@@ -803,6 +810,9 @@ const ro: Translations = {
   statusParsing: "Se procesează rețeta…",
   retryParse: "Reîncearcă",
   dismissFailedParse: "Renunță",
+
+  notifyRecipeReadyBody: "Rețeta ta este gata.",
+  notifyParseFailedTitle: "Rețeta nu a putut fi procesată",
 };
 
 const dictionaries: Record<Locale, Translations> = { en, ro };

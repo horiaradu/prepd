@@ -255,7 +255,7 @@ Replaces today's liveness-check-then-hotlink; runs after the recipe is
 
 ---
 
-## Phase 4 — Push notification on parse completion (next up)
+## Phase 4 — Push notification on parse completion ✅ (implemented)
 
 Complements Phase 3's polling: polling covers the open app; push covers the
 backgrounded/closed one (submit from the phone share flow, get notified when
