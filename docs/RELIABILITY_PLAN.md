@@ -9,9 +9,10 @@ Root causes (verified in code):
   so the HTTP status is 200 and Sentry never sees them
   ([route.ts:257-264](../src/app/api/recipes/parse/route.ts)). All failures are
   `console.error` only.
-- **Unbounded fetches**: the scraper has no timeout on any request
-  ([scraper.ts:27,45](../src/lib/scraper.ts)), plus a redundant HEAD-preflight
-  redirect loop. One slow origin eats most of the 60s function budget.
+- **Bot protections**: a single direct fetch with browser-like headers was the
+  only fetch strategy; Cloudflare-style blocks fell through to Gemini
+  `urlContext`, which the same protections usually block too. *Addressed — see
+  Phase 0.*
 - **Serial in-request pipeline**: scrape → Gemini → DB save → up to 5×4s image
   liveness checks → (possibly) AI hero generation + sharp + Blob upload, all
   before the response closes. Worst case exceeds `maxDuration = 60`, and since
@@ -22,9 +23,35 @@ Root causes (verified in code):
   on the `<img>` tags actively triggers hotlink protection on some CDNs. Images
   rot with no repair path.
 
-Phases are ordered so each lands independently. Phase 1 also produces the
-failure-mode data needed to decide whether a paid scraping API (see
-[SCRAPING_SERVICES.md](./SCRAPING_SERVICES.md)) is worth adding later.
+Phases are ordered so each lands independently.
+
+---
+
+## Phase 0 — ScraperAPI fallback for bot-protected sites ✅ (implemented)
+
+ScraperAPI was chosen from the comparison in
+[SCRAPING_SERVICES.md](./SCRAPING_SERVICES.md); account created, key set as
+`SCRAPERAPI_API_KEY` locally and on Vercel (free tier: 1,000 credits/month
+recurring; Cloudflare/DataDome bypass costs 10 credits when triggered).
+
+Fetch chain in [scraper.ts](../src/lib/scraper.ts):
+
+1. **Direct fetch** — browser-like headers, 8s timeout. Free, fast, works for
+   most sites.
+2. **ScraperAPI** — on any direct-fetch failure (403/blocked/timeout). Handles
+   proxy rotation and anti-bot bypass automatically; only successful requests
+   consume credits. 35s timeout.
+3. **Gemini `urlContext`** — unchanged last resort when both fetches fail or
+   return no content.
+
+Without `SCRAPERAPI_API_KEY` set, step 2 fails immediately and behavior is
+identical to the previous chain.
+
+Known tension: ScraperAPI recommends a 70s client timeout for best success
+rates; we cap at 35s because the route's `maxDuration` is 60s and Gemini still
+runs after the fetch. Once Phase 3 moves image work off the critical path —
+and/or if the Vercel plan allows raising `maxDuration` — bump the ScraperAPI
+timeout toward 70s.
 
 ---
 
@@ -48,6 +75,9 @@ source domain, so failure modes can be quantified.
    `stage: "scrape"` — this is the direct measure of how often bot protection
    bites. Have `extractWebPage` throw a typed error carrying the HTTP status
    so 403/429/503 (blocked) is distinguishable from timeouts and DNS failures.
+   Tag which fetch tier failed (`direct` vs `scraperapi`) — this shows whether
+   the free ScraperAPI tier's 1,000 credits/month suffice and how often the
+   fallback rescues a parse.
 4. **Capture inline hero-generation failure**
    ([route.ts:242](../src/app/api/recipes/parse/route.ts)) with
    `stage: "image-generate"`.
@@ -72,32 +102,33 @@ Gemini-response bugs are fixed.
 ### Tasks
 
 1. **Drop the redirect preflight.** Delete `resolveRedirects`
-   ([scraper.ts:24-40](../src/lib/scraper.ts)) — up to 5 serial HEAD requests
-   that many CDNs reject anyway. Use the single GET with `redirect: "follow"`
-   and take `response.url` as the resolved base URL for relative image paths.
-2. **Timeout on the page fetch:** `AbortSignal.timeout(8_000)` on the GET.
-3. **Timeout on the primary Gemini parse call:**
+   ([scraper.ts](../src/lib/scraper.ts)) — up to 5 serial HEAD requests
+   that many CDNs reject anyway (now bounded by timeouts, but still wasted
+   latency). Use the single GET with `redirect: "follow"` and take
+   `response.url` as the resolved base URL for relative image paths.
+2. **Timeout on the primary Gemini parse call:**
    `abortSignal: AbortSignal.timeout(45_000)` on `parseRecipeContent` and
    `parseRecipeFromYoutube` (the `urlContext` fallback already has one).
-4. **Guard Gemini responses.** Replace the `response.text!` non-null assertions
+3. **Guard Gemini responses.** Replace the `response.text!` non-null assertions
    ([gemini.ts:238,336](../src/lib/gemini.ts) and siblings) with an explicit
    check — a safety block or `MAX_TOKENS` finish currently becomes
    `JSON.parse(undefined)` and the `SyntaxError` reaches the user. Wrap the
    `urlContext` fallback's `JSON.parse` the same way. Throw descriptive errors
    so Phase 1 tags them usefully.
-5. **Fix the step-photo bug.** In `extractPageImages`
+4. **Fix the step-photo bug.** In `extractPageImages`
    ([scraper.ts:244-252](../src/lib/scraper.ts)), the og:image push before the
    selector loop makes `if (images.length > 0) break;` fire on the first
    selector — content images are almost never collected. Track og:image
    separately from content-selector hits so the loop actually tries selectors.
-6. **Add `maxDuration` to the other AI routes** (`parse-image`,
+5. **Add `maxDuration` to the other AI routes** (`parse-image`,
    `generate-image`, `chat`) — they currently run on Vercel's default limit
    and can truncate mid-generation.
 
 ### Acceptance
 
-- A URL pointing at a non-responding host fails in ~8s with `stage: "scrape"`,
-  not at the 60s ceiling.
+- A URL pointing at a non-responding host exhausts the fetch chain (8s direct
+  + bounded ScraperAPI attempt) with `stage: "scrape"`, well under the 60s
+  ceiling.
 - A page with content images but no `<article>` tag yields step photos.
 - Build, lint pass; parse a handful of known-good recipe URLs end-to-end.
 
@@ -175,8 +206,7 @@ already dead fall back to hero generation. Run manually; log a summary
 
 ## Explicitly out of scope (tracked separately)
 
-- Paid scraping-API fallback for bot-protected sites — decide after Phase 1
-  data; comparison in [SCRAPING_SERVICES.md](./SCRAPING_SERVICES.md).
-- Rate limiting on `/api/recipes/parse` (billing-abuse surface).
+- Rate limiting on `/api/recipes/parse` (billing-abuse surface — now also
+  spends ScraperAPI credits).
 - SSRF hardening of URL validation (internal hosts / link-local addresses are
   currently fetchable server-side).

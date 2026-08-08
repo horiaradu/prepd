@@ -95,8 +95,7 @@ matters more than cost:
 5. **ScrapingBee** — not competitive until the plan-gating question is
    resolved with their support.
 
-Decision gate: implement Phase 1 of [RELIABILITY_PLAN.md](./RELIABILITY_PLAN.md)
-first — Sentry data on how often `stage=scrape` failures are 403/blocked (vs
-timeouts and junk URLs) tells us whether the fallback is worth wiring in at
-all, and the observed monthly volume picks between ScraperAPI's free tier and
-Zyte's pay-as-you-go.
+**Decision: ScraperAPI**, starting on the recurring free tier — integrated as
+Phase 0 of [RELIABILITY_PLAN.md](./RELIABILITY_PLAN.md). Phase 1's Sentry data
+(fetch-tier tags) will show whether 1,000 credits/month suffice or the $49
+plan is needed.
