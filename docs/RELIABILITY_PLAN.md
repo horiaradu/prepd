@@ -241,7 +241,40 @@ Replaces today's liveness-check-then-hotlink; runs after the recipe is
 
 ---
 
-## Phase 4 (optional) — Backfill existing recipes
+## Phase 4 — Push notification on parse completion
+
+Complements Phase 3's polling: polling covers the open app; push covers the
+backgrounded/closed one (submit from the phone share flow, get notified when
+the recipe is ready). All plumbing already exists — `sendPushToUser(email,
+{title, body, url})` in [push.ts](../src/lib/push.ts), subscription storage,
+VAPID keys, and a service worker ([sw.js](../public/sw.js)) that displays the
+notification and deep-links on click.
+
+### Tasks
+
+1. At the end of the background parse in
+   [parse-pipeline.ts](../src/lib/parse-pipeline.ts), send a push to the
+   recipe's owner: success → recipe title, deep link `/recipe/:id`; failure →
+   translated reason, link to the list.
+2. `sendPushToUser` looks up by email but the pipeline holds `userId` —
+   add a by-userId variant (subscriptions are already keyed by userId; this
+   just skips the email lookup).
+3. Suppress the notification when the app is in the foreground: in the
+   service worker's push handler, check `clients.matchAll` for a focused
+   window on the app and skip `showNotification` — the user is already
+   watching the card fill in.
+4. Users without a push subscription are a silent no-op (already how
+   `sendPushToUser` behaves).
+
+### Acceptance
+
+- Submit a URL, background the browser → notification arrives on completion;
+  tapping it opens the recipe.
+- With the app focused, no notification is shown for a parse you watched.
+
+---
+
+## Phase 5 (optional) — Backfill existing recipes
 
 A one-off script in `scripts/` that iterates existing recipes and normalizes
 them to the Phase 3 model:
