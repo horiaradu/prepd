@@ -255,22 +255,33 @@ export async function parseRecipeContent(
     prompt += `\n\nAvailable images from the source page (assign to the most relevant steps):\n${imageList}`;
   }
 
+  // No responseSchema here: schema-constrained decoding makes this call
+  // pathologically slow on some article inputs (2+ minutes vs ~15s without).
+  // The system prompt dictates the exact JSON shape and normalizeRecipe
+  // tolerates drift.
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: prompt,
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
-      responseSchema: PARSED_RECIPE_SCHEMA,
       abortSignal: AbortSignal.timeout(GEMINI_PARSE_TIMEOUT_MS),
     },
   });
 
   const responseText = responseTextOf(response, "parseRecipeContent");
-  const parsed = JSON.parse(responseText);
+  let parsed;
+  try {
+    parsed = JSON.parse(responseText);
+  } catch {
+    throw new Error("parseRecipeContent: Gemini reply was not valid JSON");
+  }
 
   if (parsed.error) {
     throw new NoRecipeFoundError(parsed.error);
+  }
+  if (typeof parsed.title !== "string" || !parsed.title.trim()) {
+    throw new Error("parseRecipeContent: Gemini reply is missing a title");
   }
 
   return normalizeRecipe(parsed);
