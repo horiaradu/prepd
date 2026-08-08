@@ -137,7 +137,9 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
-const GEMINI_PARSE_TIMEOUT_MS = 45_000;
+// Parsing runs in the background with a 300s function budget; long articles
+// routinely need more than a minute of generation time.
+const GEMINI_PARSE_TIMEOUT_MS = 120_000;
 
 // The parsing prompt instructs Gemini to answer { "error": ... } when the
 // content contains no recipe; callers translate this for the user instead of
@@ -291,7 +293,7 @@ Additionally, include a top-level "images" array with the absolute URLs of recip
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
       tools: [{ urlContext: {} }],
-      abortSignal: AbortSignal.timeout(45_000),
+      abortSignal: AbortSignal.timeout(GEMINI_PARSE_TIMEOUT_MS),
     },
   });
 
