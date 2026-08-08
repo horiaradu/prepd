@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import RecipeInput from "@/components/RecipeInput";
 import { Dropdown } from "@/components/Dropdown";
+import { parseErrorMessage } from "@/lib/parse-error";
 import {
   COOK_STYLES,
   MEAL_TYPES,
@@ -133,20 +134,82 @@ export default function RecipeList({
     setRecipes((prev) => [recipe, ...prev]);
   }, []);
 
+  // While a parse runs in the background (or a fresh recipe still waits for
+  // its image), refresh the list every few seconds. Polling stops on its own
+  // once everything has settled.
+  useEffect(() => {
+    const needsPolling = recipes.some(
+      (r) =>
+        r.status === "parsing" ||
+        (r.status === "ready" &&
+          !r.imageUrl &&
+          Date.now() - new Date(r.createdAt).getTime() < 10 * 60_000),
+    );
+    if (!needsPolling) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/recipes");
+        if (!res.ok) return;
+        setRecipes((await res.json()) as RecipeSummary[]);
+      } catch {
+        // Transient network failure — next tick retries.
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [recipes]);
+
+  const retryParse = useCallback(async (recipe: RecipeSummary) => {
+    setRecipes((prev) =>
+      prev.map((r) =>
+        r.id === recipe.id ? { ...r, status: "parsing", parseError: null } : r,
+      ),
+    );
+    try {
+      const res = await fetch("/api/recipes/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: recipe.sourceUrl, replaceId: recipe.id }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setRecipes((prev) =>
+        prev.map((r) =>
+          r.id === recipe.id ? { ...r, status: "failed" } : r,
+        ),
+      );
+    }
+  }, []);
+
+  const dismissFailedParse = useCallback(async (recipe: RecipeSummary) => {
+    setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
+    await fetch(`/api/recipes/${recipe.id}`, { method: "DELETE" }).catch(
+      () => {},
+    );
+  }, []);
+
+  const inProgress = useMemo(
+    () => recipes.filter((r) => r.status !== "ready"),
+    [recipes],
+  );
+  const readyRecipes = useMemo(
+    () => recipes.filter((r) => r.status === "ready"),
+    [recipes],
+  );
+
   const cuisineOptions = useMemo(() => {
     const counts = new Map<Cuisine, number>();
-    for (const r of recipes) {
+    for (const r of readyRecipes) {
       if (!r.cuisine) continue;
       counts.set(r.cuisine, (counts.get(r.cuisine) ?? 0) + 1);
     }
     return [...counts.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([cuisine]) => cuisine);
-  }, [recipes]);
+  }, [readyRecipes]);
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return recipes.filter((r) => {
+    return readyRecipes.filter((r) => {
       if (needle && !r.title.toLowerCase().includes(needle)) return false;
       if (mealFilter !== "all" && r.mealType !== mealFilter) return false;
       if (cuisineFilter !== "all" && r.cuisine !== cuisineFilter) return false;
@@ -162,7 +225,7 @@ export default function RecipeList({
       return true;
     });
   }, [
-    recipes,
+    readyRecipes,
     search,
     mealFilter,
     cuisineFilter,
@@ -217,6 +280,53 @@ export default function RecipeList({
 
       <RecipeInput onRecipeParsed={handleRecipeParsed} />
 
+      {inProgress.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {inProgress.map((recipe) =>
+            recipe.status === "parsing" ? (
+              <div
+                key={recipe.id}
+                className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl bg-gray-50"
+              >
+                <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-700 truncate">
+                    {recipe.title}
+                  </p>
+                  <p className="text-xs text-gray-400">{t.statusParsing}</p>
+                </div>
+              </div>
+            ) : (
+              <div
+                key={recipe.id}
+                className="p-4 border border-red-200 bg-red-50 rounded-xl"
+              >
+                <p className="text-sm font-medium text-red-700 truncate mb-1">
+                  {recipe.title}
+                </p>
+                <p className="text-xs text-red-600 mb-3">
+                  {parseErrorMessage(recipe.parseError, t)}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => retryParse(recipe)}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
+                  >
+                    {t.retryParse}
+                  </button>
+                  <button
+                    onClick={() => dismissFailedParse(recipe)}
+                    className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    {t.dismissFailedParse}
+                  </button>
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      )}
+
       <input
         type="text"
         value={search}
@@ -225,7 +335,7 @@ export default function RecipeList({
         className="w-full mb-4 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:outline-none focus:border-green-600 focus:bg-white transition-colors"
       />
 
-      {recipes.length > 0 && (
+      {readyRecipes.length > 0 && (
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <Dropdown<MealType | "all">
             label={t.filterMealType}
@@ -318,8 +428,10 @@ export default function RecipeList({
         </div>
       )}
 
-      {recipes.length === 0 ? (
-        <p className="text-center text-gray-400 py-12">{t.noRecipesYet}</p>
+      {readyRecipes.length === 0 ? (
+        inProgress.length === 0 && (
+          <p className="text-center text-gray-400 py-12">{t.noRecipesYet}</p>
+        )
       ) : filtered.length === 0 ? (
         <p className="text-center text-gray-400 py-12">{t.noRecipesYet}</p>
       ) : (

@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import ProgressBar from "@/components/ProgressBar";
 import { CameraIcon } from "@/components/icons";
 import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
-import type { ParseResponse, RecipeSummary } from "@/types/recipe";
+import type { ParseResponse, RecipeSummary, SourceType } from "@/types/recipe";
 import { useLanguage } from "@/context/LanguageContext";
 import { trackRecipeParsed, type RecipeSource } from "@/lib/analytics-events";
 
@@ -54,6 +54,8 @@ export default function RecipeInput({
       cuisine: parsed.recipe.cuisine,
       cookStyle: parsed.recipe.cookStyle,
       totalTimeMinutes: parsed.recipe.totalTimeMinutes,
+      status: "ready",
+      parseError: null,
       cookCount: 0,
       lastCookedAt: null,
     };
@@ -61,38 +63,54 @@ export default function RecipeInput({
 
   async function handleParse(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim()) return;
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) return;
 
     setLoading(true);
     setError(null);
-    setProgress(null);
 
     try {
       const response = await fetch("/api/recipes/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: trimmedUrl }),
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error("Failed to parse recipe");
+      if (!response.ok) {
+        throw new Error(t.errorParseFailed);
       }
 
-      const parsed = await readProgressStream<ParseResponse>(
-        response,
-        setProgress,
-      );
-      onRecipeParsed(toSummary(parsed));
+      // The parse runs in the background; the list shows a "parsing" card
+      // and polls until the recipe is ready.
+      const data = (await response.json()) as {
+        id: string;
+        sourceType: SourceType;
+      };
+      onRecipeParsed({
+        id: data.id,
+        title: new URL(trimmedUrl).hostname,
+        sourceUrl: trimmedUrl,
+        sourceType: data.sourceType,
+        createdAt: new Date().toISOString(),
+        imageUrl: null,
+        mealType: null,
+        cuisine: null,
+        cookStyle: null,
+        totalTimeMinutes: null,
+        status: "parsing",
+        parseError: null,
+        cookCount: 0,
+        lastCookedAt: null,
+      });
       trackRecipeParsed({
-        recipeId: parsed.id,
-        source: parsed.sourceType as RecipeSource,
+        recipeId: data.id,
+        source: data.sourceType as RecipeSource,
       });
       setUrl("");
     } catch (err) {
       setError(err instanceof Error ? err.message : t.somethingWentWrong);
     } finally {
       setLoading(false);
-      setProgress(null);
     }
   }
 
@@ -177,12 +195,9 @@ export default function RecipeInput({
         </div>
       </form>
 
-      {loading && (
+      {loading && progress && (
         <div className="py-8">
-          <ProgressBar
-            step={progress?.step ?? t.starting}
-            progress={progress?.progress ?? 5}
-          />
+          <ProgressBar step={progress.step} progress={progress.progress} />
         </div>
       )}
 

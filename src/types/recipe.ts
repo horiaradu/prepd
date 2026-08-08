@@ -95,11 +95,18 @@ export interface Step {
   videoTimestamp?: number;
 }
 
+// "parsing" while the background parse runs; "failed" when it produced no
+// usable content. parseError is either a known reason key ("parse-failed",
+// "no-recipe-found", "parse-interrupted") the UI translates, or literal
+// error text for the admin account.
+export type RecipeStatus = "parsing" | "ready" | "failed";
+
 export interface RecipeImage {
   url: string;
   alt?: string;
-  // Private Vercel Blob URL. Present when the image is stored in our blob
-  // store and must be served through the authenticated proxy.
+  // Vercel Blob URL, present when the image is stored in our blob store.
+  // Older rows hold private Blobs served through the authenticated proxy;
+  // newer ones are public and url points at the Blob directly.
   blobUrl?: string;
 }
 
@@ -124,6 +131,8 @@ export interface Recipe extends ParsedRecipe {
   sourceType: SourceType;
   images: RecipeImage[] | null;
   originalRecipe: ParsedRecipe | null;
+  status: RecipeStatus;
+  parseError: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -135,6 +144,8 @@ export interface RecipeSummary extends RecipeTaxonomy {
   sourceType: SourceType;
   createdAt: string;
   imageUrl: string | null;
+  status: RecipeStatus;
+  parseError: string | null;
   cookCount: number;
   lastCookedAt: string | null;
 }

@@ -131,6 +131,12 @@ export type Translations = {
   // Parse errors (sent from API routes)
   errorParseFailed: string;
   errorNoRecipeFound: string;
+  errorParseInterrupted: string;
+
+  // Async parse cards
+  statusParsing: string;
+  retryParse: string;
+  dismissFailedParse: string;
 
   // RecipeList
   suggestRecipes: string;
@@ -527,6 +533,11 @@ const en: Translations = {
 
   errorParseFailed: "Something went wrong while processing the recipe. Please try again.",
   errorNoRecipeFound: "No recipe found — check that the link or photo actually contains one.",
+  errorParseInterrupted: "The parse was interrupted before finishing. Please retry.",
+
+  statusParsing: "Parsing recipe…",
+  retryParse: "Retry",
+  dismissFailedParse: "Dismiss",
 };
 
 const ro: Translations = {
@@ -787,6 +798,11 @@ const ro: Translations = {
 
   errorParseFailed: "Ceva nu a mers bine la procesarea rețetei. Încearcă din nou.",
   errorNoRecipeFound: "Nu am găsit nicio rețetă — verifică dacă linkul sau poza chiar conține una.",
+  errorParseInterrupted: "Procesarea a fost întreruptă. Încearcă din nou.",
+
+  statusParsing: "Se procesează rețeta…",
+  retryParse: "Reîncearcă",
+  dismissFailedParse: "Renunță",
 };
 
 const dictionaries: Record<Locale, Translations> = { en, ro };
