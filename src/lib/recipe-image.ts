@@ -34,6 +34,21 @@ async function downloadImage(url: string): Promise<Buffer | null> {
   }
 }
 
+// Recipe display images live in a separate PUBLIC Blob store (the default
+// store is private and rejects public uploads). Its token is injected by
+// Vercel when the store is connected to the project.
+function publicBlobToken(): string {
+  const token = process.env.PUBLIC_BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    throw new Error("PUBLIC_BLOB_READ_WRITE_TOKEN is not configured");
+  }
+  return token;
+}
+
+export function isPublicBlobUrl(url: string): boolean {
+  return url.includes(".public.blob.vercel-storage.com");
+}
+
 // Resizes, re-encodes as JPEG, and uploads to a public Blob. Public Blob
 // URLs are long random strings served from the CDN; recipes reference them
 // directly, with no proxy round-trip.
@@ -67,7 +82,7 @@ export async function processAndStoreImage(args: {
   const upload = await put(
     `recipes/${userId}/${recipeId}-${Date.now()}-${suffix}.jpg`,
     resized,
-    { access: "public", contentType: "image/jpeg" },
+    { access: "public", contentType: "image/jpeg", token: publicBlobToken() },
   );
   return upload.url;
 }

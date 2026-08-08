@@ -41,6 +41,7 @@ NEXTAUTH_URL=http://localhost:3000
 AUTHORIZED_EMAIL=horia.radu23@gmail.com
 GEMINI_API_KEY=...
 SCRAPERAPI_API_KEY=...   # scraperapi.com — bot-protection fallback for recipe scraping
+PUBLIC_BLOB_READ_WRITE_TOKEN=...   # "prepd-public-images" Blob store (public) — recipe display images
 DATABASE_URL=...     # Neon Postgres connection string
 ```
 
@@ -57,6 +58,7 @@ Set in Vercel project dashboard → **Settings** → **Environment Variables**:
 | `AUTHORIZED_EMAIL` | `horia.radu23@gmail.com` |
 | `GEMINI_API_KEY` | from Google Cloud |
 | `SCRAPERAPI_API_KEY` | from scraperapi.com dashboard; optional — without it, scraping falls back to Gemini URL context only |
+| `PUBLIC_BLOB_READ_WRITE_TOKEN` | injected when connecting the `prepd-public-images` Blob store with env prefix `PUBLIC_BLOB`; the default `BLOB_READ_WRITE_TOKEN` belongs to the private store |
 
 `DATABASE_URL` and related Postgres vars are auto-injected by the Neon integration.
 
