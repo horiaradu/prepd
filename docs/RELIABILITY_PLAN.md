@@ -232,11 +232,16 @@ Replaces today's liveness-check-then-hotlink; runs after the recipe is
 
 ## Phase 4 (optional) — Backfill existing recipes
 
-A one-off script in `scripts/` that iterates existing recipes whose
-`images[].url` points at an external origin, runs the Phase 3
-download-and-store pipeline, and updates rows. Recipes whose origin images are
-already dead fall back to hero generation. Run manually; log a summary
-(migrated / already-stored / dead-and-regenerated).
+A one-off script in `scripts/` that iterates existing recipes and normalizes
+them to the Phase 3 model:
+
+- `images[].url` pointing at an external origin → download-and-store pipeline;
+  origin images that are already dead fall back to hero generation.
+- Existing private Blobs (generated heroes served via the proxy route) →
+  re-upload as public, update the row to the direct Blob URL.
+
+Run manually; log a summary (migrated / already-stored / dead-and-regenerated).
+Once no rows reference the proxy route, delete it.
 
 ---
 
