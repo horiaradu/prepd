@@ -40,6 +40,7 @@ NEXTAUTH_SECRET=...
 NEXTAUTH_URL=http://localhost:3000
 AUTHORIZED_EMAIL=horia.radu23@gmail.com
 GEMINI_API_KEY=...
+SCRAPERAPI_API_KEY=...   # scraperapi.com — bot-protection fallback for recipe scraping
 DATABASE_URL=...     # Neon Postgres connection string
 ```
 
@@ -55,6 +56,7 @@ Set in Vercel project dashboard → **Settings** → **Environment Variables**:
 | `NEXTAUTH_URL` | `https://prepd-ten.vercel.app` |
 | `AUTHORIZED_EMAIL` | `horia.radu23@gmail.com` |
 | `GEMINI_API_KEY` | from Google Cloud |
+| `SCRAPERAPI_API_KEY` | from scraperapi.com dashboard; optional — without it, scraping falls back to Gemini URL context only |
 
 `DATABASE_URL` and related Postgres vars are auto-injected by the Neon integration.
 
