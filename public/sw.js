@@ -7,7 +7,16 @@ self.addEventListener("push", (event) => {
     badge: "/icons/icon-192.png",
     data: { url: data.url || "/inbox" },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windowClients) => {
+        // The user is already looking at the app — no notification needed.
+        const appIsFocused = windowClients.some((client) => client.focused);
+        if (appIsFocused) return;
+        return self.registration.showNotification(title, options);
+      }),
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {

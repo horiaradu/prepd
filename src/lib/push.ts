@@ -22,10 +22,17 @@ export async function sendPushToUser(
 
   if (!user) return;
 
+  await sendPushToUserId(user.id, payload);
+}
+
+export async function sendPushToUserId(
+  userId: string,
+  payload: { title: string; body: string; url?: string },
+) {
   const subscriptions = await db
     .select()
     .from(pushSubscriptions)
-    .where(eq(pushSubscriptions.userId, user.id));
+    .where(eq(pushSubscriptions.userId, userId));
 
   const promises = subscriptions.map(async (sub) => {
     try {
