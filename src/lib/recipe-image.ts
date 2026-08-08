@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs/promises";
 import sharp from "sharp";
-import { put } from "@vercel/blob";
+import { del, put } from "@vercel/blob";
 import { generateRecipeHeroImage } from "@/lib/gemini";
 import type { ParsedRecipe, RecipeImage, Step } from "@/types/recipe";
 
@@ -35,18 +35,32 @@ async function downloadImage(url: string): Promise<Buffer | null> {
 }
 
 // Recipe display images live in a separate PUBLIC Blob store (the default
-// store is private and rejects public uploads). Its token is injected by
-// Vercel when the store is connected to the project.
-function publicBlobToken(): string {
+// store is private and rejects public uploads). Connecting the store to the
+// project injects PUBLIC_BLOB_STORE_ID; on Vercel the SDK authenticates to
+// it with the ambient OIDC token. A read-write token, when present, is an
+// explicit override.
+function publicBlobAuth(): { token?: string; storeId?: string } {
   const token = process.env.PUBLIC_BLOB_READ_WRITE_TOKEN;
-  if (!token) {
-    throw new Error("PUBLIC_BLOB_READ_WRITE_TOKEN is not configured");
-  }
-  return token;
+  if (token) return { token };
+  const storeId = process.env.PUBLIC_BLOB_STORE_ID;
+  if (storeId) return { storeId };
+  throw new Error(
+    "Public Blob store is not configured (PUBLIC_BLOB_STORE_ID or PUBLIC_BLOB_READ_WRITE_TOKEN)",
+  );
 }
 
-export function isPublicBlobUrl(url: string): boolean {
+function isPublicBlobUrl(url: string): boolean {
   return url.includes(".public.blob.vercel-storage.com");
+}
+
+// Best-effort cleanup for a stored recipe image in either store; orphaned
+// blobs are harmless, so failures are swallowed.
+export async function deleteStoredImage(url: string): Promise<void> {
+  try {
+    await del(url, isPublicBlobUrl(url) ? publicBlobAuth() : undefined);
+  } catch {
+    // ignore
+  }
 }
 
 // Resizes, re-encodes as JPEG, and uploads to a public Blob. Public Blob
@@ -82,7 +96,7 @@ export async function processAndStoreImage(args: {
   const upload = await put(
     `recipes/${userId}/${recipeId}-${Date.now()}-${suffix}.jpg`,
     resized,
-    { access: "public", contentType: "image/jpeg", token: publicBlobToken() },
+    { access: "public", contentType: "image/jpeg", ...publicBlobAuth() },
   );
   return upload.url;
 }

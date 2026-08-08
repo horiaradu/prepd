@@ -148,9 +148,9 @@ Implementation notes / deviations from the design below:
 - **Two Blob stores.** The original store (`prepd-blob`) was created with
   private access, which cannot be changed and rejects public uploads. Recipe
   display images therefore go to a second, public store
-  (`prepd-public-images`, fra1) targeted via `PUBLIC_BLOB_READ_WRITE_TOKEN`;
-  the private store keeps user-uploaded photos, inbox images, and old
-  proxied heroes.
+  (`prepd-public-images`, fra1) targeted via `PUBLIC_BLOB_STORE_ID` +
+  Vercel OIDC auth; the private store keeps user-uploaded photos, inbox
+  images, and old proxied heroes.
 
 **Goal:** submitting a URL returns instantly; the entire parse (fetch → Gemini
 → images) runs in the background. Images are downloaded once, stored in

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import * as Sentry from "@sentry/nextjs";
-import { del } from "@vercel/blob";
 import { and, eq } from "drizzle-orm";
 import { authOptions, isAdmin } from "@/lib/auth";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import {
+  deleteStoredImage,
   generateAndStoreHeroImage,
-  isPublicBlobUrl,
 } from "@/lib/recipe-image";
 import type { Cuisine, MealType, CookStyle } from "@/types/recipe";
 
@@ -61,26 +60,14 @@ export async function POST(
       .where(eq(recipes.id, id));
 
     // Don't delete the original uploaded photo; users may want to view or
-    // re-parse from it later via the source-image proxy. The previous image
-    // may live in either store — pass the public store's token when needed.
+    // re-parse from it later via the source-image proxy.
     if (previousBlobUrl && previousBlobUrl !== row.sourceUrl) {
-      await del(
-        previousBlobUrl,
-        isPublicBlobUrl(previousBlobUrl)
-          ? { token: process.env.PUBLIC_BLOB_READ_WRITE_TOKEN }
-          : undefined,
-      ).catch(() => {});
+      await deleteStoredImage(previousBlobUrl);
     }
 
     return NextResponse.json({ imageUrl: image.url });
   } catch (error) {
-    if (newBlobUrl)
-      await del(
-        newBlobUrl,
-        isPublicBlobUrl(newBlobUrl)
-          ? { token: process.env.PUBLIC_BLOB_READ_WRITE_TOKEN }
-          : undefined,
-      ).catch(() => {});
+    if (newBlobUrl) await deleteStoredImage(newBlobUrl);
     console.error("Generate image error:", error);
     Sentry.captureException(error, {
       tags: { stage: "image-generate", recipeId: id },
