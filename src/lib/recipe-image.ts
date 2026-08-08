@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import sharp from "sharp";
 import { put } from "@vercel/blob";
 import { generateRecipeHeroImage } from "@/lib/gemini";
-import type { ParsedRecipe, RecipeImage } from "@/types/recipe";
+import type { ParsedRecipe, RecipeImage, Step } from "@/types/recipe";
 
 const BROWSER_HEADERS = {
   "User-Agent":
@@ -11,49 +11,148 @@ const BROWSER_HEADERS = {
   Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
 };
 
-const ACCESSIBILITY_TIMEOUT_MS = 4000;
+const DOWNLOAD_TIMEOUT_MS = 8_000;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-export async function isImageUrlAccessible(url: string): Promise<boolean> {
-  // Vercel Blob proxy URLs (served by our own API) are trusted — skip
-  // network validation for them.
-  if (url.startsWith("/")) return true;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ACCESSIBILITY_TIMEOUT_MS);
+async function downloadImage(url: string): Promise<Buffer | null> {
   try {
-    let response = await fetch(url, {
-      method: "HEAD",
+    const response = await fetch(url, {
       headers: BROWSER_HEADERS,
       redirect: "follow",
-      signal: controller.signal,
+      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
     });
-    // Some CDNs reject HEAD; fall back to a ranged GET that pulls just the
-    // first byte so we can still confirm the resource exists.
-    if (response.status === 405 || response.status === 403) {
-      response = await fetch(url, {
-        method: "GET",
-        headers: { ...BROWSER_HEADERS, Range: "bytes=0-0" },
-        redirect: "follow",
-        signal: controller.signal,
-      });
-    }
-    if (!response.ok && response.status !== 206) return false;
+    if (!response.ok) return null;
     const contentType = response.headers.get("content-type") ?? "";
-    return contentType.startsWith("image/");
+    if (!contentType.startsWith("image/")) return null;
+    const declaredLength = Number(response.headers.get("content-length"));
+    if (declaredLength > MAX_IMAGE_BYTES) return null;
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) return null;
+    return bytes;
   } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
+    return null;
   }
 }
 
-export async function findFirstWorkingImage(
-  images: RecipeImage[],
-): Promise<RecipeImage | null> {
-  for (const image of images) {
-    if (await isImageUrlAccessible(image.url)) return image;
+// Resizes, re-encodes as JPEG, and uploads to a public Blob. Public Blob
+// URLs are long random strings served from the CDN; recipes reference them
+// directly, with no proxy round-trip.
+export async function processAndStoreImage(args: {
+  userId: string;
+  recipeId: string;
+  bytes: Buffer;
+  suffix: string;
+  watermark?: boolean;
+}): Promise<string> {
+  const { userId, recipeId, bytes, suffix, watermark = false } = args;
+
+  const base = sharp(bytes).resize({
+    width: 1600,
+    height: 1600,
+    fit: "inside",
+    withoutEnlargement: true,
+  });
+
+  let pipeline = base;
+  if (watermark) {
+    const meta = await base.metadata();
+    const width = meta.width ?? 1600;
+    const watermarkWidth = Math.max(140, Math.round(width * 0.2));
+    const overlay = await loadWatermark(watermarkWidth);
+    pipeline = base.composite([{ input: overlay, gravity: "southeast" }]);
   }
-  return null;
+
+  const resized = await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+
+  const upload = await put(
+    `recipes/${userId}/${recipeId}-${Date.now()}-${suffix}.jpg`,
+    resized,
+    { access: "public", contentType: "image/jpeg" },
+  );
+  return upload.url;
+}
+
+export interface PersistRecipeImagesResult {
+  images: RecipeImage[];
+  prepSteps: Step[];
+  cookingSteps: Step[];
+}
+
+// Downloads every origin image the recipe references, stores them as public
+// Blobs, and rewrites the references (hero list + per-step photos) to the
+// stored copies so recipes never depend on hot-linked origin URLs. Images
+// that fail to download are dropped. If nothing survives, optionally
+// generates an AI hero image.
+export async function persistRecipeImages(args: {
+  userId: string;
+  recipeId: string;
+  recipe: ParsedRecipe;
+  images: RecipeImage[];
+  generateFallbackHero: boolean;
+}): Promise<PersistRecipeImagesResult> {
+  const { userId, recipeId, recipe, images, generateFallbackHero } = args;
+
+  const stepUrls = [...recipe.prepSteps, ...recipe.cookingSteps]
+    .map((s) => s.imageUrl)
+    .filter((u): u is string => !!u);
+  const originUrls = [
+    ...new Set(
+      [...images.map((img) => img.url), ...stepUrls].filter((u) =>
+        u.startsWith("http"),
+      ),
+    ),
+  ];
+
+  const stored = new Map<string, string>();
+  await Promise.all(
+    originUrls.map(async (originUrl, i) => {
+      const bytes = await downloadImage(originUrl);
+      if (!bytes) return;
+      try {
+        const storedUrl = await processAndStoreImage({
+          userId,
+          recipeId,
+          bytes,
+          suffix: `img${i}`,
+        });
+        stored.set(originUrl, storedUrl);
+      } catch (err) {
+        console.error(`Failed to store image ${originUrl}:`, err);
+      }
+    }),
+  );
+
+  const remapStep = (step: Step): Step => {
+    if (!step.imageUrl) return step;
+    const storedUrl = stored.get(step.imageUrl);
+    if (storedUrl) return { ...step, imageUrl: storedUrl };
+    const rest = { ...step };
+    delete rest.imageUrl;
+    return rest;
+  };
+
+  let persisted: RecipeImage[] = images
+    .filter((img) => stored.has(img.url))
+    .map((img) => ({
+      url: stored.get(img.url)!,
+      blobUrl: stored.get(img.url)!,
+      ...(img.alt ? { alt: img.alt } : {}),
+    }));
+
+  if (persisted.length === 0 && generateFallbackHero) {
+    const { image } = await generateAndStoreHeroImage({
+      userId,
+      recipeId,
+      recipe,
+    });
+    persisted = [image];
+  }
+
+  return {
+    images: persisted,
+    prepSteps: recipe.prepSteps.map(remapStep),
+    cookingSteps: recipe.cookingSteps.map(remapStep),
+  };
 }
 
 let watermarkSource: Buffer | null = null;
@@ -76,7 +175,6 @@ export interface GenerateAndStoreHeroImageArgs {
 
 export interface GenerateAndStoreHeroImageResult {
   image: RecipeImage;
-  proxyUrl: string;
 }
 
 export async function generateAndStoreHeroImage(
@@ -85,33 +183,13 @@ export async function generateAndStoreHeroImage(
   const { userId, recipeId, recipe } = args;
 
   const { bytes } = await generateRecipeHeroImage(recipe);
-
-  const base = sharp(bytes).resize({
-    width: 1600,
-    height: 1600,
-    fit: "inside",
-    withoutEnlargement: true,
+  const url = await processAndStoreImage({
+    userId,
+    recipeId,
+    bytes,
+    suffix: "generated",
+    watermark: true,
   });
-  const meta = await base.metadata();
-  const width = meta.width ?? 1600;
 
-  const watermarkWidth = Math.max(140, Math.round(width * 0.2));
-  const watermark = await loadWatermark(watermarkWidth);
-
-  const resized = await base
-    .composite([{ input: watermark, gravity: "southeast" }])
-    .jpeg({ quality: 82, mozjpeg: true })
-    .toBuffer();
-
-  const upload = await put(
-    `recipes/${userId}/${recipeId}-${Date.now()}-generated.jpg`,
-    resized,
-    { access: "private", contentType: "image/jpeg" },
-  );
-
-  const proxyUrl = `/api/recipes/${recipeId}/image?v=${Date.now()}`;
-  return {
-    image: { url: proxyUrl, blobUrl: upload.url, alt: recipe.title },
-    proxyUrl,
-  };
+  return { image: { url, blobUrl: url, alt: recipe.title } };
 }

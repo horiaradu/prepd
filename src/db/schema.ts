@@ -94,6 +94,10 @@ export const recipes = pgTable(
     images: jsonb("images").$type<RecipeImage[]>().default([]),
     originalRecipe: jsonb("original_recipe").$type<ParsedRecipe>(),
     rawContent: text("raw_content"),
+    status: text("status").notNull().default("ready"), // "parsing" | "ready" | "failed"
+    // Why the last parse attempt failed: a known reason key the UI
+    // translates, or literal text for the admin account.
+    parseError: text("parse_error"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

@@ -133,7 +133,18 @@ Gemini-response bugs are fixed.
 
 ---
 
-## Phase 3 — Async parsing + images to Blob (A1 + C1)
+## Phase 3 — Async parsing + images to Blob (A1 + C1) ✅ (implemented)
+
+Implementation notes / deviations from the design below:
+
+- **Photo parsing (`parse-image`) stays synchronous SSE** for now — Phase 3
+  converted only the URL flow. `progress-stream.ts` therefore stays until the
+  photo flow is converted too (follow-up).
+- `maxDuration` on the parse route is set to **300**; if the Vercel plan
+  rejects it at deploy time, lower it and shrink the ScraperAPI timeout
+  accordingly.
+- The DB migration is `drizzle/0005_recipe_parse_status.sql` (two ADD
+  COLUMNs; existing rows default to `ready`) — apply before deploying.
 
 **Goal:** submitting a URL returns instantly; the entire parse (fetch → Gemini
 → images) runs in the background. Images are downloaded once, stored in

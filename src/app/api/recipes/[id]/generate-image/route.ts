@@ -34,7 +34,7 @@ export async function POST(
 
   let newBlobUrl: string | null = null;
   try {
-    const { image, proxyUrl } = await generateAndStoreHeroImage({
+    const { image } = await generateAndStoreHeroImage({
       userId,
       recipeId: id,
       recipe: {
@@ -63,7 +63,7 @@ export async function POST(
       await del(previousBlobUrl).catch(() => {});
     }
 
-    return NextResponse.json({ imageUrl: proxyUrl });
+    return NextResponse.json({ imageUrl: image.url });
   } catch (error) {
     if (newBlobUrl) await del(newBlobUrl).catch(() => {});
     console.error("Generate image error:", error);

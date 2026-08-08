@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { RecipeDisplay } from "@/components/RecipeDisplay";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ShareDialog } from "@/components/ShareDialog";
-import ProgressBar from "@/components/ProgressBar";
 import {
   HistoryIcon,
   RotateCcwIcon,
@@ -14,8 +13,8 @@ import {
   ShareIcon,
   TrashIcon,
 } from "@/components/icons";
-import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
 import { applyOperations } from "@/lib/recipe-operations";
+import { parseErrorMessage } from "@/lib/parse-error";
 import type { Recipe, ParsedRecipe } from "@/types/recipe";
 import type { ChatMessage } from "@/lib/recipes";
 import { useLanguage } from "@/context/LanguageContext";
@@ -48,9 +47,6 @@ export default function RecipeDetails({
   const [deleting, setDeleting] = useState(false);
   const [reparsing, setReparsing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [reparseProgress, setReparseProgress] = useState<ProgressEvent | null>(
-    null,
-  );
   const [generatingImage, setGeneratingImage] = useState(false);
   const [heroImageOverride, setHeroImageOverride] = useState<string | null>(
     null,
@@ -211,34 +207,36 @@ export default function RecipeDetails({
   async function handleReparse() {
     if (!recipe.sourceUrl) return;
     setReparsing(true);
-    setReparseProgress(null);
+    setError(null);
     try {
       const res = await fetch("/api/recipes/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: recipe.sourceUrl, replaceId: recipeId }),
       });
-      if (!res.ok || !res.body) return;
-      const data = await readProgressStream<{ recipe: ParsedRecipe }>(
-        res,
-        setReparseProgress,
-      );
-      setRecipe((prev) => ({
-        ...prev,
-        title: data.recipe.title,
-        servings: data.recipe.servings,
-        ingredients: data.recipe.ingredients,
-        prepSteps: data.recipe.prepSteps,
-        cookingSteps: data.recipe.cookingSteps,
-        mealType: data.recipe.mealType,
-        cuisine: data.recipe.cuisine,
-        cookStyle: data.recipe.cookStyle,
-        totalTimeMinutes: data.recipe.totalTimeMinutes,
-      }));
-      trackRecipeReparsed({ recipeId });
+      if (!res.ok) {
+        setError(t.errorParseFailed);
+        return;
+      }
+
+      // The parse runs in the background; poll until it settles.
+      for (let i = 0; i < 100; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        const poll = await fetch(`/api/recipes/${recipeId}`);
+        if (!poll.ok) continue;
+        const fresh = (await poll.json()) as Recipe;
+        if (fresh.status === "parsing") continue;
+        if (fresh.parseError) {
+          setError(parseErrorMessage(fresh.parseError, t));
+        } else {
+          setRecipe(fresh);
+          trackRecipeReparsed({ recipeId });
+        }
+        return;
+      }
+      setError(t.errorParseInterrupted);
     } finally {
       setReparsing(false);
-      setReparseProgress(null);
     }
   }
 
@@ -315,15 +313,6 @@ export default function RecipeDetails({
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
-        </div>
-      )}
-
-      {reparseProgress && (
-        <div className="mb-4">
-          <ProgressBar
-            step={reparseProgress.step}
-            progress={reparseProgress.progress}
-          />
         </div>
       )}
 

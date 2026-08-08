@@ -47,9 +47,9 @@ const BROWSER_HEADERS = {
 };
 
 const DIRECT_FETCH_TIMEOUT_MS = 8_000;
-// ScraperAPI recommends a 70s client timeout, but the parse route's
-// maxDuration is 60s and Gemini still needs to run after the fetch.
-const SCRAPER_API_TIMEOUT_MS = 35_000;
+// ScraperAPI's recommended client timeout; parsing runs in the background,
+// so the full window fits comfortably inside the route's maxDuration.
+const SCRAPER_API_TIMEOUT_MS = 70_000;
 
 async function fetchHtmlDirect(
   url: string,
