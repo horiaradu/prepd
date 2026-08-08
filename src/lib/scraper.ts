@@ -1,5 +1,30 @@
 import * as cheerio from "cheerio";
+import * as Sentry from "@sentry/nextjs";
 import type { RecipeImage } from "@/types/recipe";
+
+export class ScrapeError extends Error {
+  readonly tier: "direct" | "scraperapi";
+  readonly status?: number;
+  // HTTP status of the failed direct fetch, when this error comes from the
+  // ScraperAPI fallback — distinguishes bot blocks (403) from timeouts.
+  readonly directStatus?: number;
+
+  constructor(
+    message: string,
+    opts: {
+      tier: "direct" | "scraperapi";
+      status?: number;
+      directStatus?: number;
+      cause?: unknown;
+    },
+  ) {
+    super(message, { cause: opts.cause });
+    this.name = "ScrapeError";
+    this.tier = opts.tier;
+    this.status = opts.status;
+    this.directStatus = opts.directStatus;
+  }
+}
 
 interface JsonLdRecipe {
   name?: string;
@@ -26,37 +51,33 @@ const DIRECT_FETCH_TIMEOUT_MS = 8_000;
 // maxDuration is 60s and Gemini still needs to run after the fetch.
 const SCRAPER_API_TIMEOUT_MS = 35_000;
 
-async function resolveRedirects(url: string): Promise<string> {
-  let current = url;
-  for (let i = 0; i < 5; i++) {
-    const res = await fetch(current, {
-      method: "HEAD",
+async function fetchHtmlDirect(
+  url: string,
+): Promise<{ html: string; finalUrl: string }> {
+  let response: Response;
+  try {
+    response = await fetch(url, {
       headers: BROWSER_HEADERS,
-      redirect: "manual",
+      redirect: "follow",
       signal: AbortSignal.timeout(DIRECT_FETCH_TIMEOUT_MS),
     });
-    const location = res.headers.get("location");
-    if (location && res.status >= 300 && res.status < 400) {
-      current = new URL(location, current).href;
-    } else {
-      break;
-    }
+  } catch (err) {
+    throw new ScrapeError(
+      `Direct fetch failed: ${err instanceof Error ? err.name : "unknown error"}`,
+      { tier: "direct", cause: err },
+    );
   }
-  return current;
-}
-
-async function fetchHtmlDirect(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: BROWSER_HEADERS,
-    redirect: "follow",
-    signal: AbortSignal.timeout(DIRECT_FETCH_TIMEOUT_MS),
-  });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch URL: ${response.status}`);
+    throw new ScrapeError(`Direct fetch failed: HTTP ${response.status}`, {
+      tier: "direct",
+      status: response.status,
+    });
   }
 
-  return response.text();
+  // response.url is the final URL after redirects — the correct base for
+  // resolving relative image paths.
+  return { html: await response.text(), finalUrl: response.url || url };
 }
 
 // Fetches the page through ScraperAPI, which handles proxy rotation and
@@ -65,43 +86,80 @@ async function fetchHtmlDirect(url: string): Promise<string> {
 async function fetchHtmlViaScraperApi(url: string): Promise<string> {
   const apiKey = process.env.SCRAPERAPI_API_KEY;
   if (!apiKey) {
-    throw new Error("SCRAPERAPI_API_KEY is not configured");
+    throw new ScrapeError("SCRAPERAPI_API_KEY is not configured", {
+      tier: "scraperapi",
+    });
   }
 
   const apiUrl = new URL("https://api.scraperapi.com/");
   apiUrl.searchParams.set("api_key", apiKey);
   apiUrl.searchParams.set("url", url);
 
-  const response = await fetch(apiUrl, {
-    signal: AbortSignal.timeout(SCRAPER_API_TIMEOUT_MS),
-  });
+  let response: Response;
+  try {
+    response = await fetch(apiUrl, {
+      signal: AbortSignal.timeout(SCRAPER_API_TIMEOUT_MS),
+    });
+  } catch (err) {
+    throw new ScrapeError(
+      `ScraperAPI request failed: ${err instanceof Error ? err.name : "unknown error"}`,
+      { tier: "scraperapi", cause: err },
+    );
+  }
 
   if (!response.ok) {
-    throw new Error(`ScraperAPI request failed: ${response.status}`);
+    throw new ScrapeError(
+      `ScraperAPI request failed: HTTP ${response.status}`,
+      { tier: "scraperapi", status: response.status },
+    );
   }
 
   return response.text();
 }
 
 export async function extractWebPage(url: string): Promise<WebPageExtraction> {
-  let resolvedUrl: string;
-  try {
-    resolvedUrl = await resolveRedirects(url);
-  } catch {
-    // Redirect probing is best-effort; a blocked or slow HEAD request must
-    // not fail the extraction.
-    resolvedUrl = url;
-  }
-
   let html: string;
+  let baseUrl = url;
+
   try {
-    html = await fetchHtmlDirect(resolvedUrl);
-  } catch (err) {
+    ({ html, finalUrl: baseUrl } = await fetchHtmlDirect(url));
+  } catch (directErr) {
+    const directStatus =
+      directErr instanceof ScrapeError ? directErr.status : undefined;
     console.error(
-      `Direct fetch failed for ${resolvedUrl}, retrying via ScraperAPI:`,
-      err,
+      `Direct fetch failed for ${url}, retrying via ScraperAPI:`,
+      directErr,
     );
-    html = await fetchHtmlViaScraperApi(resolvedUrl);
+
+    try {
+      html = await fetchHtmlViaScraperApi(url);
+    } catch (apiErr) {
+      const apiScrapeErr =
+        apiErr instanceof ScrapeError
+          ? apiErr
+          : new ScrapeError("ScraperAPI request failed", {
+              tier: "scraperapi",
+              cause: apiErr,
+            });
+      throw new ScrapeError(
+        `Both direct fetch and ScraperAPI failed: ${apiScrapeErr.message}`,
+        {
+          tier: "scraperapi",
+          status: apiScrapeErr.status,
+          directStatus,
+          cause: apiErr,
+        },
+      );
+    }
+
+    // Successful rescue — counted in Sentry to size ScraperAPI credit usage.
+    Sentry.captureMessage("ScraperAPI rescued a blocked fetch", {
+      level: "info",
+      tags: {
+        sourceHost: new URL(url).hostname,
+        ...(directStatus ? { directHttpStatus: String(directStatus) } : {}),
+      },
+    });
   }
 
   const $ = cheerio.load(html);
@@ -110,13 +168,13 @@ export async function extractWebPage(url: string): Promise<WebPageExtraction> {
   if (jsonLd) {
     return {
       content: JSON.stringify(jsonLd, null, 2),
-      images: extractJsonLdImages(jsonLd, $, resolvedUrl),
+      images: extractJsonLdImages(jsonLd, $, baseUrl),
     };
   }
 
   return {
     content: extractArticleText($),
-    images: extractPageImages($, resolvedUrl),
+    images: extractPageImages($, baseUrl),
   };
 }
 
@@ -282,8 +340,10 @@ function extractPageImages(
   // og:image first — usually the best hero image
   const ogImage = $('meta[property="og:image"]').attr("content");
   if (ogImage) addImage(ogImage);
+  const ogImageCount = images.length;
 
-  // Then images from recipe/article content area
+  // Then images from recipe/article content area; stop at the first
+  // selector that yields content images beyond the og:image.
   const selectors = [
     "article img",
     '[itemtype*="Recipe"] img',
@@ -300,7 +360,7 @@ function extractPageImages(
         addImage(src, $(el).attr("alt") || undefined);
       }
     });
-    if (images.length > 0) break;
+    if (images.length > ogImageCount) break;
   }
 
   return images.slice(0, 5);

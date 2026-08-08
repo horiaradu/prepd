@@ -128,6 +128,10 @@ export type Translations = {
   stepGeneratingRecipe: string;
   stepGeneratingImage: string;
 
+  // Parse errors (sent from API routes)
+  errorParseFailed: string;
+  errorNoRecipeFound: string;
+
   // RecipeList
   suggestRecipes: string;
   filterRecipes: string;
@@ -520,6 +524,9 @@ const en: Translations = {
   stepReadingRecipe: "Reading recipe…",
   stepGeneratingRecipe: "Generating recipe…",
   stepGeneratingImage: "Generating image…",
+
+  errorParseFailed: "Something went wrong while processing the recipe. Please try again.",
+  errorNoRecipeFound: "No recipe found — check that the link or photo actually contains one.",
 };
 
 const ro: Translations = {
@@ -777,6 +784,9 @@ const ro: Translations = {
   stepReadingRecipe: "Se citește rețeta…",
   stepGeneratingRecipe: "Se generează rețeta…",
   stepGeneratingImage: "Se generează imaginea…",
+
+  errorParseFailed: "Ceva nu a mers bine la procesarea rețetei. Încearcă din nou.",
+  errorNoRecipeFound: "Nu am găsit nicio rețetă — verifică dacă linkul sau poza chiar conține una.",
 };
 
 const dictionaries: Record<Locale, Translations> = { en, ro };

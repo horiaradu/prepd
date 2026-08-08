@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Schema } from "@google/genai";
+import type { GenerateContentResponse, Schema } from "@google/genai";
 import {
   COOK_STYLES,
   CUISINES,
@@ -137,6 +137,34 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
+const GEMINI_PARSE_TIMEOUT_MS = 45_000;
+
+// The parsing prompt instructs Gemini to answer { "error": ... } when the
+// content contains no recipe; callers translate this for the user instead of
+// treating it as an internal failure.
+export class NoRecipeFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NoRecipeFoundError";
+  }
+}
+
+// A safety block or MAX_TOKENS finish yields a response without text;
+// surface that as a descriptive error instead of JSON.parse(undefined).
+function responseTextOf(
+  response: GenerateContentResponse,
+  context: string,
+): string {
+  const text = response.text;
+  if (!text) {
+    const finishReason = response.candidates?.[0]?.finishReason;
+    throw new Error(
+      `${context}: Gemini returned no text${finishReason ? ` (finish reason: ${finishReason})` : ""}`,
+    );
+  }
+  return text;
+}
+
 function normalizeIngredient(ing: unknown): unknown {
   if (!ing || typeof ing !== "object") return ing;
   const obj = ing as Record<string, unknown>;
@@ -232,14 +260,15 @@ export async function parseRecipeContent(
       systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
       responseSchema: PARSED_RECIPE_SCHEMA,
+      abortSignal: AbortSignal.timeout(GEMINI_PARSE_TIMEOUT_MS),
     },
   });
 
-  const responseText = response.text!;
+  const responseText = responseTextOf(response, "parseRecipeContent");
   const parsed = JSON.parse(responseText);
 
   if (parsed.error) {
-    throw new Error(parsed.error);
+    throw new NoRecipeFoundError(parsed.error);
   }
 
   return normalizeRecipe(parsed);
@@ -266,15 +295,21 @@ Additionally, include a top-level "images" array with the absolute URLs of recip
     },
   });
 
-  const responseText = (response.text ?? "").trim();
+  const responseText = responseTextOf(response, "parseRecipeFromUrl").trim();
   // Gemini often prefaces the JSON with a long "thinking" trace, then
   // appends the recipe inside a ```json ... ``` block — match anywhere in
   // the reply, not just when the fence spans the whole response.
   const fenced = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  const parsed = JSON.parse(fenced ? fenced[1].trim() : responseText);
+  let parsed;
+  try {
+    parsed = JSON.parse(fenced ? fenced[1].trim() : responseText);
+  } catch {
+    // Bot-blocked pages make Gemini reply with prose instead of the recipe.
+    throw new Error("parseRecipeFromUrl: Gemini reply was not valid JSON");
+  }
 
   if (parsed.error) {
-    throw new Error(parsed.error);
+    throw new NoRecipeFoundError(parsed.error);
   }
 
   const images = normalizeUrlImages(parsed.images);
@@ -330,14 +365,15 @@ export async function parseRecipeFromYoutube(
       systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
       responseSchema: PARSED_RECIPE_SCHEMA,
+      abortSignal: AbortSignal.timeout(GEMINI_PARSE_TIMEOUT_MS),
     },
   });
 
-  const responseText = response.text!;
+  const responseText = responseTextOf(response, "parseRecipeFromYoutube");
   const parsed = JSON.parse(responseText);
 
   if (parsed.error) {
-    throw new Error(parsed.error);
+    throw new NoRecipeFoundError(parsed.error);
   }
 
   return normalizeRecipe(parsed);
@@ -400,11 +436,11 @@ export async function parseRecipeFromImage(
     },
   });
 
-  const responseText = response.text!;
+  const responseText = responseTextOf(response, "parseRecipeFromImage");
   const parsed = JSON.parse(responseText);
 
   if (parsed.error) {
-    throw new Error(parsed.error);
+    throw new NoRecipeFoundError(parsed.error);
   }
 
   return normalizeRecipe(parsed);
@@ -551,7 +587,7 @@ export async function planRecipeEdit(
     },
   });
 
-  const parsed = JSON.parse(response.text!);
+  const parsed = JSON.parse(responseTextOf(response, "planRecipeEdit"));
   return {
     operations: parsed.operations as Operation[],
     summary: parsed.summary as string,
@@ -702,11 +738,11 @@ Be specific with quantities, timings, and techniques. This should be a complete,
     },
   });
 
-  const responseText = response.text!;
+  const responseText = responseTextOf(response, "generateRecipe");
   const parsed = JSON.parse(responseText);
 
   if (parsed.error) {
-    throw new Error(parsed.error);
+    throw new NoRecipeFoundError(parsed.error);
   }
 
   return normalizeRecipe(parsed);

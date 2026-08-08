@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import * as Sentry from "@sentry/nextjs";
 import { put, del } from "@vercel/blob";
 import sharp from "sharp";
 import { authOptions } from "@/lib/auth";
-import { parseRecipeFromImage } from "@/lib/gemini";
+import { NoRecipeFoundError, parseRecipeFromImage } from "@/lib/gemini";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
@@ -12,6 +13,8 @@ import { isValidLocale, LOCALE_COOKIE, getTranslations } from "@/lib/i18n";
 function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
+
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -131,10 +134,15 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         console.error("Recipe parse-image error:", error);
+        Sentry.captureException(error, {
+          tags: { stage: "parse-image", sourceType: "image" },
+        });
         if (blobUrls.length > 0)
           await Promise.all(blobUrls.map((u) => del(u).catch(() => {})));
         const message =
-          error instanceof Error ? error.message : "Failed to parse recipe";
+          error instanceof NoRecipeFoundError
+            ? t.errorNoRecipeFound
+            : t.errorParseFailed;
         send({ type: "error", error: message });
       } finally {
         controller.close();

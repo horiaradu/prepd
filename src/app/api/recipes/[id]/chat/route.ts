@@ -12,6 +12,8 @@ import {
 } from "@/lib/recipe-operations";
 import type { ParsedRecipe, Cuisine, MealType, CookStyle } from "@/types/recipe";
 
+export const maxDuration = 60;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },

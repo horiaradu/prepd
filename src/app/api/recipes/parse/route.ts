@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import * as Sentry from "@sentry/nextjs";
 import { authOptions } from "@/lib/auth";
 import { isYoutubeUrl, getYoutubeThumbnailUrl } from "@/lib/youtube";
-import { extractWebPage } from "@/lib/scraper";
+import { extractWebPage, ScrapeError } from "@/lib/scraper";
 import {
+  NoRecipeFoundError,
   parseRecipeContent,
   parseRecipeFromUrl,
   parseRecipeFromYoutube,
@@ -127,6 +129,7 @@ export async function POST(request: NextRequest) {
 
   const userId = session.user.id;
   const sourceType: SourceType = isYoutubeUrl(body.url) ? "youtube" : "web";
+  const sourceHost = url.hostname;
   const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
   const language = isValidLocale(rawLocale) ? rawLocale : "en";
   const t = getTranslations(language);
@@ -135,6 +138,9 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       const send = (data: Record<string, unknown>) =>
         controller.enqueue(new TextEncoder().encode(sseEvent(data)));
+
+      // Pipeline stage, used to tag Sentry events when a parse fails.
+      let stage = "scrape";
 
       try {
         send({ type: "progress", step: t.stepExtractingContent, progress: 15 });
@@ -149,6 +155,7 @@ export async function POST(request: NextRequest) {
             step: t.stepAnalyzingVideo,
             progress: 40,
           });
+          stage = "gemini-youtube";
           parsed = await parseRecipeFromYoutube(body.url, language);
           const thumb = getYoutubeThumbnailUrl(body.url);
           images = thumb ? [{ url: thumb }] : [];
@@ -162,6 +169,18 @@ export async function POST(request: NextRequest) {
               `Scraper failed for ${body.url}, falling back to Gemini URL context:`,
               err,
             );
+            const tags: Record<string, string> = {
+              stage: "scrape",
+              sourceType,
+              sourceHost,
+            };
+            if (err instanceof ScrapeError) {
+              tags.fetchTier = err.tier;
+              if (err.status) tags.httpStatus = String(err.status);
+              if (err.directStatus)
+                tags.directHttpStatus = String(err.directStatus);
+            }
+            Sentry.captureException(err, { tags });
             extracted = null;
           }
 
@@ -171,6 +190,7 @@ export async function POST(request: NextRequest) {
               step: t.stepAnalyzingRecipe,
               progress: 40,
             });
+            stage = "gemini-parse";
             parsed = await parseRecipeContent(
               extracted.content,
               extracted.images,
@@ -185,6 +205,7 @@ export async function POST(request: NextRequest) {
               step: t.stepAnalyzingRecipeFromUrl,
               progress: 40,
             });
+            stage = "gemini-url-fallback";
             const result = await parseRecipeFromUrl(body.url, language);
             parsed = result.recipe;
             images = result.images;
@@ -193,6 +214,7 @@ export async function POST(request: NextRequest) {
         }
 
         send({ type: "progress", step: t.stepSavingRecipe, progress: 85 });
+        stage = "save";
         const savedId = await upsertRecipe({
           userId,
           replaceId,
@@ -209,6 +231,7 @@ export async function POST(request: NextRequest) {
         // Reparses (replaceId set) skip auto-generation so we don't burn
         // credits or orphan a prior generated hero.
         let finalImageUrl = images[0]?.url ?? null;
+        stage = "image-check";
         const working = await findFirstWorkingImage(images);
         if (working) {
           if (working.url !== images[0]?.url) {
@@ -229,6 +252,7 @@ export async function POST(request: NextRequest) {
               step: t.stepGeneratingImage,
               progress: 92,
             });
+            stage = "image-generate";
             const { image, proxyUrl } = await generateAndStoreHeroImage({
               userId,
               recipeId: savedId,
@@ -241,6 +265,9 @@ export async function POST(request: NextRequest) {
             finalImageUrl = proxyUrl;
           } catch (err) {
             console.error("Inline hero image generation failed:", err);
+            Sentry.captureException(err, {
+              tags: { stage: "image-generate", sourceType, sourceHost },
+            });
           }
         }
 
@@ -256,8 +283,13 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         console.error("Recipe parse error:", error);
+        Sentry.captureException(error, {
+          tags: { stage, sourceType, sourceHost },
+        });
         const message =
-          error instanceof Error ? error.message : "Failed to parse recipe";
+          error instanceof NoRecipeFoundError
+            ? t.errorNoRecipeFound
+            : t.errorParseFailed;
         send({ type: "error", error: message });
       } finally {
         controller.close();
