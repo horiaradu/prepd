@@ -151,6 +151,14 @@ Implementation notes / deviations from the design below:
   (`prepd-public-images`, fra1) targeted via `PUBLIC_BLOB_STORE_ID` +
   Vercel OIDC auth; the private store keeps user-uploaded photos, inbox
   images, and old proxied heroes.
+- **Verified in production** (2026-08-08): a Cloudflare-blocked source
+  (seriouseats.com, direct fetch 403) parsed via the ScraperAPI rescue,
+  the card filled in through polling, and the photo landed on the public
+  store.
+- **No auto-navigation on completion** — deliberate: completion arrives on
+  a background poll tick, and yanking the user to the details page at an
+  unpredictable moment would be disruptive. Phase 4's push notification
+  (tap → recipe) is the "take me there" affordance.
 
 **Goal:** submitting a URL returns instantly; the entire parse (fetch → Gemini
 → images) runs in the background. Images are downloaded once, stored in
@@ -247,7 +255,7 @@ Replaces today's liveness-check-then-hotlink; runs after the recipe is
 
 ---
 
-## Phase 4 — Push notification on parse completion
+## Phase 4 — Push notification on parse completion (next up)
 
 Complements Phase 3's polling: polling covers the open app; push covers the
 backgrounded/closed one (submit from the phone share flow, get notified when
