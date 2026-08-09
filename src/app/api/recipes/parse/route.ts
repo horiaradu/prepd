@@ -5,6 +5,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { authOptions, isAdmin } from "@/lib/auth";
 import { isYoutubeUrl } from "@/lib/youtube";
 import { runRecipeParse } from "@/lib/parse-pipeline";
+import { isFetchableUrl } from "@/lib/url-guard";
+import { parseAllowance } from "@/lib/parse-limit";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { isValidLocale, LOCALE_COOKIE } from "@/lib/i18n";
@@ -35,10 +37,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
-  // Only allow http/https
-  if (!["http:", "https:"].includes(url.protocol)) {
+  if (!isFetchableUrl(body.url)) {
     return NextResponse.json(
-      { error: "Only HTTP/HTTPS URLs are supported" },
+      { error: "URL is not supported" },
       { status: 400 },
     );
   }
@@ -57,12 +58,19 @@ export async function POST(request: NextRequest) {
     const [existing] = await db
       .select({
         id: recipes.id,
+        status: recipes.status,
         hasContent: sql<boolean>`jsonb_array_length(${recipes.ingredients}) > 0`,
       })
       .from(recipes)
       .where(and(eq(recipes.id, body.replaceId), eq(recipes.userId, userId)));
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (existing.status === "parsing") {
+      return NextResponse.json(
+        { error: "A parse is already running for this recipe" },
+        { status: 409 },
+      );
     }
     recipeId = existing.id;
     isReparse = existing.hasContent;
@@ -71,6 +79,12 @@ export async function POST(request: NextRequest) {
       .set({ status: "parsing", parseError: null, updatedAt: new Date() })
       .where(eq(recipes.id, recipeId));
   } else {
+    if (!(await parseAllowance(userId))) {
+      return NextResponse.json(
+        { error: "Too many parses; try again later" },
+        { status: 429 },
+      );
+    }
     const [saved] = await db
       .insert(recipes)
       .values({

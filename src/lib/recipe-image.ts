@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import sharp from "sharp";
 import { del, put } from "@vercel/blob";
 import { generateRecipeHeroImage } from "@/lib/gemini";
+import { isFetchableUrl } from "@/lib/url-guard";
 import type { ParsedRecipe, RecipeImage, Step } from "@/types/recipe";
 
 const BROWSER_HEADERS = {
@@ -15,6 +16,9 @@ const DOWNLOAD_TIMEOUT_MS = 8_000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 async function downloadImage(url: string): Promise<Buffer | null> {
+  // Image URLs come from scraped page content — same SSRF surface as the
+  // page fetch itself.
+  if (!isFetchableUrl(url)) return null;
   try {
     const response = await fetch(url, {
       headers: BROWSER_HEADERS,
