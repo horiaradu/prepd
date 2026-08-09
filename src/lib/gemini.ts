@@ -469,7 +469,7 @@ export async function generateRecipeHeroImage(
   const prompt = `Photorealistic overhead food photography of "${recipe.title}", plated and ready to eat. Key ingredients visible: ${topIngredients}. Natural daylight, shallow depth of field, on a rustic wooden table with subtle props. Appetizing, magazine-quality. No text, no watermarks, no hands.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-image",
+    model: "gemini-3.1-flash-image",
     contents: prompt,
   });
 
