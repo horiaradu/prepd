@@ -255,16 +255,13 @@ export async function parseRecipeContent(
     prompt += `\n\nAvailable images from the source page (assign to the most relevant steps):\n${imageList}`;
   }
 
-  // No responseSchema here: schema-constrained decoding makes this call
-  // pathologically slow on some article inputs (2+ minutes vs ~15s without).
-  // The system prompt dictates the exact JSON shape and normalizeRecipe
-  // tolerates drift.
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents: prompt,
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
       responseMimeType: "application/json",
+      responseSchema: PARSED_RECIPE_SCHEMA,
       abortSignal: AbortSignal.timeout(GEMINI_PARSE_TIMEOUT_MS),
     },
   });
@@ -297,7 +294,7 @@ export async function parseRecipeFromUrl(
   // (urlContext) is enabled, so we instruct JSON in the prompt and strip
   // any code fence from the reply before parsing.
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents: `Extract the recipe from this URL: ${url}.
 
 Additionally, include a top-level "images" array with the absolute URLs of recipe-relevant photos that appear on the page (hero image, finished dish, key step photos). Each entry is { "url": "https://...", "alt": "optional alt text" }. Only include URLs that actually appear on the page — do not invent them. Omit the field entirely if you find none.`,
@@ -362,7 +359,7 @@ export async function parseRecipeFromYoutube(
   const ai = getClient();
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents: [
       {
         role: "user",
@@ -427,7 +424,7 @@ export async function parseRecipeFromImage(
   }));
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents: [
       {
         role: "user",
@@ -592,7 +589,7 @@ export async function planRecipeEdit(
   ];
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents,
     config: {
       systemInstruction: getRecipeEditPlannerPrompt(language),
@@ -624,7 +621,7 @@ export async function suggestRecipes(
   ];
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents,
     config: {
       systemInstruction: getSuggestSystemInstruction(recipeContext, language),
@@ -665,7 +662,7 @@ export async function suggestRecipesStream(
   ];
 
   const response = await ai.models.generateContentStream({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents,
     config: {
       systemInstruction: getSuggestSystemInstruction(recipeContext, language),
@@ -742,7 +739,7 @@ export async function generateRecipe(
 Be specific with quantities, timings, and techniques. This should be a complete, cookable recipe.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.6-flash",
     contents: prompt,
     config: {
       systemInstruction: getRecipeParsingPrompt(language),
