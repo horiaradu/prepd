@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         p256dh: keys.p256dh,
         auth: keys.auth,
+        lastSeenAt: new Date(),
       },
     });
 
