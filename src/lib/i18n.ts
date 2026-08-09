@@ -138,6 +138,7 @@ export type Translations = {
   statusParsing: string;
   retryParse: string;
   dismissFailedParse: string;
+  photoRecipePlaceholder: string;
 
   // Parse completion push notifications
   notifyRecipeReadyBody: string;
@@ -544,6 +545,7 @@ const en: Translations = {
   statusParsing: "Parsing recipe…",
   retryParse: "Retry",
   dismissFailedParse: "Dismiss",
+  photoRecipePlaceholder: "Recipe from photo",
 
   notifyRecipeReadyBody: "Your recipe is ready to cook.",
   notifyParseFailedTitle: "Recipe couldn't be parsed",
@@ -813,6 +815,7 @@ const ro: Translations = {
   statusParsing: "Se procesează rețeta…",
   retryParse: "Reîncearcă",
   dismissFailedParse: "Renunță",
+  photoRecipePlaceholder: "Rețetă din poză",
 
   notifyRecipeReadyBody: "Rețeta ta este gata.",
   notifyParseFailedTitle: "Rețeta nu a putut fi procesată",

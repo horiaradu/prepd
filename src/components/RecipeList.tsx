@@ -165,10 +165,19 @@ export default function RecipeList({
       ),
     );
     try {
-      const res = await fetch("/api/recipes/parse", {
+      // Image recipes re-OCR their stored source photos; URL recipes re-fetch.
+      const endpoint =
+        recipe.sourceType === "image"
+          ? "/api/recipes/parse-image"
+          : "/api/recipes/parse";
+      const body =
+        recipe.sourceType === "image"
+          ? { replaceId: recipe.id }
+          : { url: recipe.sourceUrl, replaceId: recipe.id };
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: recipe.sourceUrl, replaceId: recipe.id }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error();
     } catch {
