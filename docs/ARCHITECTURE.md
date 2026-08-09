@@ -41,52 +41,54 @@ Prepd is a single Next.js application deployed on Vercel. All server logic lives
 
 ### `POST /api/recipes/parse`
 
-Accepts a URL (recipe page or YouTube video). Returns a structured recipe.
+Accepts a URL (recipe page or YouTube video). **Parsing is asynchronous:**
+the route creates the recipe row and returns its id immediately; the actual
+work runs in the background via `after()`. Clients poll the recipe until its
+`status` leaves `parsing`. See `docs/RELIABILITY_PLAN.md` for the full
+rationale.
 
-**Flow:**
-1. Detect URL type (YouTube vs. regular page)
-2. If YouTube: extract transcript using `youtube-transcript` package
-3. If web page: fetch HTML, extract main content with `cheerio`
-4. Send extracted text to Gemini API with the recipe parsing prompt (see LLM_PROMPTS.md)
-5. Parse the LLM JSON response
-6. Save to database
-7. Return the structured recipe
+**Request:** `{ "url": "https://youtube.com/watch?v=abc123" }`
+(optional `replaceId` to reparse an existing recipe in place).
 
-**Request:**
-```json
-{ "url": "https://youtube.com/watch?v=abc123" }
-```
+**Response (202):** `{ "id": "uuid", "sourceType": "youtube" }`.
 
-**Response:**
-```json
-{
-  "id": "uuid",
-  "title": "Chicken Tikka Masala",
-  "sourceUrl": "https://youtube.com/watch?v=abc123",
-  "sourceType": "youtube",
-  "servings": 4,
-  "ingredients": [
-    { "name": "chicken breast", "quantity": 500, "unit": "g" },
-    { "name": "yogurt", "quantity": 200, "unit": "ml" }
-  ],
-  "prepSteps": [
-    {
-      "instruction": "Cut chicken into 3cm cubes",
-      "ingredients": [
-        { "name": "chicken breast", "quantity": 500, "unit": "g" }
-      ]
-    }
-  ],
-  "cookingSteps": [
-    {
-      "instruction": "Heat oil in a large pan over medium heat",
-      "ingredients": [
-        { "name": "vegetable oil", "quantity": 30, "unit": "ml" }
-      ]
-    }
-  ]
-}
-```
+**Guards:** URL must pass `isFetchableUrl` (SSRF — rejects private/reserved
+IPs, localhost, internal TLDs); non-reparse calls are rate-limited to 20
+recipes/user/hour.
+
+**Background pipeline** (`src/lib/parse-pipeline.ts`):
+1. Detect URL type (YouTube vs. web page).
+2. YouTube → Gemini processes the video directly (`fileData` with the URL);
+   no transcript package.
+3. Web page → **fetch chain** (`src/lib/scraper.ts`): direct fetch (8s) →
+   on failure, **ScraperAPI** (anti-bot proxy, 70s) → on empty/failure,
+   Gemini `urlContext`. HTML parsed with `cheerio` (JSON-LD first, then
+   article heuristics).
+4. Send extracted content to Gemini with the recipe parsing prompt
+   (see LLM_PROMPTS.md); the web path uses no `responseSchema` (it caused
+   pathological latency on some articles — the prompt dictates the shape and
+   `normalizeRecipe` tolerates drift). 120s timeout.
+5. Save parsed content; flip `status` to `ready`.
+6. **Persist images** (`src/lib/recipe-image.ts`): download every referenced
+   image (hero + per-step), store in the public Blob store, rewrite
+   references to the stored copies. If none survive a fresh parse, generate
+   an AI hero. Failures never invalidate the already-ready recipe.
+
+Failures set `status: failed` + `parseError` and are captured in Sentry
+tagged with the pipeline stage. A crash/deploy mid-parse is detected lazily
+on read (a row stuck in `parsing` past the function ceiling is marked failed,
+or ready if it already has content).
+
+### `POST /api/recipes/parse-image`
+
+Photo (OCR) parsing — same async shape as the URL flow. Uploaded photos are
+resized, stored in the **private** Blob store (served via the auth proxy),
+the row is created `parsing`, and OCR runs in the background
+(`src/lib/parse-image-pipeline.ts`). A JSON `{ replaceId }` body re-OCRs a
+recipe's stored source photos (the failed-card retry).
+
+Both parse routes send a push notification on completion (suppressed when the
+app is focused) — see `src/lib/parse-notify.ts`.
 
 ### `POST /api/recipes/suggest`
 
@@ -161,22 +163,24 @@ AUTHORIZED_EMAIL=        # Your Google email — only this user can log in
 
 ### Google Gemini API
 
-- Model: `gemini-2.5-flash` (stable, free tier)
-- Used for recipe parsing (structured JSON output) and recipe suggestions (with Search grounding)
-- Free tier — more than enough for personal use
+- Model: `gemini-3-flash-preview` for parsing/suggestions; `gemini-2.5-flash-image` for hero-image generation
+- Used for recipe parsing (JSON output), YouTube video understanding, photo OCR, and recipe suggestions (with Search grounding)
 - API key stored in `GEMINI_API_KEY` env var
 
-### YouTube Transcripts
+### YouTube
 
-- `youtube-transcript` npm package extracts auto-generated or manual captions
-- No API key needed — scrapes the transcript from the video page
-- Falls back to video description if no transcript is available
+- Handled directly by Gemini: the video URL is passed as `fileData` and the model extracts the recipe with per-step timestamps. No transcript package.
 
 ### URL Scraping
 
-- `cheerio` parses recipe page HTML
-- Extract the main content (look for `<script type="application/ld+json">` with Recipe schema first — many recipe sites use structured data, which is much cleaner than raw HTML)
-- Fall back to extracting article body text if no structured data found
+- Fetch chain with an anti-bot fallback — see `POST /api/recipes/parse` above.
+- `cheerio` parses HTML: JSON-LD `Recipe` structured data first (cleaner than raw HTML), falling back to article-body heuristics.
+- **ScraperAPI** (`SCRAPERAPI_API_KEY`) is the fallback when a direct fetch is bot-blocked; only successful requests cost credits.
+
+### Vercel Blob (two stores)
+
+- **Private store** (`BLOB_READ_WRITE_TOKEN`): user-uploaded photos and inbox images, served through the authenticated `/api/recipes/[id]/image` proxy.
+- **Public store** (`PUBLIC_BLOB_STORE_ID` + OIDC): recipe display images (scraped originals downloaded here, plus generated heroes), served directly from the CDN. A store's access mode can't be changed after creation, which is why there are two.
 
 ## Environment Variables Summary
 
@@ -189,11 +193,16 @@ NEXTAUTH_URL=http://localhost:3000
 AUTHORIZED_EMAIL=
 
 # Database
-POSTGRES_URL=            # Neon Postgres connection string (via Vercel)
+DATABASE_URL=            # Neon Postgres connection string (via Vercel)
 
-# LLM
+# LLM + scraping
 GEMINI_API_KEY=
+SCRAPERAPI_API_KEY=      # bot-protection fallback
 
-# App
-NEXT_PUBLIC_APP_NAME=Prepd
+# Blob (public recipe images)
+PUBLIC_BLOB_STORE_ID=    # default BLOB_READ_WRITE_TOKEN covers the private store
+
+# Push notifications
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
 ```

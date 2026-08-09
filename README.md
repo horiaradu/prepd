@@ -24,13 +24,12 @@ A personal recipe organizer that takes messy recipe links and YouTube videos and
 - **Framework:** Next.js (App Router, Turbopack)
 - **Auth:** NextAuth.js with Google OAuth
 - **Database:** Neon Postgres + Drizzle ORM
-- **Blob storage:** Vercel Blob (private access, served via authenticated proxy)
+- **Blob storage:** Vercel Blob — public store for recipe display images, private store (auth proxy) for user-uploaded photos
 - **LLM:** Google Gemini API
-  - `gemini-2.5-flash` for parsing, suggestions, and chat (with Google Search grounding for web suggestions)
+  - `gemini-3-flash-preview` for parsing, YouTube video understanding, photo OCR, suggestions, and chat (with Google Search grounding for web suggestions)
   - `gemini-2.5-flash-image` for generated hero images
 - **Image processing:** `sharp` (resize, EXIF rotate, JPEG re-encode, SVG watermark composite)
-- **YouTube transcripts:** `youtube-transcript` npm package
-- **URL scraping:** `cheerio`
+- **URL scraping:** `cheerio`, with ScraperAPI as an anti-bot fallback
 - **Styling:** Tailwind CSS
 - **Deployment:** Vercel
 
