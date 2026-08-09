@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import ProgressBar from "@/components/ProgressBar";
 import { CameraIcon } from "@/components/icons";
-import { readProgressStream, type ProgressEvent } from "@/lib/progress-stream";
-import type { ParseResponse, RecipeSummary, SourceType } from "@/types/recipe";
+import type { RecipeSummary, SourceType } from "@/types/recipe";
 import { useLanguage } from "@/context/LanguageContext";
 import { trackRecipeParsed, type RecipeSource } from "@/lib/analytics-events";
 
@@ -39,22 +37,27 @@ export default function RecipeInput({
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<ProgressEvent | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function toSummary(parsed: ParseResponse): RecipeSummary {
+  // A just-submitted recipe whose background parse hasn't run yet.
+  function parsingSummary(
+    id: string,
+    sourceType: SourceType,
+    sourceUrl: string,
+    title: string,
+  ): RecipeSummary {
     return {
-      id: parsed.id,
-      title: parsed.recipe.title,
-      sourceUrl: parsed.sourceUrl,
-      sourceType: parsed.sourceType,
+      id,
+      title,
+      sourceUrl,
+      sourceType,
       createdAt: new Date().toISOString(),
-      imageUrl: parsed.imageUrl,
-      mealType: parsed.recipe.mealType,
-      cuisine: parsed.recipe.cuisine,
-      cookStyle: parsed.recipe.cookStyle,
-      totalTimeMinutes: parsed.recipe.totalTimeMinutes,
-      status: "ready",
+      imageUrl: null,
+      mealType: null,
+      cuisine: null,
+      cookStyle: null,
+      totalTimeMinutes: null,
+      status: "parsing",
       parseError: null,
       cookCount: 0,
       lastCookedAt: null,
@@ -88,22 +91,14 @@ export default function RecipeInput({
         id: string;
         sourceType: SourceType;
       };
-      onRecipeParsed({
-        id: data.id,
-        title: new URL(trimmedUrl).hostname,
-        sourceUrl: trimmedUrl,
-        sourceType: data.sourceType,
-        createdAt: new Date().toISOString(),
-        imageUrl: null,
-        mealType: null,
-        cuisine: null,
-        cookStyle: null,
-        totalTimeMinutes: null,
-        status: "parsing",
-        parseError: null,
-        cookCount: 0,
-        lastCookedAt: null,
-      });
+      onRecipeParsed(
+        parsingSummary(
+          data.id,
+          data.sourceType,
+          trimmedUrl,
+          new URL(trimmedUrl).hostname,
+        ),
+      );
       trackRecipeParsed({
         recipeId: data.id,
         source: data.sourceType as RecipeSource,
@@ -123,7 +118,6 @@ export default function RecipeInput({
 
     setLoading(true);
     setError(null);
-    setProgress({ step: t.preparingPhotos, progress: 5 });
 
     try {
       const resizedBlobs = await Promise.all(
@@ -140,23 +134,25 @@ export default function RecipeInput({
         body: formData,
       });
 
-      if (!response.ok || !response.body) {
+      if (!response.ok) {
         throw new Error(
           response.status === 429 ? t.errorTooManyParses : t.errorParseFailed,
         );
       }
 
-      const parsed = await readProgressStream<ParseResponse>(
-        response,
-        setProgress,
+      // OCR runs in the background; show a parsing card and poll.
+      const data = (await response.json()) as {
+        id: string;
+        sourceType: SourceType;
+      };
+      onRecipeParsed(
+        parsingSummary(data.id, "image", "", t.photoRecipePlaceholder),
       );
-      onRecipeParsed(toSummary(parsed));
-      trackRecipeParsed({ recipeId: parsed.id, source: "image" });
+      trackRecipeParsed({ recipeId: data.id, source: "image" });
     } catch (err) {
       setError(err instanceof Error ? err.message : t.somethingWentWrong);
     } finally {
       setLoading(false);
-      setProgress(null);
     }
   }
 
@@ -198,12 +194,6 @@ export default function RecipeInput({
           </button>
         </div>
       </form>
-
-      {loading && progress && (
-        <div className="py-8">
-          <ProgressBar step={progress.step} progress={progress.progress} />
-        </div>
-      )}
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">

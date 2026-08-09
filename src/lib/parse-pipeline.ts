@@ -11,42 +11,8 @@ import {
   parseRecipeFromYoutube,
 } from "@/lib/gemini";
 import { persistRecipeImages } from "@/lib/recipe-image";
-import { sendPushToUserId } from "@/lib/push";
-import { getTranslations } from "@/lib/i18n";
-import { parseErrorMessage } from "@/lib/parse-error";
+import { notifyParseOutcome } from "@/lib/parse-notify";
 import type { ParsedRecipe, RecipeImage, SourceType } from "@/types/recipe";
-
-// The service worker suppresses the notification when the app is focused,
-// so this only surfaces on backgrounded/closed devices. Push failures never
-// affect the parse result.
-async function notifyParseOutcome(args: {
-  userId: string;
-  language: string;
-  outcome:
-    | { ok: true; title: string; recipeId: string }
-    | { ok: false; reason: string; url: string };
-}): Promise<void> {
-  const { userId, language, outcome } = args;
-  const t = getTranslations(language);
-  try {
-    await sendPushToUserId(
-      userId,
-      outcome.ok
-        ? {
-            title: outcome.title,
-            body: t.notifyRecipeReadyBody,
-            url: `/recipe/${outcome.recipeId}`,
-          }
-        : {
-            title: t.notifyParseFailedTitle,
-            body: parseErrorMessage(outcome.reason, t),
-            url: outcome.url,
-          },
-    );
-  } catch (err) {
-    console.error("Parse completion push failed:", err);
-  }
-}
 
 export interface RunRecipeParseArgs {
   recipeId: string;
