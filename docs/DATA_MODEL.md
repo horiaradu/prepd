@@ -26,15 +26,17 @@ Plus NextAuth's `accounts` and `sessions` tables (auto-created by the adapter).
 |--------|------|-------|
 | id | uuid | PK, default `gen_random_uuid()` |
 | user_id | uuid | FK → users.id |
-| title | text | Recipe title |
-| source_url | text | Original URL |
-| source_type | text | `youtube` or `web` |
+| title | text | Recipe title (a placeholder — source hostname / "Recipe from photo" — until the async parse fills it in) |
+| source_url | text | Original URL; for `image` recipes, the first source photo's Blob URL |
+| source_type | text | `youtube`, `web`, or `image` |
 | servings | integer | Nullable |
 | ingredients | jsonb | Array of `{ name, quantity, unit }` |
 | prep_steps | jsonb | Array of `{ instruction, ingredients[] }` |
 | cooking_steps | jsonb | Array of `{ instruction, ingredients[] }` |
-| images | jsonb | Array of `{ url, alt? }` — photos extracted from source page |
-| raw_content | text | Original extracted text (transcript or HTML) — useful for re-parsing later if prompts improve |
+| images | jsonb | Array of `{ url, alt?, blobUrl? }` — stored in the public Blob store after parsing (see ARCHITECTURE.md) |
+| raw_content | text | Original extracted text — useful for re-parsing later if prompts improve |
+| status | text | `parsing` \| `ready` \| `failed`. Parsing runs in the background; the row is created `parsing` and flips when done |
+| parse_error | text | Nullable — failure reason key (`parse-failed`, `no-recipe-found`, `parse-interrupted`) the UI translates, or literal text for the admin account |
 | created_at | timestamp | Default `now()` |
 | updated_at | timestamp | Default `now()` |
 
@@ -199,18 +201,21 @@ Use **Drizzle ORM** — lightweight, type-safe, works well with Vercel Postgres 
 // Example schema definition (src/db/schema.ts)
 import { pgTable, uuid, text, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
 
+// Illustrative — src/db/schema.ts is the source of truth.
 export const recipes = pgTable("recipes", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull(),
   title: text("title").notNull(),
   sourceUrl: text("source_url").notNull(),
-  sourceType: text("source_type").notNull(), // 'youtube' | 'web'
+  sourceType: text("source_type").notNull(), // 'youtube' | 'web' | 'image'
   servings: integer("servings"),
   ingredients: jsonb("ingredients").notNull(), // Ingredient[]
   prepSteps: jsonb("prep_steps").notNull(),   // Step[]
   cookingSteps: jsonb("cooking_steps").notNull(), // Step[]
   images: jsonb("images").notNull().default([]), // RecipeImage[]
   rawContent: text("raw_content"),
+  status: text("status").notNull().default("ready"), // 'parsing' | 'ready' | 'failed'
+  parseError: text("parse_error"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

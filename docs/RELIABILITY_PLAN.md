@@ -137,9 +137,10 @@ Gemini-response bugs are fixed.
 
 Implementation notes / deviations from the design below:
 
-- **Photo parsing (`parse-image`) stays synchronous SSE** for now — Phase 3
-  converted only the URL flow. `progress-stream.ts` therefore stays until the
-  photo flow is converted too (follow-up).
+- **Photo parsing (`parse-image`) is now async too** — converted in a
+  follow-up (PR #41), mirroring the URL flow (202 + `after()` + polling +
+  push, plus a retry that re-OCRs stored source photos).
+  `progress-stream.ts` remains only because the suggest page still uses it.
 - `maxDuration` on the parse route is set to **300**; if the Vercel plan
   rejects it at deploy time, lower it and shrink the ScraperAPI timeout
   accordingly.
@@ -288,24 +289,45 @@ notification and deep-links on click.
 
 ---
 
-## Phase 5 (optional) — Backfill existing recipes
+## Phase 5 — Backfill existing recipes ⏳ (script merged, not yet run)
 
-A one-off script in `scripts/` that iterates existing recipes and normalizes
+`scripts/backfill-recipe-images.ts` iterates existing recipes and normalizes
 them to the Phase 3 model:
 
-- `images[].url` pointing at an external origin → download-and-store pipeline;
-  origin images that are already dead fall back to hero generation.
-- Existing private Blobs (generated heroes served via the proxy route) →
-  re-upload as public, update the row to the direct Blob URL.
+- external origin URLs → download-and-store to the public Blob store;
+- private-proxy heroes → read from the private store, re-store public,
+  delete the old private blob;
+- already-public → skipped.
 
-Run manually; log a summary (migrated / already-stored / dead-and-regenerated).
-Once no rows reference the proxy route, delete it.
+Idempotent; `--apply` to write, `--limit=N` to scope. Dead origin URLs are
+**reported, not regenerated** (regenerating would spend Gemini credits and
+replace real photos with AI — a separate decision).
+
+**Not yet executed.** Dry-run against production: 38 recipes, 107 images
+would migrate, 13 dead origins. Local execution can't write to the public
+store (Vercel blocks Blob OIDC from the development environment, and the
+store has no static read-write token), so running it needs the public
+store's read-write token set as `PUBLIC_BLOB_READ_WRITE_TOKEN`, or execution
+from an OIDC-enabled environment. Once it has run clean and no rows reference
+the proxy route, delete `/api/recipes/[id]/image`.
 
 ---
 
-## Explicitly out of scope (tracked separately)
+## Follow-ups still open
 
-- Rate limiting on `/api/recipes/parse` (billing-abuse surface — now also
-  spends ScraperAPI credits).
-- SSRF hardening of URL validation (internal hosts / link-local addresses are
-  currently fetchable server-side).
+- Suggest/chat routes lack Gemini timeouts and Sentry capture on stream
+  death (lower stakes — failures there are visible and retryable).
+
+## Done since the original plan (out of the original scope)
+
+- **SSRF guard** (`src/lib/url-guard.ts`) on the parse URL and every scraped
+  image download.
+- **Rate limiting** (`src/lib/parse-limit.ts`) — 20 parses/user/hour.
+- **Security dependency updates** — cleared the critical/high Dependabot
+  alerts (Auth.js homoglyph bypass, next, sharp, transitives).
+- **Push subscription hygiene** — `last_seen_at` refresh, prune on 404/410.
+- **Gemini schema-latency fix** — dropped `responseSchema` from web parsing
+  (was causing multi-minute stalls / AbortErrors).
+
+Both items originally listed as out-of-scope — rate limiting and SSRF
+hardening of the parse URL — are covered by the two entries above.
