@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { isValidLocale, LOCALE_COOKIE, getTranslations } from "@/lib/i18n";
+import { parseAllowance } from "@/lib/parse-limit";
 
 function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -35,6 +36,14 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
+
+  if (!(await parseAllowance(userId))) {
+    return NextResponse.json(
+      { error: "Too many parses; try again later" },
+      { status: 429 },
+    );
+  }
+
   const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
   const language = isValidLocale(rawLocale) ? rawLocale : "en";
   const t = getTranslations(language);

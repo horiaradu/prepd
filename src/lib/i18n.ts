@@ -132,6 +132,7 @@ export type Translations = {
   errorParseFailed: string;
   errorNoRecipeFound: string;
   errorParseInterrupted: string;
+  errorTooManyParses: string;
 
   // Async parse cards
   statusParsing: string;
@@ -538,6 +539,7 @@ const en: Translations = {
   errorParseFailed: "Something went wrong while processing the recipe. Please try again.",
   errorNoRecipeFound: "No recipe found — check that the link or photo actually contains one.",
   errorParseInterrupted: "The parse was interrupted before finishing. Please retry.",
+  errorTooManyParses: "You've added a lot of recipes in the last hour — take a short break and try again.",
 
   statusParsing: "Parsing recipe…",
   retryParse: "Retry",
@@ -806,6 +808,7 @@ const ro: Translations = {
   errorParseFailed: "Ceva nu a mers bine la procesarea rețetei. Încearcă din nou.",
   errorNoRecipeFound: "Nu am găsit nicio rețetă — verifică dacă linkul sau poza chiar conține una.",
   errorParseInterrupted: "Procesarea a fost întreruptă. Încearcă din nou.",
+  errorTooManyParses: "Ai adăugat multe rețete în ultima oră — ia o mică pauză și încearcă din nou.",
 
   statusParsing: "Se procesează rețeta…",
   retryParse: "Reîncearcă",

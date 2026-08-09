@@ -77,7 +77,9 @@ export default function RecipeInput({
       });
 
       if (!response.ok) {
-        throw new Error(t.errorParseFailed);
+        throw new Error(
+          response.status === 429 ? t.errorTooManyParses : t.errorParseFailed,
+        );
       }
 
       // The parse runs in the background; the list shows a "parsing" card
@@ -139,7 +141,9 @@ export default function RecipeInput({
       });
 
       if (!response.ok || !response.body) {
-        throw new Error("Failed to parse recipe from photo");
+        throw new Error(
+          response.status === 429 ? t.errorTooManyParses : t.errorParseFailed,
+        );
       }
 
       const parsed = await readProgressStream<ParseResponse>(
