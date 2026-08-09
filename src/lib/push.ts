@@ -45,12 +45,13 @@ export async function sendPushToUserId(
         { TTL: PUSH_MESSAGE_TTL_SECONDS },
       );
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "statusCode" in err &&
-        (err as { statusCode: number }).statusCode === 410
-      ) {
+      // 404 Not Found and 410 Gone both mean the endpoint is permanently
+      // dead (unsubscribed, uninstalled) — remove it so it stops counting.
+      const statusCode =
+        err && typeof err === "object" && "statusCode" in err
+          ? (err as { statusCode: number }).statusCode
+          : undefined;
+      if (statusCode === 404 || statusCode === 410) {
         await db
           .delete(pushSubscriptions)
           .where(eq(pushSubscriptions.endpoint, sub.endpoint));

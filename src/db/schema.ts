@@ -207,6 +207,9 @@ export const pushSubscriptions = pgTable(
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    // Refreshed each time the installed app re-registers its subscription;
+    // lets stale devices (uninstalled/migrated) be identified and pruned.
+    lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
   },
   (table) => [index("idx_push_subscriptions_user_id").on(table.userId)],
 );

@@ -32,7 +32,20 @@ export function usePushNotifications() {
       let mounted = true;
       navigator.serviceWorker.ready
         .then((reg) => reg.pushManager.getSubscription())
-        .then((sub) => { if (mounted) setHasSubscription(sub !== null); })
+        .then((sub) => {
+          if (!mounted) return;
+          setHasSubscription(sub !== null);
+          // Re-post the live subscription so the server refreshes lastSeenAt.
+          // Keeps active devices marked fresh; stale ones (uninstalled) stop
+          // reporting and can be pruned.
+          if (sub) {
+            fetch("/api/push/subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(sub.toJSON()),
+            }).catch(() => {});
+          }
+        })
         .catch(() => { if (mounted) setHasSubscription(false); });
       return () => { mounted = false; };
     }
@@ -55,14 +68,20 @@ export function usePushNotifications() {
         ),
       });
 
-      await fetch("/api/push/subscribe", {
+      const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription.toJSON()),
       });
+      if (!res.ok) {
+        // Server rejected the subscription — don't claim success, or the UI
+        // hides the enable button for a subscription that was never stored.
+        throw new Error(`subscribe failed: ${res.status}`);
+      }
       setHasSubscription(true);
     } catch (err) {
       console.error("Push subscription failed:", err);
+      setHasSubscription(false);
     }
   }, []);
 
