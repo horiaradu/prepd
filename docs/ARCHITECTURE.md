@@ -182,7 +182,7 @@ AUTHORIZED_EMAIL=        # Your Google email — only this user can log in
 - **Facebook**: the public reel page, fetched with a full browser header set (ScraperAPI as fallback), embeds JSON with the caption and direct MP4 URLs; the node matching the reel id is used, since the page also embeds suggested reels.
 - **Instagram**: anonymous requests get only an app shell, so reel data comes from **Apify**'s official Instagram Reel Scraper (`APIFY_API_TOKEN`, pay per result) — caption, video URL, thumbnail.
 - The video file is uploaded through the Gemini Files API (deleted right after parsing) and parsed together with the caption. Per-step timestamp links stay YouTube-only.
-- **Requires Node 24** (`engines.node`, `.nvmrc`). On Node 22 the built-in `fetch` and the undici 7 that cheerio bundles (which installs itself as the global dispatcher on import) disagree on the `Content-Length` header the Gemini SDK sets on upload chunks, and every Files API upload fails with `invalid content-length header`.
+- **Requires `@google/genai` 2.20 or newer.** Older SDK versions set a `Content-Length` header on Files API upload chunks; on Node 22, where cheerio's bundled undici 7 installs itself as the global `fetch` dispatcher on import, that header was rejected and every upload failed with `invalid content-length header`. Node 24 (`engines.node`, `.nvmrc`) is the supported runtime either way.
 
 ### URL Scraping
 
