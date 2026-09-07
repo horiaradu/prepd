@@ -41,7 +41,7 @@ Prepd is a single Next.js application deployed on Vercel. All server logic lives
 
 ### `POST /api/recipes/parse`
 
-Accepts a URL (recipe page or YouTube video). **Parsing is asynchronous:**
+Accepts a URL (recipe page, YouTube video, or Instagram/Facebook reel). **Parsing is asynchronous:**
 the route creates the recipe row and returns its id immediately; the actual
 work runs in the background via `after()`. Clients poll the recipe until its
 `status` leaves `parsing`. See `docs/RELIABILITY_PLAN.md` for the full
@@ -57,19 +57,25 @@ IPs, localhost, internal TLDs); non-reparse calls are rate-limited to 20
 recipes/user/hour.
 
 **Background pipeline** (`src/lib/parse-pipeline.ts`):
-1. Detect URL type (YouTube vs. web page).
+1. Detect URL type (YouTube, Instagram/Facebook reel, or web page).
 2. YouTube → Gemini processes the video directly (`fileData` with the URL);
    no transcript package.
-3. Web page → **fetch chain** (`src/lib/scraper.ts`): direct fetch (8s) →
+3. Reel → **resolver** (`src/lib/reel.ts`) yields caption, video URL and
+   thumbnail: Facebook from the public page's embedded JSON (direct fetch
+   with full browser headers, ScraperAPI on failure); Instagram via Apify's
+   Instagram Reel Scraper (`APIFY_API_TOKEN`). The video is downloaded,
+   uploaded through the Gemini Files API and parsed together with the
+   caption; if the download fails, the caption alone is parsed.
+4. Web page → **fetch chain** (`src/lib/scraper.ts`): direct fetch (8s) →
    on failure, **ScraperAPI** (anti-bot proxy, 70s) → on empty/failure,
    Gemini `urlContext`. HTML parsed with `cheerio` (JSON-LD first, then
    article heuristics).
-4. Send extracted content to Gemini with the recipe parsing prompt
+5. Send extracted content to Gemini with the recipe parsing prompt
    (see LLM_PROMPTS.md); the web path uses no `responseSchema` (it caused
    pathological latency on some articles — the prompt dictates the shape and
    `normalizeRecipe` tolerates drift). 120s timeout.
-5. Save parsed content; flip `status` to `ready`.
-6. **Persist images** (`src/lib/recipe-image.ts`): download every referenced
+6. Save parsed content; flip `status` to `ready`.
+7. **Persist images** (`src/lib/recipe-image.ts`): download every referenced
    image (hero + per-step), store in the public Blob store, rewrite
    references to the stored copies. If none survive a fresh parse, generate
    an AI hero. Failures never invalidate the already-ready recipe.
@@ -164,12 +170,19 @@ AUTHORIZED_EMAIL=        # Your Google email — only this user can log in
 ### Google Gemini API
 
 - Model: `gemini-3-flash-preview` for parsing/suggestions; `gemini-2.5-flash-image` for hero-image generation
-- Used for recipe parsing (JSON output), YouTube video understanding, photo OCR, and recipe suggestions (with Search grounding)
+- Used for recipe parsing (JSON output), YouTube and reel video understanding (reels via the Files API), photo OCR, and recipe suggestions (with Search grounding)
 - API key stored in `GEMINI_API_KEY` env var
 
 ### YouTube
 
 - Handled directly by Gemini: the video URL is passed as `fileData` and the model extracts the recipe with per-step timestamps. No transcript package.
+
+### Instagram / Facebook reels
+
+- **Facebook**: the public reel page, fetched with a full browser header set (ScraperAPI as fallback), embeds JSON with the caption and direct MP4 URLs; the node matching the reel id is used, since the page also embeds suggested reels.
+- **Instagram**: anonymous requests get only an app shell, so reel data comes from **Apify**'s official Instagram Reel Scraper (`APIFY_API_TOKEN`, pay per result) — caption, video URL, thumbnail.
+- The video file is uploaded through the Gemini Files API (deleted right after parsing) and parsed together with the caption. Per-step timestamp links stay YouTube-only.
+- **Requires Node 24** (`engines.node`, `.nvmrc`). On Node 22 the built-in `fetch` and the undici 7 that cheerio bundles (which installs itself as the global dispatcher on import) disagree on the `Content-Length` header the Gemini SDK sets on upload chunks, and every Files API upload fails with `invalid content-length header`.
 
 ### URL Scraping
 
@@ -198,6 +211,7 @@ DATABASE_URL=            # Neon Postgres connection string (via Vercel)
 # LLM + scraping
 GEMINI_API_KEY=
 SCRAPERAPI_API_KEY=      # bot-protection fallback
+APIFY_API_TOKEN=         # Instagram reel data (Apify)
 
 # Blob (public recipe images)
 PUBLIC_BLOB_STORE_ID=    # default BLOB_READ_WRITE_TOKEN covers the private store

@@ -39,7 +39,7 @@ export interface WebPageExtraction {
   images: RecipeImage[];
 }
 
-const BROWSER_HEADERS = {
+export const BROWSER_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -83,7 +83,7 @@ async function fetchHtmlDirect(
 // Fetches the page through ScraperAPI, which handles proxy rotation and
 // anti-bot protections (Cloudflare, DataDome, ...) automatically. Only
 // successful responses consume credits.
-async function fetchHtmlViaScraperApi(url: string): Promise<string> {
+export async function fetchHtmlViaScraperApi(url: string): Promise<string> {
   const apiKey = process.env.SCRAPERAPI_API_KEY;
   if (!apiKey) {
     throw new ScrapeError("SCRAPERAPI_API_KEY is not configured", {

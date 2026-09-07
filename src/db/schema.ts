@@ -81,7 +81,7 @@ export const recipes = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     sourceUrl: text("source_url").notNull(),
-    sourceType: text("source_type").notNull(), // "youtube" | "web" | "image"
+    sourceType: text("source_type").notNull(), // "youtube" | "instagram" | "facebook" | "web" | "image"
     language: text("language").notNull().default("en"), // "en" | "ro"
     servings: integer("servings"),
     mealType: text("meal_type"), // breakfast | main | side | soup | salad | dessert | snack | drink | sauce | bread | other

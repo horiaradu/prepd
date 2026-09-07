@@ -1,5 +1,9 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import type { GenerateContentResponse, Schema } from "@google/genai";
+import { FileState, GoogleGenAI, Type } from "@google/genai";
+import type {
+  File as GeminiFile,
+  GenerateContentResponse,
+  Schema,
+} from "@google/genai";
 import {
   COOK_STYLES,
   CUISINES,
@@ -352,23 +356,33 @@ function normalizeUrlImages(raw: unknown): RecipeImage[] {
   return out;
 }
 
-export async function parseRecipeFromYoutube(
-  url: string,
+export interface VideoInput {
+  // A public YouTube URL, or the URI of a file uploaded via the Files API.
+  fileUri: string;
+  mimeType: string;
+}
+
+const VIDEO_PARSE_INSTRUCTION =
+  "Extract the recipe from this video. For each step, assign a videoTimestamp (in seconds) marking where in the video the step is demonstrated.";
+
+export async function parseRecipeFromVideo(
+  video: VideoInput,
   language = "en",
+  caption: string | null = null,
 ): Promise<ParsedRecipe> {
   const ai = getClient();
+
+  let instruction = VIDEO_PARSE_INSTRUCTION;
+  if (caption) {
+    instruction += `\n\nThe creator posted this caption with the video. It usually holds the exact ingredient quantities, so prefer it over amounts inferred from the footage:\n---\n${caption}\n---`;
+  }
 
   const response = await ai.models.generateContent({
     model: "gemini-3.6-flash",
     contents: [
       {
         role: "user",
-        parts: [
-          { fileData: { fileUri: url, mimeType: "video/*" } },
-          {
-            text: "Extract the recipe from this video. For each step, assign a videoTimestamp (in seconds) marking where in the video the step is demonstrated.",
-          },
-        ],
+        parts: [{ fileData: video }, { text: instruction }],
       },
     ],
     config: {
@@ -379,7 +393,7 @@ export async function parseRecipeFromYoutube(
     },
   });
 
-  const responseText = responseTextOf(response, "parseRecipeFromYoutube");
+  const responseText = responseTextOf(response, "parseRecipeFromVideo");
   const parsed = JSON.parse(responseText);
 
   if (parsed.error) {
@@ -387,6 +401,66 @@ export async function parseRecipeFromYoutube(
   }
 
   return normalizeRecipe(parsed);
+}
+
+// Gemini only accepts YouTube URLs as direct video input; any other video
+// (reels) goes through the Files API: upload, wait for processing, parse,
+// delete. Uploads expire on their own after 48 hours, but user content
+// should not linger even that long.
+const FILE_PROCESSING_TIMEOUT_MS = 90_000;
+const FILE_POLL_INTERVAL_MS = 2_000;
+
+export async function parseRecipeFromVideoBytes(
+  video: { bytes: Buffer; mimeType: string },
+  caption: string | null,
+  language = "en",
+): Promise<ParsedRecipe> {
+  const ai = getClient();
+
+  // Copied into a plain Uint8Array: a Node Buffer may sit on a
+  // SharedArrayBuffer, which Blob does not accept.
+  const uploaded = await ai.files.upload({
+    file: new Blob([new Uint8Array(video.bytes)], { type: video.mimeType }),
+    config: { mimeType: video.mimeType },
+  });
+
+  try {
+    const ready = await waitForFileProcessing(ai, uploaded);
+    if (!ready.uri) {
+      throw new Error("Gemini file upload returned no URI");
+    }
+    return await parseRecipeFromVideo(
+      { fileUri: ready.uri, mimeType: ready.mimeType ?? video.mimeType },
+      language,
+      caption,
+    );
+  } finally {
+    if (uploaded.name) {
+      await ai.files.delete({ name: uploaded.name }).catch(() => {});
+    }
+  }
+}
+
+async function waitForFileProcessing(
+  ai: GoogleGenAI,
+  file: GeminiFile,
+): Promise<GeminiFile> {
+  const deadline = Date.now() + FILE_PROCESSING_TIMEOUT_MS;
+  let current = file;
+  while (current.state === FileState.PROCESSING) {
+    if (Date.now() > deadline) {
+      throw new Error("Gemini file processing timed out");
+    }
+    if (!current.name) {
+      throw new Error("Gemini file upload returned no name");
+    }
+    await new Promise((resolve) => setTimeout(resolve, FILE_POLL_INTERVAL_MS));
+    current = await ai.files.get({ name: current.name });
+  }
+  if (current.state !== FileState.ACTIVE) {
+    throw new Error(`Gemini file processing failed (state: ${current.state})`);
+  }
+  return current;
 }
 
 export async function parseRecipeFromImage(

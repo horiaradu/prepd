@@ -1,6 +1,7 @@
 import { sendGTMEvent } from "@next/third-parties/google";
 
-export type RecipeSource = "web" | "youtube" | "image" | "email";
+export type RecipeSource =
+  "web" | "youtube" | "instagram" | "facebook" | "image" | "email";
 
 export function send(data: Record<string, unknown>) {
   try {

@@ -4,11 +4,13 @@ import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { getYoutubeThumbnailUrl } from "@/lib/youtube";
 import { extractWebPage, ScrapeError } from "@/lib/scraper";
+import { downloadReelVideo, resolveReel, type ReelVideo } from "@/lib/reel";
 import {
   NoRecipeFoundError,
   parseRecipeContent,
   parseRecipeFromUrl,
-  parseRecipeFromYoutube,
+  parseRecipeFromVideo,
+  parseRecipeFromVideoBytes,
 } from "@/lib/gemini";
 import { persistRecipeImages } from "@/lib/recipe-image";
 import { notifyParseOutcome } from "@/lib/parse-notify";
@@ -51,10 +53,47 @@ export async function runRecipeParse(args: RunRecipeParseArgs): Promise<void> {
 
     if (sourceType === "youtube") {
       stage = "gemini-youtube";
-      parsed = await parseRecipeFromYoutube(url, language);
+      parsed = await parseRecipeFromVideo(
+        { fileUri: url, mimeType: "video/*" },
+        language,
+      );
       const thumb = getYoutubeThumbnailUrl(url);
       images = thumb ? [{ url: thumb }] : [];
       rawContent = null;
+    } else if (sourceType === "instagram" || sourceType === "facebook") {
+      stage = "reel-resolve";
+      const reel = await resolveReel(url, sourceType);
+      images = reel.thumbnailUrl ? [{ url: reel.thumbnailUrl }] : [];
+      rawContent = reel.caption;
+
+      // The video carries what the caption leaves out (spoken or on-screen
+      // steps); when it cannot be fetched, the caption alone often still
+      // holds the full recipe.
+      let video: ReelVideo | null = null;
+      if (reel.videoUrl) {
+        stage = "reel-video";
+        try {
+          video = await downloadReelVideo(reel.videoUrl);
+        } catch (err) {
+          console.error(
+            `Reel video download failed for ${url}, falling back to caption:`,
+            err,
+          );
+          Sentry.captureException(err, {
+            tags: { stage, sourceType, sourceHost },
+          });
+        }
+      }
+
+      if (video) {
+        stage = "gemini-video";
+        parsed = await parseRecipeFromVideoBytes(video, reel.caption, language);
+      } else if (reel.caption) {
+        stage = "gemini-parse";
+        parsed = await parseRecipeContent(reel.caption, undefined, language);
+      } else {
+        throw new Error("Reel has neither a playable video nor a caption");
+      }
     } else {
       let extracted: { content: string; images: RecipeImage[] } | null;
       try {
