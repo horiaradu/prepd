@@ -16,17 +16,18 @@ const en: FaqContent = {
     {
       question: "What is Mintdish?",
       answer:
-        "Mintdish takes a recipe from wherever you found it — a link, a YouTube video, or a photo — and turns it into a clean, structured recipe with ingredients, prep steps, and timing. No food-blog backstory.",
+        "Mintdish takes a recipe from wherever you found it — a link, a YouTube video, an Instagram or Facebook reel, or a photo — and turns it into a clean, structured recipe with ingredients, prep steps, and timing. No food-blog backstory.",
     },
     {
       question: "What can I paste into Mintdish?",
       answer:
-        "Links from recipe sites like Bon Appétit, Serious Eats, NYT Cooking, and Food52; YouTube cooking videos; and photos or screenshots of cookbook pages, handwritten cards, or recipes a friend sent over text.",
+        "Links from recipe sites like Bon Appétit, Serious Eats, NYT Cooking, and Food52; YouTube cooking videos; Instagram and Facebook reels; and photos or screenshots of cookbook pages, handwritten cards, or recipes a friend sent over text.",
     },
     {
-      question: "Does Mintdish work with YouTube videos?",
+      question:
+        "Does Mintdish work with YouTube videos and Instagram or Facebook reels?",
       answer:
-        "Yes. Mintdish reads the video transcript and watches what's being cooked, then turns it into step-by-step instructions with ingredients. Each step links back to the timestamp so you can jump to that moment in the video.",
+        "Yes. Mintdish watches what's being cooked and reads the transcript or caption, then turns it into step-by-step instructions with ingredients. For YouTube videos, each step links back to the timestamp so you can jump to that moment in the video.",
     },
     {
       question: "How accurate is the recipe parsing?",
@@ -81,7 +82,7 @@ const en: FaqContent = {
     {
       question: "Are AI-generated recipe images labelled?",
       answer:
-        "Yes. Any hero image generated on-demand by Mintdish using Gemini 2.5 Flash Image is watermarked with a small \"Generated with AI\" label so it can never be confused with a real photo.",
+        'Yes. Any hero image generated on-demand by Mintdish using Gemini 2.5 Flash Image is watermarked with a small "Generated with AI" label so it can never be confused with a real photo.',
     },
     {
       question: "Which recipe sites does Mintdish work with?",
@@ -114,17 +115,18 @@ const ro: FaqContent = {
     {
       question: "Ce este Mintdish?",
       answer:
-        "Mintdish ia o rețetă de oriunde ai găsit-o — un link, un videoclip YouTube sau o poză — și o transformă într-o rețetă curată și structurată, cu ingrediente, pași de preparare și timpi. Fără introducerea kilometrică a blogurilor culinare.",
+        "Mintdish ia o rețetă de oriunde ai găsit-o — un link, un videoclip YouTube, un reel de Instagram sau Facebook ori o poză — și o transformă într-o rețetă curată și structurată, cu ingrediente, pași de preparare și timpi. Fără introducerea kilometrică a blogurilor culinare.",
     },
     {
       question: "Ce pot să lipesc în Mintdish?",
       answer:
-        "Linkuri de pe site-uri de rețete precum Bon Appétit, Serious Eats, NYT Cooking sau Food52; videoclipuri YouTube de gătit; poze sau capturi de ecran cu pagini din cărți de bucate, rețete scrise de mână sau rețete trimise pe mesaj.",
+        "Linkuri de pe site-uri de rețete precum Bon Appétit, Serious Eats, NYT Cooking sau Food52; videoclipuri YouTube de gătit; reels de Instagram și Facebook; poze sau capturi de ecran cu pagini din cărți de bucate, rețete scrise de mână sau rețete trimise pe mesaj.",
     },
     {
-      question: "Funcționează cu videoclipuri YouTube?",
+      question:
+        "Funcționează cu videoclipuri YouTube și reels de Instagram sau Facebook?",
       answer:
-        "Da. Mintdish citește transcriptul videoclipului și urmărește ce se gătește, apoi transformă totul în instrucțiuni pas cu pas cu ingrediente. Fiecare pas are un link către momentul potrivit din videoclip.",
+        "Da. Mintdish urmărește ce se gătește și citește transcriptul sau descrierea, apoi transformă totul în instrucțiuni pas cu pas cu ingrediente. La videoclipurile YouTube, fiecare pas are un link către momentul potrivit din videoclip.",
     },
     {
       question: "Cât de exactă este procesarea rețetelor?",
@@ -162,7 +164,8 @@ const ro: FaqContent = {
         "Rețetele și datele contului sunt stocate într-o bază de date Postgres găzduită pe Neon; imaginile sunt stocate pe Vercel. Detaliile complete, inclusiv terțele părți implicate în procesare și analiză, sunt în Politica de confidențialitate.",
     },
     {
-      question: "De ce pune Mintdish pașii de preparare înaintea celor de gătit?",
+      question:
+        "De ce pune Mintdish pașii de preparare înaintea celor de gătit?",
       answer:
         "Gătitul real este mai rapid și mai calm când tot ce trebuie tocat, măsurat sau marinat este pregătit înainte să pornești focul. Mintdish rearanjează orice rețetă în format „prep-first”: fiecare tocare, marinare sau pauză apare înainte de gătit, iar fiecare pas de gătit listează doar ingredientele de care ai nevoie chiar atunci.",
     },

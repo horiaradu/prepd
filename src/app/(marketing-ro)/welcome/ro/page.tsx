@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     absolute: "Mintdish — Sari peste blogul culinar. Direct rețeta.",
   },
   description:
-    "Lipește un link de rețetă, un clip YouTube sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
+    "Lipește un link de rețetă, un video de gătit sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
   alternates: {
     canonical: "/welcome/ro",
     languages: {
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Mintdish — Sari peste blogul culinar. Direct rețeta.",
     description:
-      "Lipește un link de rețetă, un clip YouTube sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
+      "Lipește un link de rețetă, un video de gătit sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
   },
   twitter: {
     title: "Mintdish — Sari peste blogul culinar. Direct rețeta.",
     description:
-      "Lipește un link de rețetă, un clip YouTube sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
+      "Lipește un link de rețetă, un video de gătit sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
   },
 };
 

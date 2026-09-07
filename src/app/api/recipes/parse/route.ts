@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { and, eq, sql } from "drizzle-orm";
 import { authOptions, isAdmin } from "@/lib/auth";
 import { isYoutubeUrl } from "@/lib/youtube";
+import { detectReelSource } from "@/lib/reel";
 import { runRecipeParse } from "@/lib/parse-pipeline";
 import { isFetchableUrl } from "@/lib/url-guard";
 import { parseAllowance } from "@/lib/parse-limit";
@@ -45,7 +46,9 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
-  const sourceType: SourceType = isYoutubeUrl(body.url) ? "youtube" : "web";
+  const sourceType: SourceType = isYoutubeUrl(body.url)
+    ? "youtube"
+    : (detectReelSource(body.url) ?? "web");
   const rawLocale = request.cookies.get(LOCALE_COOKIE)?.value ?? "en";
   const language = isValidLocale(rawLocale) ? rawLocale : "en";
 

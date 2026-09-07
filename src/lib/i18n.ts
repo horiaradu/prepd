@@ -67,7 +67,7 @@ export type Translations = {
   badgeLink: string;
   recipeSites: string;
   recipeSitesDesc: string;
-  badgeYoutube: string;
+  badgeVideo: string;
   cookingVideos: string;
   cookingVideosDesc: string;
   badgePhoto: string;
@@ -298,7 +298,7 @@ const en: Translations = {
   footerProductHeading: "Product",
   footerLegalHeading: "Legal",
   footerTagline:
-    "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
+    "Paste a recipe link, a cooking video, or a photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
 
   cookieConsentTitle: "We use cookies",
   cookieConsentDescription:
@@ -328,7 +328,7 @@ const en: Translations = {
   heroLine1: "Skip the food blog.",
   heroLine2: "Just the recipe.",
   heroSubtitle:
-    "Paste a recipe link, drop a YouTube cooking video, or snap a photo. Mintdish parses it into clean ingredients, prep steps, and cooking times — ready to follow.",
+    "Paste a recipe link, drop a cooking video from YouTube, Instagram or Facebook, or snap a photo. Mintdish parses it into clean ingredients, prep steps, and cooking times — ready to follow.",
   joinWaitlist: "Join the waitlist",
 
   fromWhereverFound: "From wherever you found it.",
@@ -338,10 +338,10 @@ const en: Translations = {
   recipeSites: "Recipe sites",
   recipeSitesDesc:
     "Bon Appétit, Serious Eats, Food52, NYT Cooking. Paste the link, get the recipe — without the 2,000-word backstory.",
-  badgeYoutube: "YouTube",
+  badgeVideo: "Video",
   cookingVideos: "Cooking videos",
   cookingVideosDesc:
-    "Mintdish reads the transcript, watches what gets cooked, and turns it into step-by-step instructions with ingredients.",
+    "YouTube videos, Instagram and Facebook reels. Mintdish reads the caption or transcript, watches what gets cooked, and turns it into step-by-step instructions with ingredients.",
   badgePhoto: "Photo",
   cookbookPages: "Cookbook pages & screenshots",
   cookbookPagesDesc:
@@ -374,7 +374,7 @@ const en: Translations = {
 
   learnMoreTitle: "Learn more",
   learnMoreHowItWorks:
-    "How does Mintdish parse recipes from links, YouTube videos, and photos?",
+    "How does Mintdish parse recipes from links, cooking videos, and photos?",
   learnMoreFaq: "Frequently asked questions about parsing, privacy, and access",
   learnMoreGuides:
     "Cooking guides: cups to grams, saving YouTube recipes, the prep-first method",
@@ -383,7 +383,7 @@ const en: Translations = {
   accessDenied: "Access denied. Only authorized accounts can sign in.",
   signInWithGoogle: "Sign in with Google",
 
-  pasteRecipeLink: "Paste a recipe or YouTube link",
+  pasteRecipeLink: "Paste a recipe or video link",
   uploadPhotoTitle: "Upload a photo of a recipe",
   parse: "Parse",
   parsing: "Parsing…",
@@ -537,10 +537,14 @@ const en: Translations = {
   stepGeneratingRecipe: "Generating recipe…",
   stepGeneratingImage: "Generating image…",
 
-  errorParseFailed: "Something went wrong while processing the recipe. Please try again.",
-  errorNoRecipeFound: "No recipe found — check that the link or photo actually contains one.",
-  errorParseInterrupted: "The parse was interrupted before finishing. Please retry.",
-  errorTooManyParses: "You've added a lot of recipes in the last hour — take a short break and try again.",
+  errorParseFailed:
+    "Something went wrong while processing the recipe. Please try again.",
+  errorNoRecipeFound:
+    "No recipe found — check that the link or photo actually contains one.",
+  errorParseInterrupted:
+    "The parse was interrupted before finishing. Please retry.",
+  errorTooManyParses:
+    "You've added a lot of recipes in the last hour — take a short break and try again.",
 
   statusParsing: "Parsing recipe…",
   retryParse: "Retry",
@@ -563,7 +567,7 @@ const ro: Translations = {
   footerProductHeading: "Produs",
   footerLegalHeading: "Juridic",
   footerTagline:
-    "Lipește un link de rețetă, un clip YouTube sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
+    "Lipește un link de rețetă, un video de gătit sau o poză — Mintdish extrage ingredientele, pașii și timpii. Fără introducerea kilometrică.",
 
   cookieConsentTitle: "Folosim cookie-uri",
   cookieConsentDescription:
@@ -594,7 +598,7 @@ const ro: Translations = {
   heroLine1: "Sari peste blogul culinar.",
   heroLine2: "Direct rețeta.",
   heroSubtitle:
-    "Lipești un link la rețetă, dai un video YouTube de gătit sau faci o poză. Mintdish o transformă în ingrediente curate, pași de preparare și timpi de gătit — gata de urmat.",
+    "Lipești un link la rețetă, dai un video de gătit de pe YouTube, Instagram sau Facebook, sau faci o poză. Mintdish o transformă în ingrediente curate, pași de preparare și timpi de gătit — gata de urmat.",
   joinWaitlist: "Înscrie-te pe lista de așteptare",
 
   fromWhereverFound: "De oriunde ai găsit-o.",
@@ -604,10 +608,10 @@ const ro: Translations = {
   recipeSites: "Site-uri de rețete",
   recipeSitesDesc:
     "Bon Appétit, Serious Eats, Food52, NYT Cooking. Lipești linkul, obții rețeta — fără introducerea de 2.000 de cuvinte.",
-  badgeYoutube: "YouTube",
+  badgeVideo: "Video",
   cookingVideos: "Videoclipuri de gătit",
   cookingVideosDesc:
-    "Mintdish citește transcriptul, urmărește ce se gătește și transformă totul în instrucțiuni pas cu pas cu ingrediente.",
+    "Videoclipuri YouTube, reels de Instagram și Facebook. Mintdish citește descrierea sau transcriptul, urmărește ce se gătește și transformă totul în instrucțiuni pas cu pas cu ingrediente.",
   badgePhoto: "Poză",
   cookbookPages: "Pagini din cărți de bucate și capturi de ecran",
   cookbookPagesDesc:
@@ -641,7 +645,7 @@ const ro: Translations = {
 
   learnMoreTitle: "Află mai multe",
   learnMoreHowItWorks:
-    "Cum procesează Mintdish rețete din linkuri, videoclipuri YouTube și poze?",
+    "Cum procesează Mintdish rețete din linkuri, videoclipuri de gătit și poze?",
   learnMoreFaq:
     "Întrebări frecvente despre procesare, confidențialitate și acces",
   learnMoreGuides:
@@ -651,7 +655,7 @@ const ro: Translations = {
   accessDenied: "Acces refuzat. Doar conturile autorizate se pot autentifica.",
   signInWithGoogle: "Autentificare cu Google",
 
-  pasteRecipeLink: "Lipește un link la rețetă sau YouTube",
+  pasteRecipeLink: "Lipește un link la rețetă sau video",
   uploadPhotoTitle: "Încarcă o fotografie a rețetei",
   parse: "Procesează",
   parsing: "Se procesează…",
@@ -807,10 +811,13 @@ const ro: Translations = {
   stepGeneratingRecipe: "Se generează rețeta…",
   stepGeneratingImage: "Se generează imaginea…",
 
-  errorParseFailed: "Ceva nu a mers bine la procesarea rețetei. Încearcă din nou.",
-  errorNoRecipeFound: "Nu am găsit nicio rețetă — verifică dacă linkul sau poza chiar conține una.",
+  errorParseFailed:
+    "Ceva nu a mers bine la procesarea rețetei. Încearcă din nou.",
+  errorNoRecipeFound:
+    "Nu am găsit nicio rețetă — verifică dacă linkul sau poza chiar conține una.",
   errorParseInterrupted: "Procesarea a fost întreruptă. Încearcă din nou.",
-  errorTooManyParses: "Ai adăugat multe rețete în ultima oră — ia o mică pauză și încearcă din nou.",
+  errorTooManyParses:
+    "Ai adăugat multe rețete în ultima oră — ia o mică pauză și încearcă din nou.",
 
   statusParsing: "Se procesează rețeta…",
   retryParse: "Reîncearcă",

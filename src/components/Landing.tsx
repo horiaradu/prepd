@@ -136,10 +136,10 @@ function InputModes({ t }: { t: Translations }) {
             preview={<BrowserPreview />}
           />
           <InputModeCard
-            badge={t.badgeYoutube}
+            badge={t.badgeVideo}
             title={t.cookingVideos}
             description={t.cookingVideosDesc}
-            icon={<YouTubeGlyph />}
+            icon={<VideoGlyph />}
             preview={<VideoPreview />}
           />
           <InputModeCard
@@ -211,7 +211,7 @@ function VideoPreview() {
   return (
     <div className="h-32 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 relative overflow-hidden">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
+        <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center shadow-lg">
           <span
             aria-hidden
             className="block w-0 h-0 border-y-[8px] border-y-transparent border-l-[12px] border-l-white ml-1"
@@ -247,19 +247,22 @@ function RecipeCardPreview() {
   );
 }
 
-function YouTubeGlyph() {
+function VideoGlyph() {
   return (
     <svg
       width="28"
       height="28"
       viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden
       className="text-green-600"
     >
-      <path
-        fill="currentColor"
-        d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.76C18.25 5 12 5 12 5s-6.25 0-7.84.44A2.5 2.5 0 0 0 2.4 7.2C2 8.78 2 12 2 12s0 3.22.4 4.8a2.5 2.5 0 0 0 1.76 1.76C5.75 19 12 19 12 19s6.25 0 7.84-.44a2.5 2.5 0 0 0 1.76-1.76C22 15.22 22 12 22 12s0-3.22-.4-4.8ZM10 15V9l5 3-5 3Z"
-      />
+      <path d="m22 8-6 4 6 4V8Z" />
+      <rect width="14" height="12" x="2" y="6" rx="2" ry="2" />
     </svg>
   );
 }

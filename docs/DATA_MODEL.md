@@ -28,7 +28,7 @@ Plus NextAuth's `accounts` and `sessions` tables (auto-created by the adapter).
 | user_id | uuid | FK → users.id |
 | title | text | Recipe title (a placeholder — source hostname / "Recipe from photo" — until the async parse fills it in) |
 | source_url | text | Original URL; for `image` recipes, the first source photo's Blob URL |
-| source_type | text | `youtube`, `web`, or `image` |
+| source_type | text | `youtube`, `instagram`, `facebook`, `web`, or `image` |
 | servings | integer | Nullable |
 | ingredients | jsonb | Array of `{ name, quantity, unit }` |
 | prep_steps | jsonb | Array of `{ instruction, ingredients[] }` |

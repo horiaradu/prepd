@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     absolute: "Mintdish — Skip the food blog. Just the recipe.",
   },
   description:
-    "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
+    "Paste a recipe link, a cooking video, or a photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
   alternates: {
     canonical: "/welcome",
     languages: {
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Mintdish — Skip the food blog. Just the recipe.",
     description:
-      "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
+      "Paste a recipe link, a cooking video, or a photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
   },
   twitter: {
     title: "Mintdish — Skip the food blog. Just the recipe.",
     description:
-      "Paste a recipe link, YouTube video, or photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
+      "Paste a recipe link, a cooking video, or a photo — Mintdish pulls out ingredients, steps, and timing. No food blog fluff.",
   },
 };
 
