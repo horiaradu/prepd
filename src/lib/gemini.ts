@@ -206,11 +206,15 @@ function normalizeCuisine(value: unknown): Cuisine | null {
     : null;
 }
 
-function normalizeTotalTime(value: unknown): number | null {
+// Largest value a Postgres `integer` column accepts.
+const MAX_DB_INTEGER = 2_147_483_647;
+
+// A positive whole number that fits the integer columns it is saved to.
+function normalizePositiveInteger(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     return null;
   }
-  return Math.round(value);
+  return Math.min(Math.max(Math.round(value), 1), MAX_DB_INTEGER);
 }
 
 function normalizeRecipe(recipe: unknown): ParsedRecipe {
@@ -236,7 +240,8 @@ function normalizeRecipe(recipe: unknown): ParsedRecipe {
     mealType: normalizeMealType(r.mealType),
     cuisine: normalizeCuisine(r.cuisine),
     cookStyle: normalizeCookStyle(r.cookStyle),
-    totalTimeMinutes: normalizeTotalTime(r.totalTimeMinutes),
+    servings: normalizePositiveInteger(r.servings),
+    totalTimeMinutes: normalizePositiveInteger(r.totalTimeMinutes),
   } as ParsedRecipe;
 }
 
